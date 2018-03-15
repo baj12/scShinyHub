@@ -40,6 +40,12 @@ inputData = reactive({
   dataTables$gbm = gbm[rnames,]
   dataTables$gbm_log = gbm_log[rnames,]
   dataTables$featuredata <- featuredata[rnames,]
+  
+  # some checks
+  if(sum(is.infinite(as.matrix(exprs(gbm))))>0){
+    showNotification("gbm contains infinite values")
+    return(NULL)
+  }
   if(DEBUG)cat(file=stderr(), "inputData: done\n")
   return(dataTables)
 })
@@ -81,18 +87,28 @@ useCells <- reactive({
     if(DEBUG)cat(file=stderr(), "useCells:NULL\n")
     return(NULL)
   }
-  
+  if(DEBUG)cat(file=stderr(), "useCells2\n")
   minG = input$minGenes
   gbm = as.matrix(exprs(dataTables$gbm))
   goodCols = colSums(gbm) > minG
   
   maxG = input$maxGenes
-  goodCols = goodCols & ( colSums(gbm) <= maxG)
+  goodCols = goodCols & ( colSums(gbm,na.rm = TRUE) <= maxG)
   
   geneNames = input$minExpGenes
   ids = which(grepl(geneNames, dataTables$featuredata$Associated.Gene.Name))
-  goodCols = goodCols & (colSums(gbm[ids, ]) > 0)
-  
+  if(length(ids)==1){
+    goodCols = goodCols &gbm[ids, ] > 0 
+  }else if(length(ids) == 0){
+    showNotification("not enough cells, check gene names for min coverage")
+    return(NULL)
+  }else{
+    goodCols = goodCols & (colSums(gbm[ids, ]) > 0)
+  }
+  if(sum(goodCols)==0) {
+    showNotification("not enough cells left")
+    return(NULL)
+  }
   if(DEBUG)cat(file=stderr(), "useCells:done\n")
   return(goodCols)
 })
@@ -115,7 +131,7 @@ useGenes <- reactive({
   if(DEBUG)cat(file=stderr(), "useGenes\n")
   dataTables = inputData()
   useCells = useCells()
-  if(!exists("dataTables") | is.null(dataTables) | length(dataTables$featuredata$Associated.Gene.Name)==0){
+  if(!exists("dataTables") | is.null(dataTables) | is.null(useCells) | length(dataTables$featuredata$Associated.Gene.Name)==0){
     if(DEBUG)cat(file=stderr(), "useGenes: NULL\n")
     return(NULL)
   }
