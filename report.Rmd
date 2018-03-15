@@ -1,0 +1,1024 @@
+---
+title: "10X selector report"
+author: "Bernd Jagla"
+date: "3/8/2018"
+output: html_document
+params:
+  tempServerFunctions: NA
+  tempprivatePlotFunctions: NA
+  b1: NA
+  cluster: NA
+  cluster5: NA
+  clusters: NA
+  clusters1: NA
+  clusters2: NA
+  clusters3: NA
+  clusters4: NA
+  db1: NA
+  db2: NA
+  dimension_x: NA
+  dimension_x1: NA
+  dimension_x2: NA
+  dimension_x3: NA
+  dimension_x4: NA
+  dimension_y: NA
+  dimension_y1: NA
+  dimension_y2: NA
+  dimension_y3: NA
+  dimension_y4: NA
+  file1: NA
+  gene_id: NA
+  gene_id_sch: NA
+  geneListSelection: NA
+  heatmap_geneids: NA
+  heatmap_geneids2: NA
+  maxGenes: NA
+  mclustids: NA
+  minExpGenes: NA
+  minGenes: NA
+  minGenesGS: NA
+  panelplotids: NA
+  scb1: NA
+  selectIds: NA
+---
+
+```{r}
+library(shiny)
+library(shinyTree)
+library(plotly)
+library(shinythemes)
+library(ggplot2)
+library(DT)
+library(pheatmap)
+library(threejs)
+library(sm)
+library(RColorBrewer)
+library(mclust)
+library(reshape)
+library(cellrangerRkit)
+library(SCORPIUS)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(shinyWidgets)
+library(scater)
+
+source(params$tempServerFunctions)
+source(params$tempprivatePlotFunctions)
+DEBUG=TRUE
+seed = 1
+```
+
+
+# parameters
+
+```{r setup, include=FALSE}
+input = params
+print(str(input$file1))
+load(params$file1$datapath)
+print(ls())
+```
+
+
+
+```{r check Variables}
+if(is.null(input$cluster)) {
+  input$cluster = '0'
+  print("Warning: setting cluster to 0")
+}
+if(is.null(input$cluster5)) {
+  input$cluster5 = '0'
+  print("Warning: setting cluster5 to 0")
+}
+if(is.null(input$clusters)) {
+  input$clusters = '0'
+  print("Warning: setting clusters to 0")
+}
+if(is.null(input$clusters1)) {
+  input$clusters1 = '0'
+  print("Warning: setting clusters1 to All")
+}
+if(is.null(input$clusters2)) {
+  input$clusters2 = '0'
+  print("Warning: setting clusters2 to 0")
+}
+if(is.null(input$clusters3)) {
+  input$clusters3 = '0'
+  print("Warning: setting clusters4 to 0")
+}
+if(is.null(input$clusters4)) {
+  input$clusters4 = 'All'
+  print("Warning: setting clusters4 to All")
+}
+
+```
+
+
+```{r inputData}
+dataTables = list()
+dataTables$log2cpmOrg <- log2cpm
+dataTables$tsne.data <- tsne.data
+dataTables$tsne.dataOrg <- tsne.data
+featuredata <-
+  featuredata[which(featuredata$Chromosome.Name %in% c(unlist(lapply(
+    seq(1, 22, 1), toString
+  )), c("X", "Y", "MT", "N"))),]
+featuredata$Associated.Gene.Name <-
+  toupper(featuredata$Associated.Gene.Name)
+featuredata <- featuredata[rownames(log2cpm), ]
+dataTables$featuredataOrg <- featuredata
+dataTables$positiveCells <- NULL
+dataTables$positiveCellsAll <- NULL
+
+# take only genes that are in all tables
+rnames = rownames(featuredata)
+rnames = rnames[rnames %in% rownames(log2cpm)]
+rnames = rnames[rnames %in% rownames(gbm)]
+
+dataTables$log2cpm <- log2cpm[rnames, ]
+dataTables$gbm = gbm[rnames, ]
+dataTables$gbm_log = gbm_log[rnames, ]
+dataTables$featuredata <- featuredata[rnames, ]
+
+```
+
+```{r medianENSG}
+geneC = colSums(log2cpm>0, na.rm = TRUE)
+medianENSG = median(t(geneC))
+```
+
+```{r medianUMI}
+umiC = colSums(log2cpm, na.rm = TRUE)
+medianUMI = median(t(umiC))
+```
+
+```{r useCells}
+minG = input$minGenes
+gbm = as.matrix(exprs(dataTables$gbm))
+goodCols = colSums(gbm) > minG
+
+maxG = input$maxGenes
+goodCols = goodCols & ( colSums(gbm) <= maxG)
+
+geneNames = input$minExpGenes
+ids = which(grepl(geneNames, dataTables$featuredata$Associated.Gene.Name))
+goodCols = goodCols & (colSums(gbm[ids, ]) > 0)
+
+
+useCells = goodCols
+```
+
+```{r useGenes}
+#genes to be explicitly removed
+ipIDs = input$selectIds
+if(nchar(ipIDs)>0) {
+  rmIds = !grepl(input$selectIds, dataTables$featuredata$Associated.Gene.Name)
+}else 
+{
+  rmIds = rep(TRUE,nrow(dataTables$log2cpm))
+}
+
+# gene groups to be included
+if(!is.null(input$geneListSelection)){
+  selectedgeneList = get_selected(input$geneListSelection)
+  if(length(selectedgeneList)>0){
+    selGenes = c()
+    for(sIdx in 1:length(selectedgeneList)){
+      print(sIdx)
+      att = attr(selectedgeneList[[sIdx]], "ancestry")
+      if(length(att)>0){
+        selGenes = c(selGenes , geneLists[[att]][[selectedgeneList[[sIdx]]]])
+      }
+    }
+    selGenes = unique(selGenes)
+    rmIds = rownames(dataTables$log2cpm) %in% selGenes & rmIds
+  }
+}
+
+# overall gene expression Min
+minGene <- input$minGenesGS
+if(!is.null(minGene)){
+  selGenes = rowSums(as.matrix(exprs(dataTables$gbm[,useCells]))) >=minGene
+  rmIds = rmIds & selGenes
+}
+
+if(DEBUG)cat(file=stderr(), "useGenes: done\n")
+useGenes = rmIds
+```
+
+
+```{r featureDataReact}
+
+featureDataReact = dataTables$featuredata[useGenes, ]
+featureData = dataTables$featuredata[useGenes, ]
+```
+
+```{r gbm}
+if(DEBUG)cat(file=stderr(), "gbm\n")
+gbm = dataTables$gbm[useGenes, useCells]
+if(DEBUG)cat(file=stderr(), "gbm:DONE\n")
+
+```
+
+```{r gbm_log}
+if(DEBUG)cat(file=stderr(), "gbm_log\n")
+gbm_log = dataTables$gbm_log[useGenes, useCells]
+if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
+
+```
+
+```{r scaterReads}
+if(DEBUG)cat(file=stderr(), "scaterReads\n")
+fd = featureDataReact
+
+counts = as.matrix(exprs( gbm))
+
+anno = pData(gbm)
+anno$sample_id = anno$barcode
+anno$fixed = "red"
+# anno$individual= "NA1"
+# anno$replicate = "r1"
+# anno$well = "A01"
+# anno$batch = "b1"
+pheno_data <- new("AnnotatedDataFrame", anno)
+rownames(pheno_data) <- pheno_data$sample_id
+
+reads = as.matrix(counts)
+rownames(reads) = make.unique(fd[rownames(reads),"Associated.Gene.Name"])
+rownames(reads)[is.na(rownames(reads)) ] = "na"
+reads = SingleCellExperiment(
+  assays = list(counts = reads), 
+  colData = anno
+)
+ercc <- rownames(reads)[grepl("ERCC-", rownames(reads))]
+
+mt = rownames(reads)[grepl("^MT",rownames(reads))]
+
+reads <- scater::calculateQCMetrics(
+  reads
+)
+filter_by_expr_features <- (reads$total_features > 200)
+reads$use <- (
+  # sufficient features (genes)
+  filter_by_expr_features 
+  # sufficient molecules counted
+  #filter_by_total_counts &
+  # sufficient endogenous RNA
+  #filter_by_ERCC &
+  # remove cells with unusual number of reads in MT genes
+  #filter_by_MT
+)
+
+
+scaterReads = reads
+```
+
+```{r log2cpm}
+if(DEBUG)cat(file=stderr(), "log2cpm\n")
+if(DEBUG)cat(file=stderr(), "log2cpm:Done\n")
+
+log2cpm = dataTables$log2cpm[useGenes, useCells]
+```
+
+```{r pca}
+if(DEBUG)cat(file=stderr(), "pca\n")
+
+pca = run_pca(gbm_log)
+```
+
+```{r tsne}
+if(DEBUG)cat(file=stderr(), "tsne\n")
+
+set.seed(seed = seed)
+tsne = run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
+if(DEBUG)cat(file=stderr(), "tsne: done\n")
+```
+
+```{r kmClustering}
+if(DEBUG)cat(file=stderr(), "kmClustering\n")
+clustering=list()
+
+kNr = 10
+for(kNr in 2:10) {
+  set.seed(seed = seed)
+  km = run_kmeans_clustering(pca, k=kNr)
+  clustering[[paste0("kmeans_",kNr,"_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)), "Cluster" = km$cluster)
+}
+
+kmClustering = clustering
+if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
+
+```
+
+```{r tsne.data}
+if(DEBUG)cat(file=stderr(), "tsne.data\n")
+
+tsne.data = data.frame(tsne$Y)
+colnames(tsne.data) = c("V1", "V2", "V3")
+tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
+rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
+if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
+```
+
+```{r prioritized_genes}
+set.seed(seed = seed)
+prioritized_genes =     prioritize_top_genes(gbm, tsne.data$dbCluster, "sseq",
+                                             logscale = FALSE, 
+                                             min_mean=0.5, 
+                                             p_cutoff=0.05,
+                                             order_by='pvalue')
+
+
+```
+
+```{r dge}
+if(DEBUG)cat(file=stderr(), "dge\n")
+if(!is.null(input$db1) & ! is.null(input$db2)){
+  subsetData <- subset(tsne.data, dbCluster == input$clusters1)
+  cells.1 <- rownames(brushedPoints(subsetData, input$db1))
+  cells.2 <- rownames(brushedPoints(subsetData, input$db2))
+
+  subsetExpression <- log2cpm[, union(cells.1, cells.2)]
+  
+  genes.use <- rownames(subsetExpression)
+  data.1 = apply(subsetExpression[genes.use, cells.1], 1, expMean)
+  data.2 = apply(subsetExpression[genes.use, cells.2], 1, expMean)
+  total.diff = (data.1 - data.2)
+  
+  genes.diff = names(which(abs(total.diff) > .2))
+  genes.use = ainb(genes.use, genes.diff)
+  
+  toReturn <-
+    DiffExpTest(subsetExpression, cells.1, cells.2, genes.use = genes.use)
+  toReturn[, "avg_diff"] = total.diff[rownames(toReturn)]
+  toReturn$Associated.Gene.Name <-
+    featureData[rownames(toReturn), 'Associated.Gene.Name']
+  selectedDge <- toReturn
+  cat(stderr(), rownames(toReturn)[1:5])
+  
+  dge <-     toReturn
+  if(DEBUG)cat(file=stderr(), "dge:done11\n")
+}else{
+  dge=NA
+}
+```
+
+
+```{r selectedDge}
+# selectedDge <- reactiveValues()
+
+```
+
+```{r tsne3d}
+p <-
+  plot_ly(
+    tsne.data,
+    x = ~ V1,
+    y = ~ V2,
+    z = ~ V3,
+    type = "scatter3d",
+    color =  ~ dbCluster,
+    hoverinfo = "text",
+    text = paste('Cluster:', tsne.data$dbCluster),
+    mode = 'markers',
+    marker =
+      list(
+        line = list(width = 0),
+        size = rep(10, nrow(tsne.data)),
+        sizeref = 3
+      )
+  )
+if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
+layout(p)
+
+```
+
+```{r summaryStats}
+
+
+line1<-paste('No. of cells:', dim(log2cpm)[2],sep='\t')
+line2<-paste('Median UMIs:', medianUMI,sep='\t')
+line3<-paste('Median Genes:', medianENSG,sep='\t')
+line5<-paste('No. of reads:',  dim(log2cpm)[1],sep='\t')
+HTML(
+  paste0("Summary statistics of this dataset:", '<br/>','<br/>',
+         line1, '<br/>', 
+         line2, '<br/>',
+         line3, '<br/>',
+         line5
+  )
+)
+
+```
+
+```{r plotUmiHist}
+
+hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
+```
+
+```{r variancePCA}
+barplot(pca$var_pcs, main="Variance captured by first PCs")
+```
+
+```{r plotHistogramsAll}
+barplot(pca$var_pcs, main="Variance captured by first PCs")
+```
+
+```{r selectedGenesTable}
+gbmMat = as.matrix(exprs(dataTables$gbm))
+fd = dataTables$featuredata
+dt = fd[useGenes,c("Associated.Gene.Name", "Gene.Biotype", "Description")]
+dt$rowSums = rowSums(gbmMat[useGenes,useCells])
+dt$rowSamples = rowSums(gbmMat[useGenes,useCells]>0)
+DT::datatable(dt)
+
+```
+
+```{r removedGenesTable}
+gbmMat = as.matrix(exprs(dataTables$gbm))
+fd = dataTables$featuredata
+dt = fd[useGenes,c("Associated.Gene.Name", "Gene.Biotype", "Description")]
+dt$rowSums = rowSums(gbmMat[useGenes,useCells])
+dt$rowSamples = rowSums(gbmMat[useGenes,useCells]>0)
+DT::datatable(dt)
+
+```
+
+```{r tsne_plt}
+if(DEBUG)cat(file=stderr(), "output$tsne_plt\n")
+geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+                                       toupper(input$gene_id)), ])[1]
+
+expression <- log2cpm[geneid, ]
+
+tsneData <- cbind(tsne.data, t(expression))
+names(tsneData)[names(tsneData) == geneid] <- 'values'
+
+p <-
+  plot_ly(
+    tsneData,
+    x = ~ V1,
+    y = ~ V2,
+    z = ~ V3,
+    type = "scatter3d",
+    hoverinfo = "text",
+    text = paste('Cluster:', tsne.data$dbCluster),
+    mode = 'markers',
+    marker = list(
+      size = 2,
+      line = list(width = 0),
+      color =  ~ values,
+      colors = 'Greens'
+    )
+  )
+layout(p, title = toupper(input$gene_id))
+
+```
+
+```{r clusterPlot}
+if(DEBUG)cat(file=stderr(), "output$clusterPlot\n")
+geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+                                       toupper(input$gene_id)), ])[1]
+
+expression <- log2cpm[geneid, ]
+
+
+tsneData <- cbind(tsne.data, t(expression))
+names(tsneData)[names(tsneData) == geneid] <- 'values'
+
+
+if(is.null(input$cluster)) input$cluster = 0
+subsetData <- subset(tsneData, dbCluster == input$cluster)
+p1 <-
+  ggplot(subsetData,
+         aes_string(x = input$dimension_x, y = input$dimension_y)) +
+  geom_point(aes_string(size = 2, color = 'values')) +
+  geom_point(shape = 1,
+             size = 4,
+             colour = "black") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(
+      angle = 90,
+      size = 12,
+      vjust = 0.5
+    ),
+    axis.text.y = element_text(size = 12),
+    strip.text.x = element_text(size = 16),
+    strip.text.y = element_text(size = 14),
+    axis.title.x = element_text(face = "bold", size = 16),
+    axis.title.y = element_text(face = "bold", size = 16),
+    legend.position = "none"
+  ) +
+  ggtitle(paste(toupper(input$gene_id), input$cluster, sep = '-Cluster')) +
+  scale_colour_gradient2(low = 'grey50', high = "red")
+p1
+
+```
+
+```{r gene_vio_plot}
+if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")
+
+geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+                                       toupper(input$gene_id)), ])[1]
+
+expression <- log2cpm[geneid, ]
+
+validate(need(is.na(sum(expression)) != TRUE, ''))
+
+tsneData <- cbind(tsne.data, t(expression))
+names(tsneData)[names(tsneData) == geneid] <- 'values'
+#tsne.data<-subset(tsne.data,dbCluster!=0)
+
+p1 <-
+  ggplot(tsneData, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
+  geom_violin(scale = "width") +
+  stat_summary(
+    fun.y = median,
+    geom = "point",
+    size = 5,
+    color = 'black'
+  ) +
+  stat_summary(fun.data = n_fun, geom = "text") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(
+      angle = 90,
+      size = 12,
+      vjust = 0.5
+    ),
+    axis.text.y = element_text(size = 12),
+    strip.text.x = element_text(size = 16),
+    strip.text.y = element_text(size = 14),
+    axis.title.x = element_text(face = "bold", size = 16),
+    axis.title.y = element_text(face = "bold", size = 16),
+    legend.position = "none"
+  ) +
+  xlab('Cluster') +
+  ylab('Expression') +
+  ggtitle(toupper(input$gene_id))
+if(DEBUG)cat(file=stderr(), "output$gene_vio_plot:done\n")
+p1
+
+```
+
+
+```{r panelPlot}
+if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
+
+genesin <- input$panelplotids
+genesin <- toupper(genesin)
+genesin <- gsub(" ", "", genesin, fixed = TRUE)
+genesin <- strsplit(genesin, ',')
+genesin<-genesin[[1]]
+
+par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
+rbPal <- colorRampPalette(c('#f0f0f0','red'))
+
+if (input$clusters4 == 'All') 
+{
+  for (i in 1:length(genesin)){
+    Col <- rbPal(10)[
+      as.numeric(
+        cut(
+          as.numeric(
+            log2cpm[
+              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
+              ,]
+          ),breaks = 10))]
+    plot(tsne.data[,input$dimension_x4],tsne.data[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
+  }
+}else{
+  for (i in 1:length(genesin)){
+    
+    subsetTSNE <- subset(tsne.data, dbCluster == input$clusters4)
+    
+    Col <- rbPal(10)[
+      as.numeric(
+        cut(
+          as.numeric(
+            log2cpm[
+              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
+              ,]
+          ),breaks = 10))]
+    
+    names(Col)<-rownames(tsne.data)
+    plotCol<-Col[rownames(subsetTSNE)]
+    plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
+    
+  }
+}
+
+```
+
+```{r scaterQC}
+scater::plotQC(scaterReads, type = "highest-expression", col_by_variable="fixed")
+
+```
+
+```{r heatmap}
+genesin <- input$heatmap_geneids
+genesin <- toupper(genesin)
+genesin <- gsub(" ", "", genesin, fixed = TRUE)
+genesin <- strsplit(genesin, ',')
+
+map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+cat(file = stderr(), length(map))
+
+expression <- log2cpm[map, ]
+
+if(is.na(sum(expression)) == TRUE){
+  print('Gene symbol incorrect or genes not expressed')
+}else{
+  
+  tsne.data <- tsne.data[order(tsne.data$dbCluster), ]
+  
+  expression <- expression[, rownames(tsne.data)]
+  expression <- expression[complete.cases(expression), ]
+  
+  annotation <- data.frame(factor(tsne.data$dbCluster))
+  rownames(annotation) <- colnames(expression)
+  colnames(annotation) <- c('Cluster')
+  
+  h <-
+    pheatmap(
+      as.matrix(expression),
+      cluster_rows = TRUE,
+      cluster_cols = FALSE,
+      scale = 'row',
+      fontsize_row = 10,
+      labels_col = colnames(expression),
+      labels_row = featureData[rownames(expression), 'Associated.Gene.Name'],
+      show_rownames = TRUE,
+      annotation_col = annotation,
+      show_colnames = FALSE,
+      annotation_legend = TRUE,
+      breaks = seq(-6, 6, by = .12),
+      colorRampPalette(rev(brewer.pal(
+        n = 6, name =
+          "RdBu"
+      )))(100)
+      
+    )
+  print(h)
+}
+```
+
+```{r clusterPlot2}
+if(DEBUG)cat(file=stderr(), "output$clusterPlot2\n")
+geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+                                       toupper(input$gene_id_sch)), ])[1]
+
+expression <- log2cpm[geneid, ]
+
+validate(need(is.na(sum(expression)) != TRUE, ''))
+
+tsneData <- cbind(tsne.data, t(expression))
+names(tsneData)[names(tsneData) == geneid] <- 'values'
+
+# if(DEBUG)cat(file=stderr(), paste("output$dge_plot1:---",input$clusters2,"---\n"))
+if(!is.null(input$dimension_x2) & !is.null(input$dimension_y2)){
+  subsetData <- subset(tsneData, dbCluster == input$clusters2)
+  p1 <-
+    ggplot(subsetData,
+           aes_string(x = input$dimension_x2, y = input$dimension_y2)) +
+    geom_point(aes_string(size = 2, color = 'values')) +
+    geom_point(shape = 1,
+               size = 4,
+               colour = "black") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 10),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    ggtitle(paste(toupper(input$gene_id_sch), input$clusters2, sep =
+                    '-Cluster')) +
+    scale_colour_gradient2(low = 'grey50', high = "red")
+  print(p1)
+}
+```
+
+```{r selectedHeatmap}
+if(DEBUG)cat(file=stderr(), "output$selectedHeatmap\n")
+
+genesin <- input$heatmap_geneids2
+genesin <- toupper(genesin)
+genesin <- strsplit(genesin, ',')
+if(!is.null(input$scb1)){
+  subsetData <-
+    subset(tsne.data, dbCluster == input$clusters2)
+  cells.1 <- rownames(brushedPoints(df=subsetData, 
+                                    brush=input$scb1,
+                                    xvar = input$scb1$mapping$x,
+                                    yvar = input$scb1$mapping$y,
+                                    panelvar1 = 
+                                    ))
+  map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+
+  expression <- log2cpm[map, cells.1]
+
+  expression <- expression[complete.cases(expression), ]
+  cat(file = stderr(), rownames(expression))
+  mColor <- max(expression)
+  
+  if( is.na(sum(expression)) == TRUE){
+    print('Gene symbol incorrect or genes not expressed')
+  }else{
+    
+
+    h <-
+      pheatmap(
+        as.matrix(expression),
+        cluster_rows = TRUE,
+        cluster_cols = TRUE,
+        scale = 'row',
+        fontsize_row = 10,
+        labels_col = colnames(expression),
+        labels_row = featureData[rownames(expression), 'Associated.Gene.Name'],
+        show_rownames = TRUE,
+        show_colnames = FALSE,
+        breaks = seq(-6, 6, by = .12),
+        colorRampPalette(rev(brewer.pal(
+          n = 6, name =
+            "RdBu"
+        )))(100)
+        
+      )
+    print(h)
+  }
+}
+```
+
+
+```{r plotCoExpression}
+
+if(DEBUG)cat(file=stderr(), "output$plotCoExpression\n")
+
+genesin <- input$mclustids
+genesin <- toupper(genesin)
+genesin <- strsplit(genesin, ',')
+
+subsetData <-
+  subset(tsne.data, dbCluster == input$clusters3)
+cells.1 <- rownames(subsetData)
+
+
+map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+
+expression <- log2cpm[map, ]
+
+if(is.na(sum(expression)) == TRUE){
+  print ('Gene symbol incorrect or genes not expressed')
+}else{
+  
+  bin <- expression
+  bin[] <- 0
+  
+  for (i in 1:nrow(expression))
+  {
+    x <- Mclust(expression[i, ], G = 2)
+    bin[i, ] <- x$classification
+  }
+  bin <- bin - 1
+  allexprs <- apply(bin, 2, sum)
+  plotexprs <- allexprs
+  plotexprs[] <- 0
+  plotexprs[allexprs >= length(rownames(bin))] <- 1
+  positiveCells <- allexprs >= length(rownames(bin))
+  positiveCellsAll <- plotexprs
+    mergeExprs <- plotexprs[rownames(subsetData)]
+  
+  subsetData$CoExpression <- mergeExprs
+  
+  p1 <-
+    ggplot(subsetData,
+           aes_string(x = input$dimension_x3, y = input$dimension_y3)) +
+    geom_point(aes_string(size = 2, color = 'CoExpression')) +
+    geom_point(shape = 1,
+               size = 4,
+               colour = "black") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    #ggtitle(paste(toupper(input$gene_id),input$cluster,sep='-Cluster'))+
+    scale_colour_gradient2(low = 'grey50', high = "red")
+  print(p1)
+}
+
+```
+
+
+```{r onOffTable}
+if(DEBUG)cat(file=stderr(), "output$onOffTable\n")
+
+merge <- tsne.data
+# if(DEBUG)cat(file=stderr(), paste("positiveCellsAll:---",positiveCellsAll,"---\n"))
+
+merge$CoExpression <- positiveCellsAll
+df <-
+  as.data.frame(table(merge[, c('dbCluster', 'CoExpression')]))
+dfOut <- cast(df, dbCluster ~ CoExpression)
+colnames(dfOut) <- c("Cluster", 'OFF', 'ON')
+rownames(dfOut) <- dfOut$Cluster
+dfOut['Sum', ] <- c('', sum(dfOut$OFF), sum(dfOut$ON))
+DT::datatable(dfOut)
+
+```
+
+
+```{r dge_plot1}
+
+if(!is.null(input$dimension_x1) & !is.null(input$dimension_y1)){
+  subsetData <- subset(tsne.data, dbCluster == input$clusters1)
+  p1 <-
+    ggplot(subsetData,
+           aes_string(x = input$dimension_x1, y = input$dimension_y1)) +
+    geom_point() +
+    geom_point(shape = 1,
+               size = 4,
+               color = "black") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    ggtitle(input$clusters1)
+  print(p1)
+}
+```
+
+
+```{r dge_plot2}
+if(DEBUG)cat(file=stderr(), "output$dge_plot2\n")
+if(!is.null(input$dimension_x1) & !is.null(input$dimension_y1)){
+  subsetData <- subset(tsne.data, dbCluster == input$clusters1)
+  p1 <-
+    ggplot(subsetData,
+           aes_string(x = input$dimension_x1, y = input$dimension_y1)) +
+    geom_point() +
+    geom_point(shape = 1,
+               size = 4,
+               color = "black") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    ggtitle(input$clusters1)
+  print(p1)
+}
+```
+
+
+```{r dgeTable}
+if(DEBUG)cat(file=stderr(), "output$dge\n")
+
+if(!is.na(dge)){
+  top.genes <- dge
+  top.genes$Associated.Gene.Name <-
+    featureData[rownames(top.genes), 'Associated.Gene.Name']
+  if (dim(top.genes)[1] > 1) {
+    DT::datatable(top.genes,
+                  options = list(
+                    orderClasses = TRUE,
+                    lengthMenu = c(10, 30, 50),
+                    pageLength = 10
+                  ))
+  }
+}
+```
+
+
+```{r crHeat_plot1}
+if(DEBUG)cat(file=stderr(), "output$crHeat_plot1\n")
+
+example_K <- 10 
+example_Cols <- rev(brewer.pal(10,"Set3")) # customize plotting colors
+
+cells_to_plot <- order_cell_by_clusters(gbm, tsne.data$dbCluster)
+
+example_col = example_Cols[1:example_K]
+p = gbm_pheatmap(gbm=log_gene_bc_matrix(gbm), 
+                 genes_to_plot=prioritized_genes, 
+                 cells_to_plot=cells_to_plot,
+                 n_genes=10, 
+                 colour=example_col,
+                 limits = c(-3, 3))
+
+if(DEBUG)cat(file=stderr(), "output$crHeat_plot1:done\n")
+p
+
+```
+
+
+```{r crPrioGenes}
+if(DEBUG)cat(file=stderr(), "output$crPrioGenes\n")
+
+dt = prioritized_genes[[input$cluster5]]
+DT::datatable(dt)
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+print(ls())
+sessionInfo()
+```
+
