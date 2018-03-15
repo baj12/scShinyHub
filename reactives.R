@@ -229,7 +229,14 @@ pca = reactive({
     return(NULL)
   }
   if(DEBUG)cat(file=stderr(), "pca:done\n")
-  return(run_pca(gbm_log))
+  pca = tryCatch({
+    run_pca(gbm_log)},
+    error = function(e){
+      showNotification("Problem with PCA, probably not enough cells?")
+      return(NULL)
+    }
+  )
+  return(pca)
 })
 
 kmClustering = reactive({
