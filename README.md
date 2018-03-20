@@ -54,5 +54,28 @@ Simply open server.R and clikck the Run button in RStudio.
 
 ## Development guide
 
-being developed
+### components/plug-ins
 
+contributions/NAME/component/
+
+outputs.R
+
+reactives.R
+
+ui.R
+
+
+### Modules
+
+#### conventions used here.
+
+* Shiny modules can be considered as functions or self-contained, integratable shiny applications. They contain of a UI element and the server side logic. There are recommendations for the naming of shiny modules, which state that the UI function should end in UI, Input, or Output, and that the server side side function should be the base name. I find it more convenient to have the server side function end in "Server".
+
+* access to global data:
+
+** genes
+** tnse.data
+** inputData
+
+
+### myHeavyCalculations
