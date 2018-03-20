@@ -26,7 +26,9 @@ tabList = list(
                         fluidRow(div(h3('TSNE Plot'), align = 'center')),
                         br(),
                         
-                        fluidRow(plotlyOutput('tsne_main'))
+                        fluidRow(column(12,
+                                        plotlyOutput('tsne_main'))
+                        )
   )
   
 )

@@ -1,0 +1,163 @@
+---
+title: "gbm2Rds"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+library(cellrangerRkit)
+packageVersion("cellrangerRkit")
+library(SCORPIUS)
+library(ggplot2)
+library(dplyr)
+suppressMessages(library(biomaRt))
+
+
+load("Examples/PBMC-Apheresis.Rds")
+featuredataTarget = featuredata
+log2cpmTarget = log2cpm
+tsne.dataTarget = tsne.data
+pd = data.frame(row.names = colnames(log2cpm), sample=rep("1",ncol(log2cpm)))
+mat = as.matrix(round(2^(log2cpm-1)))
+fd=featuredata[rownames(mat),]
+gbm = newGeneBCMatrix(mat = as(mat, "dgTMatrix"), fd=fd, pd=pd)
+gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
+gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
+save(file = "Jim2.Rds", list = c("featuredata", "tsne.data", "log2cpm", "gbm", "gbm_log"))
+
+```
+
+```{r load data}
+genome <- "GRCh38"
+pipestance_path <- "/Users/bernd/Downloads/"
+pipestance_path <- "/Volumes/collanto/scSolenne-1/jim-fasta/test"
+gene_bc_matrix <- load_cellranger_matrix_h5(pipestance_path, genome=genome)
+gbm <- load_cellranger_matrix(pipestance_path)
+#analysis_results <- load_cellranger_analysis_results(pipestance_path)
+
+# exprs(gbm) # expression matrix
+# fData(gbm) # data frame of genes
+# pData(gbm) # data frame of cell barcodes
+
+counts = exprs( gbm)
+# fData(gene_bc_matrix)
+# pData(gene_bc_matrix)
+
+genes = c("CD7", "KIT", "ETS1", "GATA3", "ID2", "IL1R1", "IL7R", "RUNX3", "TCF7", "TOX", "RP11-335E6.2")
+fdata <-fData(gbm)
+geneIdx = which(fdata$symbol %in% genes)
+
+expList = which(rowSums(t(as.matrix(counts[geneIdx,])))>0)
+zeroGene = which(rowSums(counts)==0)[2]
+
+
+rm.Cells = as.integer(which(colSums(counts[geneIdx,])==0))
+gbmMod = gbm
+countsMod = exprs(gbm)
+countsMod[zeroGene,] = colSums(counts[geneIdx,])
+gbmMod@assayData$exprs = as(countsMod, "dgTMatrix")
+
+gbm = gbm[,-rm.Cells]
+```
+
+```{r data4cellView, eval=TRUE}
+use_genes <- get_nonzero_genes(gbm)
+gbm_bcnorm <- normalize_barcode_sums_to_median(gbm[use_genes,])
+gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
+
+
+ar = list()
+pca = run_pca(gbm_log)
+ar$pca <- as.data.frame(pca$x)
+colnames(ar$pca) = c("PC.1" , "PC.2",    "PC.3",    "PC.4",    "PC.5",    "PC.6",    "PC.7",    "PC.8",    "PC.9",    "PC.10")
+ar$pca$Barcode = factor(rownames(ar$pca))
+ar$pca = ar$pca[, c("Barcode", "PC.1" , "PC.2",    "PC.3",    "PC.4",    "PC.5",    "PC.6",    "PC.7",    "PC.8",    "PC.9",    "PC.10")]
+
+tsne <- run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
+ar$tsne = data.frame(tsne$Y)
+colnames(ar$tsne) = c("TSNE.1", "TSNE.2", "TSNE.3")
+ar$tsne$Barcode = factor(rownames(ar$pca))
+ar$tsne = ar$tsne[, c("Barcode", "TSNE.1", "TSNE.2", "TSNE.3")]
+
+
+ar$clustering=list()
+
+kNr = 10
+for(kNr in 2:10) {
+  km = run_kmeans_clustering(pca, k=kNr)
+  ar$clustering[[paste0("kmeans_",kNr,"_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)), "Cluster" = km$cluster)
+}
+
+analysis_results = ar
+```
+
+
+```{r}
+
+log2cpm = as.data.frame(as.matrix(exprs(gbm_log)))
+pca <- run_pca(gbm_log)
+pca = run_pca(subset(dt$gbm_log,which(rownames(gbm_log) %in% rownames(log2cpm))))
+    tsne <- run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
+tsne.data = data.frame(tsne$Y)
+colnames(tsne.data) = c("V1", "V2", "V3")
+tsne.data$dbCluster = analysis_results$clustering$kmeans_10_clusters$Cluster-1
+rownames(tsne.data) = analysis_results$clustering$kmeans_10_clusters$Barcode
+fd = featureData(gbm_log)
+
+
+
+ensemblDB="hsapiens_gene_ensembl"
+mart <- useMart(biomart = "ensembl", dataset = ensemblDB)
+
+featureData <- tryCatch(
+  getBM(
+    attributes = c("ensembl_gene_id",
+                   "external_gene_name", 
+                   "description", 
+                   "chromosome_name", 
+                   "genomic_coding_start", 
+                   "genomic_coding_end", 
+                   "gene_biotype"),
+    filters = "ensembl_gene_id", 
+    values = rownames(log2cpm),
+    mart = mart
+  ),
+  error=function(cond) {return("biomart connection error")},
+  warning=function(cond){return("Biomart warning")}
+)
+
+
+# attributes = listAttributes(mart)
+
+
+featureData_summary <- featureData %>% 
+  group_by(ensembl_gene_id, external_gene_name, description, chromosome_name, gene_biotype) %>% 
+  summarize(min_genomic_coding_start = min(genomic_coding_start, na.rm = TRUE),
+            max_genomic_coding_end = max(genomic_coding_end, na.rm = TRUE))
+featureData_summary = as.data.frame(featureData_summary)
+rownames(featureData_summary) = featureData_summary$ensembl_gene_id
+featureData_summary = featureData_summary[,-1]
+
+colnames(featureData_summary) = c("Associated.Gene.Name", 
+                                "Description", 
+                                "Chromosome.Name",
+                                "Gene.Biotype",
+                                "Gene.Start..bp.",
+                                "Gene.End..bp.")
+featureData_summary = featureData_summary[,c(
+  "Description",
+  "Chromosome.Name",
+  "Gene.Start..bp.",
+  "Gene.End..bp.",
+  "Associated.Gene.Name", 
+  "Gene.Biotype"
+)]
+featuredata = featureData_summary
+
+umiC = colSums(log2cpm, na.rm = TRUE)
+geneC = colSums(log2cpm>0, na.rm = TRUE)
+# featuredata['ENSGUMI',] = c("UMI","N",0,0,"UMI","summary")
+# featuredata['ENSGGENES',] = c("GENES", "N",0,0,"GENES","summary")
+save(file = "Jim2.Rds", list = c("featuredata", "tsne.data", "log2cpm", "gbm", "gbm_log"))
+```
+

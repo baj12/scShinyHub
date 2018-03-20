@@ -34,3 +34,37 @@ output$crPrioGenes <- DT::renderDataTable({
   dt = prioritized_genes[[input$cluster5]]
   DT::datatable(dt)
 })
+
+
+output$crSelectedGenes <- renderText({
+  if(DEBUG)cat(file=stderr(), "crSelectedGenes\n")
+  featureData = featureDataReact()
+  if(is.null(featureData)){
+    return(NULL)
+  }
+  top.genes <- dge()
+  top.genes$Associated.Gene.Name <-
+    featureData[rownames(top.genes), 'Associated.Gene.Name']
+  
+  paste0(top.genes$Associated.Gene.Name[input$dge_rows_selected],",")
+})
+
+
+# TODO as module ? 
+# cell ranger output table
+output$clusters5 <- renderUI({
+  if(DEBUG)cat(file=stderr(), "output$clusters\n")
+  tsne.data = tsne.data()
+  if(is.null(tsne.data)){
+    HTML("Please load data first")
+  }else{
+    noOfClusters <- max(tsne.data$dbCluster)
+    selectInput(
+      "cluster5",
+      label = "Cluster",
+      choices = c(0:noOfClusters),
+      selected = 0
+    )
+  }
+})
+

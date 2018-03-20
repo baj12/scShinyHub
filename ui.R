@@ -20,7 +20,9 @@ library(shinyTree)
 # this is where the general tabs are defined:
 source('tabs.R')
 
+
 DEBUG = FALSE
+
 
 # general tabs
 allTabs = list(       
@@ -36,10 +38,10 @@ allMenus = list(
   menuItem("Gene selection", tabName = "geneSelection", icon = icon("dashboard"))
 )
 
+
+
 # parse all ui.R files under contributions to include in application
 uiFiles = dir(path = "contributions", pattern = "ui.R", full.names = TRUE, recursive = TRUE)
-
-
 for(fp in uiFiles){
   menuList = list()
   tabList = list()
@@ -59,6 +61,8 @@ for(fp in uiFiles){
   }
   
 }
+
+
 
 shinyUI(
   dashboardPage(

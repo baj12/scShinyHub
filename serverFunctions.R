@@ -1,3 +1,18 @@
+
+
+# append to heavyCalculations
+appendHeavyCalculations <- function(myHeavyCalculations, heavyCalculations){
+  for (hc in myHeavyCalculations){
+    if(length(hc)==2 & is.character(hc[1]) & is.character(hc[2])){
+      heavyCalculations[[length(heavyCalculations)+1]] = hc
+    }else{
+      stop(paste("myHeavyCalculations is malformatted\nhc:",hc,"\nmyHeavyCalculations:",myHeavyCalculations,"\n"))
+    }
+  }
+  return(heavyCalculations)
+}
+
+
 # functions should go in external file
 
 n_fun <- function(x) {

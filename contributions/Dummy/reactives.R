@@ -12,3 +12,5 @@
 #   return(run_pca(gbm_log))
 # })
 
+# declare heavy calculations
+myHeavyCalculations = NULL

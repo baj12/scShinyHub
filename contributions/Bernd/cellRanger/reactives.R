@@ -12,3 +12,6 @@ prioritized_genes = reactive({
                        p_cutoff=0.05,
                        order_by='pvalue')
 })
+
+myHeavyCalculations=list(c("prioritized_genes", "prioritized_genes"))
+

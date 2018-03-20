@@ -54,38 +54,45 @@ geneSelectionTab  = tabItem(tabName = "geneSelection",
                             fluidRow(div(h3('Gene selection'), align = 'center')),
                             br(),
                             fluidRow(div(
-                              h5(
+                              h3(
                                 'Here we filter out genes'
                               ),
                               align = 'center'
                             )),
                             fluidRow(
-                              textInput('selectIds', 'regular expression for selection of genes to be removed', value = '^MT-|^RP'))
-                            ,fluidRow(
-                              h4('GeneList Selection')
-                              ,shinyTree("geneListSelection", checkbox = TRUE)
-                            ),fluidRow(
-                              h4('Minoverall expression'),
-                              numericInput('minGenesGS', 'Min # of UMIs over all cells', 1, min=0, max = 1000000)
+                              column(2, offset = 1,
+                                     textInput('selectIds', 'regular expression for selection of genes to be removed', value = '^MT-|^RP')),
+                              column(2,
+                                     h4('GeneList Selection'),
+                                     shinyTree("geneListSelection", checkbox = TRUE)
+                              ),
+                              column(2,
+                                     h4('Minoverall expression'),
+                                     numericInput('minGenesGS', 'Min # of UMIs over all cells', 1, min=0, max = 1000000)
+                              )
                             ),
                             br(),
                             fluidRow(
-                              h4('Selected genes'),br(),
-                              textOutput("gsSelectedGenes", inline = FALSE)
-                            ),br(),
-                            fluidRow(
-                              h4('Genes kept, with mean Expression, and number of cells expressing min 1', align = "center"),
+                              h3('Genes kept, with mean Expression, and number of cells expressing min 1', align = "center"),
                               br(),
-                              DT::dataTableOutput('selectedGenesTable')
+                              h4('Selected genes'),
+                              column(12, offset=0,
+                                     textOutput("gsSelectedGenes", inline = FALSE)
+                              ),
+                              br(),
+                              column(10, offset = 1,
+                                     DT::dataTableOutput('selectedGenesTable')
+                              )
                             ),
                             br(),
                             fluidRow(
-                              h4('Selected genes'),br(),
+                              h3('Genes removed, with mean Expression, and number of cells expressing min 1', align = "center"),
+                              h4('Selected genes'),
+                              br(),
                               textOutput("gsrmGenes", inline = FALSE)
                             ),br(),
                             fluidRow(
-                              h4('Genes removed, with mean Expression, and number of cells expressing min 1', align = "center"),
-                              column(4, offset = 3,
+                              column(10, offset = 1,
                                      DT::dataTableOutput('removedGenesTable'))
                             )
 )

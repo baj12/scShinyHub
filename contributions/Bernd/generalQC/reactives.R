@@ -47,4 +47,5 @@ scaterReads <- reactive({
   reads
 })
 
-
+# declare function as heavy
+myHeavyCalculations = list(c("scaterReads", "scaterReads"))

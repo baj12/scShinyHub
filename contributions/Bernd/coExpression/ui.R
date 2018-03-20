@@ -1,5 +1,5 @@
 
- # list of menu Items
+# list of menu Items
 menuList =  list(
   menuItem("Co-expression", tabName = "coexpression", startExpanded = FALSE,
            menuSubItem("All clusters", tabName = "coexpressionAll"),
@@ -38,35 +38,37 @@ tabList = list(
                                     fluidRow(
                                       column(
                                         2,
-                                        
                                         textInput('gene_id_sch', 'Enter gene', value = 'CD7')
                                       ),
-                                      column(2,
-                                             uiOutput("clusters2")),
-                                      column(
-                                        2,
-                                        selectInput(
-                                          'dimension_x2',
-                                          label = 'X',
-                                          choice = c('V1', 'V2', 'V3'),
-                                          selected = 'V1'
-                                        )
-                                      ),
-                                      column(
-                                        2,
-                                        selectInput(
-                                          'dimension_y2',
-                                          label = 'Y',
-                                          choice = c('V1', 'V2', 'V3'),
-                                          selected = 'V2'
-                                        )
-                                      )
+                                      column(10,
+                                             clusterUI("selected"))
                                     ),
-                                    fluidRow(column(
-                                      5, offset = 1,
-                                      plotOutput('clusterPlot2', brush = brushOpts(id =
-                                                                                     'scb1'))
-                                    )),
+                                    #   column(2,
+                                    #          uiOutput("clusters2")),
+                                    #   column(
+                                    #     2,
+                                    #     selectInput(
+                                    #       'dimension_x2',
+                                    #       label = 'X',
+                                    #       choice = c('V1', 'V2', 'V3'),
+                                    #       selected = 'V1'
+                                    #     )
+                                    #   ),
+                                    #   column(
+                                    #     2,
+                                    #     selectInput(
+                                    #       'dimension_y2',
+                                    #       label = 'Y',
+                                    #       choice = c('V1', 'V2', 'V3'),
+                                    #       selected = 'V2'
+                                    #     )
+                                    #   )
+                                    # ),
+                                    # fluidRow(column(
+                                    #   5, offset = 1,
+                                    #   plotOutput('clusterPlot2', brush = brushOpts(id =
+                                    #                                                  'scb1'))
+                                    # )),
                                     fluidRow(column(
                                       2,
                                       

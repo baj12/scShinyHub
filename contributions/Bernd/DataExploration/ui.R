@@ -1,5 +1,5 @@
 
- # list of menu Items
+# list of menu Items
 menuList =  list(
   menuItem("Data Exploration", tabName = "expore", startExpanded = FALSE,
            menuSubItem("Expression", tabName = "expression"),
@@ -9,7 +9,7 @@ menuList =  list(
   
 )
 
-
+source("modulesUI.R")
 # list of tab Items
 tabList = list(
   expressionTab = tabItem("expression",
@@ -37,51 +37,30 @@ tabList = list(
                           br(),
                           br(),
                           fluidRow(
-                            column(
-                              2,
-                              
-                              textInput('gene_id', 'Enter gene', value = 'CD7')
-                            ),
-                            column(2,
-                                   uiOutput("clusters")),
-                            column(
-                              2,
-                              selectInput(
-                                'dimension_x',
-                                label = 'X',
-                                choice = c('V1', 'V2', 'V3'),
-                                selected = 'V1'
-                              )
-                            ),
-                            column(
-                              2,
-                              selectInput(
-                                'dimension_y',
-                                label = 'Y',
-                                choice = c('V1', 'V2', 'V3'),
-                                selected = 'V2'
-                              )
-                            ),
-                            column(
-                              2,
-                              div(
-                                align = "center",
-                                style = "margin-center:50px; margin-top:25px",
-                                downloadButton("downloadExpression", "Download Expression")
-                              )
+                            column(6,
+                                   fluidRow(
+                                     column(
+                                       2,
+                                       textInput('gene_id', 'Enter gene', value = 'CD7')
+                                     )
+                                     ,
+                                     
+                                     column(
+                                       2,
+                                       div(
+                                         align = "center",
+                                         style = "margin-center:50px; margin-top:25px",
+                                         downloadButton("downloadExpression", "Download Expression")
+                                       )
+                                     )
+                                   ),
+                                   plotlyOutput('tsne_plt'))
+                            ,column(6,
+                                    clusterUI("expclusters")
                             )
                           ),
                           br(),
-                          br(),
-                          br(),
-                          fluidRow(
-                            column(5, offset = 1,
-                                   plotlyOutput('tsne_plt')),
-                            column(5, offset = 0,
-                                   plotOutput('clusterPlot', brush = brushOpts(id =
-                                                                                 'b1')))
-                          ),
-                          fluidRow(column(10, offset = 1,
+                          fluidRow(column(12, 
                                           plotOutput('gene_vio_plot')))
                           
   ),
@@ -126,7 +105,7 @@ tabList = list(
                            )
                          ),
                          fluidRow(column(
-                           10, offset = 1,
+                           12, 
                            plotOutput('panelPlot')
                          ))
                          
