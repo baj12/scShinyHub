@@ -11,6 +11,8 @@ The original version of this app is CellView (https://github.com/mohanbolisetty/
  
 ## Installation:
 
+Download git repository from gitlab.
+
 ```R
 requiredPackages= c("shiny", "shinyTree", "plotly", "shinythemes", "ggplot2", "DT", "pheatmap", "threejs", "sm", "RColorBrewer", "mclust", "reshape", "cellrangerRkit", "SCORPIUS", "knitr", "kableExtra", "shinyWidgets", "scater")
 install.packages("rafalib")
@@ -19,7 +21,7 @@ rafalib::install_bioc(requiredPackages)
 
 ## Running the app
 
-Simply open server.R and clikck the Run button in RStudio.
+Simply open the file server.R in RStudio and clikck the Run button in RStudio.
 
 ## Description of repository
 
@@ -29,6 +31,9 @@ Simply open server.R and clikck the Run button in RStudio.
 * aad0501_Table_S3.xlsx
   Excel file with cell type specific genes (from: Dissecting the multicellular ecosystem of metastatic melanoma by single-cell RNA-seq)
   http://science.sciencemag.org/content/suppl/2016/04/07/352.6282.189.DC1
+
+* Examples
+  directory containing example data coming from the CellView package.
   
 * geneLists.R
   script to create geneLists.RData from proteinatlas.tsv(.zip), used for gene-classes in gene selection tab.
@@ -43,27 +48,60 @@ Simply open server.R and clikck the Run button in RStudio.
   global report template (needs some heavy recreation and plugin(ization))
   
 * serverFunctions.R
-  other externalized functions used in server.R
+  other externalized functions used in server.R, coming from the original CellView package.
   
 * shinyTreeExample.R 
   test script to test shinyTree
   
 * tabs.R
-  ui elements used in ui.R that were not externalized.
+  ui elements used in ui.R that were not externalized (namely for the cell and gene selection, and the basic stats on the side panel).
 
+* ui.R
+  main ui creation for the shiny app. Handles import of ui.R from contributions
+  
+* reformtExamples.R
+  script to reformat the examples from CellView to a structure that can be used by this app.
 
 ## Development guide
 
+One of the challenges when dealing with scRNA seq experients and R is the vast number of data structures that is being used by the different packages. One task that the base version of this app is doing is to provide reactives that convert from the original input data to the required data structure. This has been done so far for the cellrange package (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/rkit) and the scater (https://bioconductor.org/packages/release/bioc/html/scater.html) packages.
+
+
 ### components/plug-ins
 
-contributions/NAME/component/
+Plugins are components under the contributions directory that follow some basic conventions. They will be loaded on run-time to the application by parsing the child direcotries. They abide to the following basic structure. There is also a Dummy component that holds some commented out examples.
 
-outputs.R
+Directory names:
 
-reactives.R
+`contributions/NAME/component/`
 
-ui.R
+`NAME` should be replaced by the contributor's name and `component` by a somewhat meaningful name of the component.
 
+Files that are loaded from these directories:
+
+* outputs.R
+store the output.R server side code here.
+
+* reactives.R
+define any new reactives here.
+
+* ui.R
+User interface code goes here.
+
+Each of outputs.R or reactives.R can have a variable called:
+
+`myHeavyCalculations`
+
+that holds a list of names and functions(reactives) that can be executed by pressing the "Force Calculations" button.
+
+E.g.:
+```R
+myHeavyCalculations = list(c("pcaName", "pca"),
+                           c("kmClusteringName", "kmClustering"))
+```
+Here, pcaName and kmClusteringName are the names displayed on the console/gui element during execution and pca and kmClustering are the names of the reactives that are called.
+
+See also below Modules for global variables / reactives that can be used in any component.
 
 ### Modules
 
@@ -73,9 +111,44 @@ ui.R
 
 * access to global data:
 
-** genes
-** tnse.data
-** inputData
+The following variables are defined as reactives on the base level and can be access from anywhere without the need for installing a plugin.
+Be aware that the standard parameters are set for project that I am currently working on and might not reflect your needs.
+
+* `useGenes`
+  genes selected using the user interface. 
+
+* `useCells`
+  cells selected using the user interface. 
+  
+* `gbm`
+  data structure from cellranger that holds the original unmodified count data. Contains only the genes/cells that have been selected.
+  
+* `featureDataReact`
+  feature data with gene name mappings. Contains only the genes/cells that have been selected.
+
+* `log2cpm`
+  log2 transformed data coming from the origianl CellView application. Contains only the genes/cells that have been selected.
+
+* `tnse.data`
+  tnse coordinates from run_tsne from the cellranger package.  Contains only the genes/cells that have been selected.
+
+* `inputData`
+  base data coming from Rds file that is loaded initially, no genes/cells removed.
+
+* `medianENSG`
+  median of the number of genes with at least one read of all samples
+  
+* `medianUMI`
+  median expression of all samples
+  
+* `gbm_log`
+  log 10 transformed data from cellranger package. (It uses normalize_barcode_sums_to_median.) Contains only the genes/cells that have been selected.
+
+* `pca`
+  results from run_pca from the cellranger package. 
+
+* `kmClustering`
+  results from run_kmeans_clustering from the cellranger package with 10 clusters
 
 
-### myHeavyCalculations
+
