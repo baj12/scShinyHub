@@ -7,7 +7,7 @@
 
 library(shiny)
 library(shinydashboard)
-
+library(shinyBS)
 library(plotly)
 library(shinythemes)
 library(ggplot2)
@@ -70,14 +70,18 @@ shinyUI(
     dashboardSidebar(
       sidebarMenu(
         allMenus
+        
       ),
       
-      htmlOutput('summaryStatsSideBar'),
+      
+      tipify(htmlOutput('summaryStatsSideBar'),
+             "medium UMI shows how many genes are expressed in log2 space of normalized data","right"),
       downloadButton("report", "Generate report"),
       actionButton('goCalc', 'Force Calculations')
       
     ), # dashboard side bar
     dashboardBody(
+      bsAlert("alert"),
       tags$div(
         allTabs,
         class = "tab-content"

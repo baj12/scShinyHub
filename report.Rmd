@@ -2,73 +2,20 @@
 title: "10X selector report"
 author: "Bernd Jagla"
 date: "3/8/2018"
-output: html_document
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 7
+    fig_width: 9
+    number_sections: yes
+    toc: yes
 params:
-  tempServerFunctions: NA
-  tempprivatePlotFunctions: NA
-  b1: NA
-  cluster: NA
-  cluster5: NA
-  clusters: NA
-  clusters1: NA
-  clusters2: NA
-  clusters3: NA
-  clusters4: NA
-  db1: NA
-  db2: NA
-  dimension_x: NA
-  dimension_x1: NA
-  dimension_x2: NA
-  dimension_x3: NA
-  dimension_x4: NA
-  dimension_y: NA
-  dimension_y1: NA
-  dimension_y2: NA
-  dimension_y3: NA
-  dimension_y4: NA
-  file1: NA
-  gene_id: NA
-  gene_id_sch: NA
-  geneListSelection: NA
-  heatmap_geneids: NA
-  heatmap_geneids2: NA
-  maxGenes: NA
-  mclustids: NA
-  minExpGenes: NA
-  minGenes: NA
-  minGenesGS: NA
-  panelplotids: NA
-  scb1: NA
-  selectIds: NA
+__PARAMPLACEHOLDER__
 ---
 
-```{r}
-library(shiny)
-library(shinyTree)
-library(plotly)
-library(shinythemes)
-library(ggplot2)
-library(DT)
-library(pheatmap)
-library(threejs)
-library(sm)
-library(RColorBrewer)
-library(mclust)
-library(reshape)
-library(cellrangerRkit)
-library(SCORPIUS)
-library(ggplot2)
-library(knitr)
-library(kableExtra)
-library(shinyWidgets)
-library(scater)
-
-source(params$tempServerFunctions)
-source(params$tempprivatePlotFunctions)
-DEBUG=TRUE
-seed = 1
+```{r load reactives, }
+__LOAD_REACTIVES__
 ```
-
 
 # parameters
 
@@ -146,13 +93,30 @@ dataTables$featuredata <- featuredata[rnames, ]
 geneC = colSums(log2cpm>0, na.rm = TRUE)
 medianENSG = median(t(geneC))
 ```
+medianUMIfunc <- function(log2cpm){
+    umiC = colSums(log2cpm, na.rm = TRUE)
+    if(DEBUG)cat(file=stderr(), "medianUMI:done\n")
+    return(median(t(umiC)))
+  }
+  
+medianUMI <- reactive({
+  if(DEBUG)cat(file=stderr(), "medianUMI\n")
+  log2cpm = log2cpm()
+  if(is.null(log2cpm) ){
+    if(DEBUG)cat(file=stderr(), "medianUMI:NULL\n")
+    return(0)
+  }
+  return(medianUMIfunc(log2cpm))
+})
+
 
 ```{r medianUMI}
 umiC = colSums(log2cpm, na.rm = TRUE)
 medianUMI = median(t(umiC))
+assign("medianUMI", median(t(umiC)), envir = parent.frame())
 ```
 
-```{r useCells}
+```{r useCells, eval=FALSE}
 minG = input$minGenes
 gbm = as.matrix(exprs(dataTables$gbm))
 goodCols = colSums(gbm) > minG
@@ -168,7 +132,7 @@ goodCols = goodCols & (colSums(gbm[ids, ]) > 0)
 useCells = goodCols
 ```
 
-```{r useGenes}
+```{r useGenes, eval=FALSE}
 #genes to be explicitly removed
 ipIDs = input$selectIds
 if(nchar(ipIDs)>0) {
@@ -207,27 +171,27 @@ useGenes = rmIds
 ```
 
 
-```{r featureDataReact}
+```{r featureDataReact, eval=FALSE}
 
 featureDataReact = dataTables$featuredata[useGenes, ]
 featureData = dataTables$featuredata[useGenes, ]
 ```
 
-```{r gbm}
+```{r gbm, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "gbm\n")
 gbm = dataTables$gbm[useGenes, useCells]
 if(DEBUG)cat(file=stderr(), "gbm:DONE\n")
 
 ```
 
-```{r gbm_log}
+```{r gbm_log, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "gbm_log\n")
 gbm_log = dataTables$gbm_log[useGenes, useCells]
 if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
 
 ```
 
-```{r scaterReads}
+```{r scaterReads, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "scaterReads\n")
 fd = featureDataReact
 
@@ -273,20 +237,20 @@ reads$use <- (
 scaterReads = reads
 ```
 
-```{r log2cpm}
+```{r log2cpm, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "log2cpm\n")
 if(DEBUG)cat(file=stderr(), "log2cpm:Done\n")
 
 log2cpm = dataTables$log2cpm[useGenes, useCells]
 ```
 
-```{r pca}
+```{r pca, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "pca\n")
 
 pca = run_pca(gbm_log)
 ```
 
-```{r tsne}
+```{r tsne, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "tsne\n")
 
 set.seed(seed = seed)
@@ -294,7 +258,7 @@ tsne = run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
 if(DEBUG)cat(file=stderr(), "tsne: done\n")
 ```
 
-```{r kmClustering}
+```{r kmClustering, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "kmClustering\n")
 clustering=list()
 
@@ -310,7 +274,7 @@ if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
 
 ```
 
-```{r tsne.data}
+```{r tsne.data, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "tsne.data\n")
 
 tsne.data = data.frame(tsne$Y)
@@ -320,7 +284,7 @@ rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
 if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
 ```
 
-```{r prioritized_genes}
+```{r prioritized_genes, eval=FALSE}
 set.seed(seed = seed)
 prioritized_genes =     prioritize_top_genes(gbm, tsne.data$dbCluster, "sseq",
                                              logscale = FALSE, 
@@ -331,7 +295,7 @@ prioritized_genes =     prioritize_top_genes(gbm, tsne.data$dbCluster, "sseq",
 
 ```
 
-```{r dge}
+```{r dge, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "dge\n")
 if(!is.null(input$db1) & ! is.null(input$db2)){
   subsetData <- subset(tsne.data, dbCluster == input$clusters1)
@@ -364,12 +328,12 @@ if(!is.null(input$db1) & ! is.null(input$db2)){
 ```
 
 
-```{r selectedDge}
+```{r selectedDge, eval=FALSE}
 # selectedDge <- reactiveValues()
 
 ```
 
-```{r tsne3d}
+```{r tsne3d, eval=FALSE}
 p <-
   plot_ly(
     tsne.data,
@@ -393,7 +357,7 @@ layout(p)
 
 ```
 
-```{r summaryStats}
+```{r summaryStats, eval=FALSE}
 
 
 line1<-paste('No. of cells:', dim(log2cpm)[2],sep='\t')
@@ -411,20 +375,20 @@ HTML(
 
 ```
 
-```{r plotUmiHist}
+```{r plotUmiHist, eval=FALSE}
 
 hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
-```{r variancePCA}
+```{r variancePCA, eval=FALSE}
 barplot(pca$var_pcs, main="Variance captured by first PCs")
 ```
 
-```{r plotHistogramsAll}
+```{r plotHistogramsAll, eval=FALSE}
 barplot(pca$var_pcs, main="Variance captured by first PCs")
 ```
 
-```{r selectedGenesTable}
+```{r selectedGenesTable, eval=FALSE}
 gbmMat = as.matrix(exprs(dataTables$gbm))
 fd = dataTables$featuredata
 dt = fd[useGenes,c("Associated.Gene.Name", "Gene.Biotype", "Description")]
@@ -434,7 +398,7 @@ DT::datatable(dt)
 
 ```
 
-```{r removedGenesTable}
+```{r removedGenesTable, eval=FALSE}
 gbmMat = as.matrix(exprs(dataTables$gbm))
 fd = dataTables$featuredata
 dt = fd[useGenes,c("Associated.Gene.Name", "Gene.Biotype", "Description")]
@@ -444,7 +408,7 @@ DT::datatable(dt)
 
 ```
 
-```{r tsne_plt}
+```{r tsne_plt, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$tsne_plt\n")
 geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
                                        toupper(input$gene_id)), ])[1]
@@ -475,7 +439,7 @@ layout(p, title = toupper(input$gene_id))
 
 ```
 
-```{r clusterPlot}
+```{r clusterPlot, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$clusterPlot\n")
 geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
                                        toupper(input$gene_id)), ])[1]
@@ -516,7 +480,7 @@ p1
 
 ```
 
-```{r gene_vio_plot}
+```{r gene_vio_plot, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")
 
 geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
@@ -563,7 +527,7 @@ p1
 ```
 
 
-```{r panelPlot}
+```{r panelPlot, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
 
 genesin <- input$panelplotids
@@ -613,12 +577,12 @@ if (input$clusters4 == 'All')
 
 ```
 
-```{r scaterQC}
+```{r scaterQC, eval=FALSE}
 scater::plotQC(scaterReads, type = "highest-expression", col_by_variable="fixed")
 
 ```
 
-```{r heatmap}
+```{r heatmap, eval=FALSE}
 genesin <- input$heatmap_geneids
 genesin <- toupper(genesin)
 genesin <- gsub(" ", "", genesin, fixed = TRUE)
@@ -666,7 +630,7 @@ if(is.na(sum(expression)) == TRUE){
 }
 ```
 
-```{r clusterPlot2}
+```{r clusterPlot2, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$clusterPlot2\n")
 geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
                                        toupper(input$gene_id_sch)), ])[1]
@@ -709,7 +673,7 @@ if(!is.null(input$dimension_x2) & !is.null(input$dimension_y2)){
 }
 ```
 
-```{r selectedHeatmap}
+```{r selectedHeatmap, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$selectedHeatmap\n")
 
 genesin <- input$heatmap_geneids2
@@ -761,7 +725,7 @@ if(!is.null(input$scb1)){
 ```
 
 
-```{r plotCoExpression}
+```{r plotCoExpression, eval=FALSE}
 
 if(DEBUG)cat(file=stderr(), "output$plotCoExpression\n")
 
@@ -830,7 +794,7 @@ if(is.na(sum(expression)) == TRUE){
 ```
 
 
-```{r onOffTable}
+```{r onOffTable, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$onOffTable\n")
 
 merge <- tsne.data
@@ -848,7 +812,7 @@ DT::datatable(dfOut)
 ```
 
 
-```{r dge_plot1}
+```{r dge_plot1, eval=FALSE}
 
 if(!is.null(input$dimension_x1) & !is.null(input$dimension_y1)){
   subsetData <- subset(tsne.data, dbCluster == input$clusters1)
@@ -879,7 +843,7 @@ if(!is.null(input$dimension_x1) & !is.null(input$dimension_y1)){
 ```
 
 
-```{r dge_plot2}
+```{r dge_plot2, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$dge_plot2\n")
 if(!is.null(input$dimension_x1) & !is.null(input$dimension_y1)){
   subsetData <- subset(tsne.data, dbCluster == input$clusters1)
@@ -910,7 +874,7 @@ if(!is.null(input$dimension_x1) & !is.null(input$dimension_y1)){
 ```
 
 
-```{r dgeTable}
+```{r dgeTable, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$dge\n")
 
 if(!is.na(dge)){
@@ -929,7 +893,7 @@ if(!is.na(dge)){
 ```
 
 
-```{r crHeat_plot1}
+```{r crHeat_plot1, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$crHeat_plot1\n")
 
 example_K <- 10 
@@ -951,7 +915,7 @@ p
 ```
 
 
-```{r crPrioGenes}
+```{r crPrioGenes, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$crPrioGenes\n")
 
 dt = prioritized_genes[[input$cluster5]]
@@ -1014,11 +978,12 @@ DT::datatable(dt)
 
 ```
 
-
+__CHILDREPORTS__
 
 
 ```{r}
 print(ls())
+save(file = "~/Desktop/report.RData", list=ls())
 sessionInfo()
 ```
 

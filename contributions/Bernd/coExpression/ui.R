@@ -1,4 +1,6 @@
 
+source("modulesUI.R")
+
 # list of menu Items
 menuList =  list(
   menuItem("Co-expression", tabName = "coexpression", startExpanded = FALSE,

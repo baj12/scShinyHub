@@ -66,6 +66,13 @@ medianENSG <- reactive({
   return(median(t(geneC)))
   
 })
+
+medianUMIfunc <- function(log2cpm){
+  umiC = colSums(log2cpm, na.rm = TRUE)
+  if(DEBUG)cat(file=stderr(), "medianUMI:done\n")
+  return(median(t(umiC)))
+}
+
 medianUMI <- reactive({
   if(DEBUG)cat(file=stderr(), "medianUMI\n")
   log2cpm = log2cpm()
@@ -73,11 +80,9 @@ medianUMI <- reactive({
     if(DEBUG)cat(file=stderr(), "medianUMI:NULL\n")
     return(0)
   }
-  umiC = colSums(log2cpm, na.rm = TRUE)
-  if(DEBUG)cat(file=stderr(), "medianUMI:done\n")
-  return(median(t(umiC)))
-  
+  return(medianUMIfunc(log2cpm))
 })
+
 
 # collects information from all places where cells are being removed or specified
 useCells <- reactive({

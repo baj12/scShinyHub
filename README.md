@@ -84,6 +84,30 @@ store the output.R server side code here.
 
 * reactives.R
 define any new reactives here.
+In order to be able to use the same functions/values in the report and the reactive we have to separate the reactive part from the calculation part. We there for create a function directly before the reactive that does the calculations, given the reactive variable that it uses as arguments. Here is a short example:
+
+medianUMIfunc <- function(log2cpm){
+    umiC = colSums(log2cpm, na.rm = TRUE)
+    if(DEBUG)cat(file=stderr(), "medianUMI:done\n")
+    return(median(t(umiC)))
+  }
+  
+medianUMI <- reactive({
+  if(DEBUG)cat(file=stderr(), "medianUMI\n")
+  log2cpm = log2cpm()
+  if(is.null(log2cpm) ){
+    if(DEBUG)cat(file=stderr(), "medianUMI:NULL\n")
+    return(0)
+  }
+  return(medianUMIfunc(log2cpm))
+})
+
+In the above example, medianUMI only uses reactives that are not available in the markdown and assign them to "real" variables and checks their conditions. We then return the actual value that is needed based only on non-reactives. This function (medainUMIfunc) can be used in the markdown to produce the desired result based solely on non-reactive values that are made available using params.
+
+The function has to be in reactive.R such that we can import it in the R markdown.
+
+* report.Rmd 
+  see below
 
 * ui.R
 User interface code goes here.
@@ -150,5 +174,17 @@ Be aware that the standard parameters are set for project that I am currently wo
 * `kmClustering`
   results from run_kmeans_clustering from the cellranger package with 10 clusters
 
+### tool tips
 
+use tipify to surround the element you want to provide further information for.
+
+### reports from contributions / plugins
+
+* report.Rmd
+
+The file report.Rmd is searched for under the contributions directory and all files are included in the html report via the child attribute
+
+Please make sure that the code chunks are named and unique. Otherwise we might run into problems with duplicate chunk names. Unique names should begin with a unique ID, e.g. the naming that follows the directory structure used for the contributions.
+
+all inputs are available for the report. When running with DEBUG=TRUE a report.RData file is generated on the desktop that can be used to develop the report as it contains all available variables. Inputs from plugins are also available.
 
