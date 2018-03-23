@@ -3,15 +3,8 @@
 
 # reactive values  ------------------------------------------------------------------
 # should only hold original data
-inputData = reactive({
+inputDataFunc <- function(inFile){
   if(DEBUG)cat(file=stderr(), "DEBUG:inputData\n")
-  
-  inFile <- input$file1
-  
-  if (is.null(inFile)){
-    if(DEBUG)cat(file=stderr(), "inputData: NULL\n")
-    return(NULL)
-  }
   
   load(inFile$datapath)
   
@@ -48,7 +41,23 @@ inputData = reactive({
   }
   if(DEBUG)cat(file=stderr(), "inputData: done\n")
   return(dataTables)
+  
+}
+
+inputData = reactive({
+  inFile <- input$file1
+  if (is.null(inFile)){
+    if(DEBUG)cat(file=stderr(), "inputData: NULL\n")
+    return(NULL)
+  }
+  return(inputDataFunc(inFile))
 })
+
+medianENSGfunc <- function(log2cpm){
+  geneC = colSums(log2cpm>0, na.rm = TRUE)
+  if(DEBUG)cat(file=stderr(), "medianENSG:done\n")
+  return(median(t(geneC)))
+}
 
 medianENSG <- reactive({
   if(DEBUG)cat(file=stderr(), "medianENSG\n")
@@ -60,11 +69,7 @@ medianENSG <- reactive({
   if(ncol(log2cpm)<=1 | nrow(log2cpm) < 1){
     return(0)
   }
-  geneC = colSums(log2cpm>0, na.rm = TRUE)
-  
-  if(DEBUG)cat(file=stderr(), "medianENSG:done\n")
-  return(median(t(geneC)))
-  
+  return(medianENSGfunc(log2cpm))
 })
 
 medianUMIfunc <- function(log2cpm){
@@ -83,15 +88,7 @@ medianUMI <- reactive({
   return(medianUMIfunc(log2cpm))
 })
 
-
-# collects information from all places where cells are being removed or specified
-useCells <- reactive({
-  if(DEBUG)cat(file=stderr(), "useCells\n")
-  dataTables = inputData()
-  if(!exists("dataTables") || is.null(dataTables)){
-    if(DEBUG)cat(file=stderr(), "useCells:NULL\n")
-    return(NULL)
-  }
+useCellsFunc <- function(dataTables){
   if(DEBUG)cat(file=stderr(), "useCells2\n")
   minG = input$minGenes
   gbm = as.matrix(exprs(dataTables$gbm))
@@ -116,6 +113,17 @@ useCells <- reactive({
   }
   if(DEBUG)cat(file=stderr(), "useCells:done\n")
   return(goodCols)
+}
+
+# collects information from all places where cells are being removed or specified
+useCells <- reactive({
+  if(DEBUG)cat(file=stderr(), "useCells\n")
+  dataTables = inputData()
+  if(!exists("dataTables") || is.null(dataTables)){
+    if(DEBUG)cat(file=stderr(), "useCells:NULL\n")
+    return(NULL)
+  }
+  return(useCellsFunc(dataTables))
 })
 
 
@@ -131,21 +139,10 @@ featureDataReact = reactive({
   return(dataTables$featuredata[useGenes, ])
 })
 
-# collects information from all places where genes being removed or specified
-useGenes <- reactive({
-  if(DEBUG)cat(file=stderr(), "useGenes\n")
-  dataTables = inputData()
-  useCells = useCells()
-  if(!exists("dataTables") | is.null(dataTables) | is.null(useCells) | length(dataTables$featuredata$Associated.Gene.Name)==0){
-    if(DEBUG)cat(file=stderr(), "useGenes: NULL\n")
-    return(NULL)
-  }
-  
-  #genes to be explicitly removed
-  ipIDs = input$selectIds
+useGenesFunc <- function(dataTables, useCells, ipIDs, geneListSelection, minGene){
   if(nchar(ipIDs)>0) 
   {
-    rmIds = !grepl(input$selectIds, dataTables$featuredata$Associated.Gene.Name)
+    rmIds = !grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
   }
   else 
   {
@@ -153,8 +150,8 @@ useGenes <- reactive({
   }
   
   # gene groups to be included
-  if(!is.null(input$geneListSelection)){
-    selectedgeneList = get_selected(input$geneListSelection)
+  if(!is.null(geneListSelection)){
+    selectedgeneList = get_selected(geneListSelection)
     if(length(selectedgeneList)>0){
       selGenes = c()
       for(sIdx in 1:length(selectedgeneList)){
@@ -170,7 +167,6 @@ useGenes <- reactive({
   }
   
   # overall gene expression Min
-  minGene <- input$minGenesGS
   if(!is.null(minGene)){
     selGenes = rowSums(as.matrix(exprs(dataTables$gbm[,useCells]))) >=minGene
     rmIds = rmIds & selGenes
@@ -178,7 +174,25 @@ useGenes <- reactive({
   
   if(DEBUG)cat(file=stderr(), "useGenes: done\n")
   return(rmIds)
+  
+}
+
+# collects information from all places where genes being removed or specified
+useGenes <- reactive({
+  if(DEBUG)cat(file=stderr(), "useGenes\n")
+  dataTables = inputData()
+  useCells = useCells()
+  if(!exists("dataTables") | is.null(dataTables) | is.null(useCells) | length(dataTables$featuredata$Associated.Gene.Name)==0){
+    if(DEBUG)cat(file=stderr(), "useGenes: NULL\n")
+    return(NULL)
+  }
+  #genes to be explicitly removed
+  ipIDs = input$selectIds
+  geneListSelection = input$geneListSelection
+  minGene <- input$minGenesGS
+  return(useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene))
 })
+
 
 # individual values
 gbm_log <- reactive({
@@ -226,6 +240,22 @@ log2cpm <- reactive({
   return(dataTables$log2cpm[useGenes, useCells])
 })
 
+
+pcaFunc <- function(gbm_log){
+  if(DEBUG)cat(file=stderr(), "pca:done\n")
+  pca = tryCatch({
+    run_pca(gbm_log)},
+    error = function(e){
+      if(!is.null(getDefaultReactiveDomain())){
+        showNotification("Problem with PCA, probably not enough cells?")
+      }
+      return(NULL)
+    }
+  )
+  return(pca)
+  
+}
+
 pca = reactive({
   if(DEBUG)cat(file=stderr(), "pca\n")
   gbm_log = gbm_log()
@@ -233,15 +263,7 @@ pca = reactive({
     if(DEBUG)cat(file=stderr(), "pca:NULL\n")
     return(NULL)
   }
-  if(DEBUG)cat(file=stderr(), "pca:done\n")
-  pca = tryCatch({
-    run_pca(gbm_log)},
-    error = function(e){
-      showNotification("Problem with PCA, probably not enough cells?")
-      return(NULL)
-    }
-  )
-  return(pca)
+  return(pcaFunc(gbm_log))
 })
 
 kmClustering = reactive({

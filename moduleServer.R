@@ -73,9 +73,9 @@ clusterServer <- function(input, output, session,
     g_id<-g_id[[1]]
     
     notFound = featureData[!toupper(g_id) %in% featureData$Associated.Gene.Name, "Associated.Gene.Name"]
-    if(length(notFound)>0){
-      if(DEBUG)cat(file=stderr(), paste("gene names not found: ",notFound, "\n"))
-    }
+    # if(length(notFound)>0){
+    #   if(DEBUG)cat(file=stderr(), paste("gene names not found: ",notFound, "\n"))
+    # }
     geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
                                            toupper(g_id)), ])[1]
     

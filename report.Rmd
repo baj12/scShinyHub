@@ -1,6 +1,6 @@
 ---
-title: "10X selector report"
-author: "Bernd Jagla"
+title: "Single Cell Analysis Report"
+author: "scShinyHub"
 date: "3/8/2018"
 output: 
   html_document: 
@@ -10,19 +10,68 @@ output:
     number_sections: yes
     toc: yes
 params:
-__PARAMPLACEHOLDER__
+#__PARAMPLACEHOLDER__
 ---
 
-```{r load reactives, }
-__LOAD_REACTIVES__
+```{r checkDEBUG}
+if(!exists("DEBUG")){
+  DEBUG=TRUE
+  # DEBUG=FALSE
+}
 ```
+
+```{r loadData}
+if(exists("params")){
+  cat(file=stderr(), paste("params:", params$calledFromShiny,"\n"))
+  cat(file=stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
+}else{
+  # rm(list = ls())
+  require(shiny)
+  require(shinyTree)
+  require(shinyBS)
+  require(plotly)
+  require(shinythemes)
+  require(ggplot2)
+  require(DT)
+  require(pheatmap)
+  require(threejs)
+  require(sm)
+  require(RColorBrewer)
+  require(mclust)
+  require(reshape)
+  require(cellrangerRkit)
+  require(SCORPIUS)
+  require(ggplot2)
+  require(knitr)
+  require(kableExtra)
+  require(shinyWidgets)
+  require(scater)
+  
+  source("serverFunctions.R")
+  source("privatePlotFunctions.R")
+  source("reactives.R", local = TRUE)
+  uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  for(fp in uiFiles){
+    if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
+    source(fp, local = TRUE)
+  }
+  load("~/Desktop/report.RData")
+  LOCALEXECUTION = TRUE # to know that we are debugging.
+}
+
+```
+
+
+__LOAD_REACTIVES__
 
 # parameters
 
 ```{r setup, include=FALSE}
 input = params
 print(str(input$file1))
-load(params$file1$datapath)
+if(file.exists(params$file1$datapath)){
+  load(params$file1$datapath)
+}
 print(ls())
 ```
 
@@ -62,129 +111,46 @@ if(is.null(input$clusters4)) {
 
 
 ```{r inputData}
-dataTables = list()
-dataTables$log2cpmOrg <- log2cpm
-dataTables$tsne.data <- tsne.data
-dataTables$tsne.dataOrg <- tsne.data
-featuredata <-
-  featuredata[which(featuredata$Chromosome.Name %in% c(unlist(lapply(
-    seq(1, 22, 1), toString
-  )), c("X", "Y", "MT", "N"))),]
-featuredata$Associated.Gene.Name <-
-  toupper(featuredata$Associated.Gene.Name)
-featuredata <- featuredata[rownames(log2cpm), ]
-dataTables$featuredataOrg <- featuredata
-dataTables$positiveCells <- NULL
-dataTables$positiveCellsAll <- NULL
-
-# take only genes that are in all tables
-rnames = rownames(featuredata)
-rnames = rnames[rnames %in% rownames(log2cpm)]
-rnames = rnames[rnames %in% rownames(gbm)]
-
-dataTables$log2cpm <- log2cpm[rnames, ]
-dataTables$gbm = gbm[rnames, ]
-dataTables$gbm_log = gbm_log[rnames, ]
-dataTables$featuredata <- featuredata[rnames, ]
-
+if(! exists("dataTables")) # needed when working with ~/Desktop/reports.Data
+  dataTables = inputDataFunc(input$file1)
 ```
 
 ```{r medianENSG}
-geneC = colSums(log2cpm>0, na.rm = TRUE)
-medianENSG = median(t(geneC))
+medianENSG = medianENSGfunc(log2cpm)
 ```
-medianUMIfunc <- function(log2cpm){
-    umiC = colSums(log2cpm, na.rm = TRUE)
-    if(DEBUG)cat(file=stderr(), "medianUMI:done\n")
-    return(median(t(umiC)))
-  }
-  
-medianUMI <- reactive({
-  if(DEBUG)cat(file=stderr(), "medianUMI\n")
-  log2cpm = log2cpm()
-  if(is.null(log2cpm) ){
-    if(DEBUG)cat(file=stderr(), "medianUMI:NULL\n")
-    return(0)
-  }
-  return(medianUMIfunc(log2cpm))
-})
 
 
 ```{r medianUMI}
-umiC = colSums(log2cpm, na.rm = TRUE)
-medianUMI = median(t(umiC))
-assign("medianUMI", median(t(umiC)), envir = parent.frame())
+medianUMI = medianUMIfunc(log2cpm)
 ```
 
-```{r useCells, eval=FALSE}
-minG = input$minGenes
-gbm = as.matrix(exprs(dataTables$gbm))
-goodCols = colSums(gbm) > minG
-
-maxG = input$maxGenes
-goodCols = goodCols & ( colSums(gbm) <= maxG)
-
-geneNames = input$minExpGenes
-ids = which(grepl(geneNames, dataTables$featuredata$Associated.Gene.Name))
-goodCols = goodCols & (colSums(gbm[ids, ]) > 0)
-
-
-useCells = goodCols
+```{r useCells}
+useCells = useCellsFunc(dataTables)
 ```
 
-```{r useGenes, eval=FALSE}
-#genes to be explicitly removed
-ipIDs = input$selectIds
-if(nchar(ipIDs)>0) {
-  rmIds = !grepl(input$selectIds, dataTables$featuredata$Associated.Gene.Name)
-}else 
-{
-  rmIds = rep(TRUE,nrow(dataTables$log2cpm))
-}
+```{r useGenes}
+  ipIDs = input$selectIds
+  geneListSelection = input$geneListSelection
+  minGene <- input$minGenesGS
 
-# gene groups to be included
-if(!is.null(input$geneListSelection)){
-  selectedgeneList = get_selected(input$geneListSelection)
-  if(length(selectedgeneList)>0){
-    selGenes = c()
-    for(sIdx in 1:length(selectedgeneList)){
-      print(sIdx)
-      att = attr(selectedgeneList[[sIdx]], "ancestry")
-      if(length(att)>0){
-        selGenes = c(selGenes , geneLists[[att]][[selectedgeneList[[sIdx]]]])
-      }
-    }
-    selGenes = unique(selGenes)
-    rmIds = rownames(dataTables$log2cpm) %in% selGenes & rmIds
-  }
-}
-
-# overall gene expression Min
-minGene <- input$minGenesGS
-if(!is.null(minGene)){
-  selGenes = rowSums(as.matrix(exprs(dataTables$gbm[,useCells]))) >=minGene
-  rmIds = rmIds & selGenes
-}
-
-if(DEBUG)cat(file=stderr(), "useGenes: done\n")
-useGenes = rmIds
+useGenes = useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
 ```
 
 
-```{r featureDataReact, eval=FALSE}
+```{r featureDataReact}
 
 featureDataReact = dataTables$featuredata[useGenes, ]
 featureData = dataTables$featuredata[useGenes, ]
 ```
 
-```{r gbm, eval=FALSE}
+```{r gbm}
 if(DEBUG)cat(file=stderr(), "gbm\n")
 gbm = dataTables$gbm[useGenes, useCells]
 if(DEBUG)cat(file=stderr(), "gbm:DONE\n")
 
 ```
 
-```{r gbm_log, eval=FALSE}
+```{r gbm_log}
 if(DEBUG)cat(file=stderr(), "gbm_log\n")
 gbm_log = dataTables$gbm_log[useGenes, useCells]
 if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
@@ -247,7 +213,7 @@ log2cpm = dataTables$log2cpm[useGenes, useCells]
 ```{r pca, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "pca\n")
 
-pca = run_pca(gbm_log)
+pca = pcaFunc(gbm_log)
 ```
 
 ```{r tsne, eval=FALSE}
@@ -301,7 +267,7 @@ if(!is.null(input$db1) & ! is.null(input$db2)){
   subsetData <- subset(tsne.data, dbCluster == input$clusters1)
   cells.1 <- rownames(brushedPoints(subsetData, input$db1))
   cells.2 <- rownames(brushedPoints(subsetData, input$db2))
-
+  
   subsetExpression <- log2cpm[, union(cells.1, cells.2)]
   
   genes.use <- rownames(subsetExpression)
@@ -687,11 +653,11 @@ if(!is.null(input$scb1)){
                                     xvar = input$scb1$mapping$x,
                                     yvar = input$scb1$mapping$y,
                                     panelvar1 = 
-                                    ))
+  ))
   map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
-
+  
   expression <- log2cpm[map, cells.1]
-
+  
   expression <- expression[complete.cases(expression), ]
   cat(file = stderr(), rownames(expression))
   mColor <- max(expression)
@@ -700,7 +666,7 @@ if(!is.null(input$scb1)){
     print('Gene symbol incorrect or genes not expressed')
   }else{
     
-
+    
     h <-
       pheatmap(
         as.matrix(expression),
@@ -761,7 +727,7 @@ if(is.na(sum(expression)) == TRUE){
   plotexprs[allexprs >= length(rownames(bin))] <- 1
   positiveCells <- allexprs >= length(rownames(bin))
   positiveCellsAll <- plotexprs
-    mergeExprs <- plotexprs[rownames(subsetData)]
+  mergeExprs <- plotexprs[rownames(subsetData)]
   
   subsetData$CoExpression <- mergeExprs
   

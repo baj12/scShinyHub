@@ -198,13 +198,13 @@ shinyServer(function(input, output, session) {
       # we copy them to the temp directory and load them in the markdown
       uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
       reactiveFiles = ""
-      for(fp in uiFiles){
+      for(fp in c("reactives.R", uiFiles)){
         if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
         tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".R")
         file.copy(fp, tmpFile, overwrite = TRUE)
         reactiveFiles = paste0(reactiveFiles, "source(\"", tmpFile,"\")\n", collapse = "\n")
       }
-      
+      reactiveFiles = paste0("\n\n```{r load-reactives}\n", reactiveFiles, "\n```\n\n")
       
       
       
@@ -240,7 +240,8 @@ shinyServer(function(input, output, session) {
       inputNames = names(input)
       params <- list(
         tempServerFunctions = tempServerFunctions,
-        tempprivatePlotFunctions = tempprivatePlotFunctions
+        tempprivatePlotFunctions = tempprivatePlotFunctions,
+        calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
       )
       for (idx in 1:length(names(input))){
         params[[inputNames[idx]]] = input[[inputNames[idx]]]
@@ -253,56 +254,14 @@ shinyServer(function(input, output, session) {
       x <- readLines(tempReport)
       # x <- readLines("report.Rmd")
       paramString = paste0("  ", names(params),": NA", collapse = "\n")
-      y <- gsub( "__PARAMPLACEHOLDER__", paramString, x )
+      y <- gsub( "#__PARAMPLACEHOLDER__", paramString, x )
       y <- gsub( "__CHILDREPORTS__", pluginReportsString, y )
       y <- gsub( "__LOAD_REACTIVES__", reactiveFiles, y )
       # cat(y, file="tempReport.Rmd", sep="\n")
       cat(y, file=tempReport, sep="\n")
       
-      
-      # Set up parameters to pass to Rmd document
-      # params <- list(
-      #   tempServerFunctions = tempServerFunctions,
-      #   tempprivatePlotFunctions = tempprivatePlotFunctions,
-      #   b1 = input$b1,
-      #   cluster = input$cluster,
-      #   cluster5 = input$cluster5,
-      #   clusters = input$clusters,
-      #   clusters1 = input$clusters1,
-      #   clusters2 = input$clusters2,
-      #   clusters3 = input$clusters3,
-      #   clusters4 = input$clusters4,
-      #   db1 = input$db1,
-      #   db2 = input$db2,
-      #   dimension_x = input$dimension_x,
-      #   dimension_x1 = input$dimension_x1,
-      #   dimension_x2 = input$dimension_x2,
-      #   dimension_x3 = input$dimension_x3,
-      #   dimension_x4 = input$dimension_x4,
-      #   dimension_y = input$dimension_y,
-      #   dimension_y1 = input$dimension_y1,
-      #   dimension_y2 = input$dimension_y2,
-      #   dimension_y3 = input$dimension_y3,
-      #   dimension_y4 = input$dimension_y4,
-      #   file1 = input$file1,
-      #   gene_id = input$gene_id,
-      #   gene_id_sch = input$gene_id_sch,
-      #   geneListSelection = input$geneListSelection,
-      #   heatmap_geneids = input$heatmap_geneids,
-      #   heatmap_geneids2 = input$heatmap_geneids2,
-      #   maxGenes = input$maxGenes,
-      #   mclustids = input$mclustids,
-      #   minExpGenes = input$minExpGenes,
-      #   minGenes = input$minGenes,
-      #   minGenesGS = input$minGenesGS,
-      #   panelplotids = input$panelplotids,
-      #   # positiveCells = positiveCells$positiveCells,
-      #   # positiveCellsAll = positiveCells$positiveCellsAll,
-      #   scb1 = input$scb1,
-      #   selectIds = input$selectIds
-      # )
       if(DEBUG)cat(file=stderr(), "output$report:gbm:\n")
-      if(DEBUG)cat(file=stderr(), str(gbm))
+      if(DEBUG)cat(file=stderr(), paste("\n", tempReport,"\n"))
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
