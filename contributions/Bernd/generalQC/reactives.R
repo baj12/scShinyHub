@@ -1,12 +1,6 @@
 # here we define reactive values/variables
-scaterReads <- reactive({
-  if(DEBUG)cat(file=stderr(), "scaterReads\n")
-  gbm = gbm()
-  gbm_log = gbm_log()
-  fd = featureDataReact()
-  if( is.null(gbm) | is.null(gbm_log))
-    return(NULL)
-  
+
+scaterReadsFunc <- function(gbm, gbm_log, fd){
   counts = as.matrix(exprs( gbm))
   
   anno = pData(gbm)
@@ -44,7 +38,19 @@ scaterReads <- reactive({
     # remove cells with unusual number of reads in MT genes
     #filter_by_MT
   )
-  reads
+  return(reads)
+  
+}
+
+scaterReads <- reactive({
+  if(DEBUG)cat(file=stderr(), "scaterReads\n")
+  gbm = gbm()
+  gbm_log = gbm_log()
+  fd = featureDataReact()
+  if( is.null(gbm) | is.null(gbm_log))
+    return(NULL)
+  return(scaterReadsFunc(gbm, gbm_log, fd))
+
 })
 
 # declare function as heavy

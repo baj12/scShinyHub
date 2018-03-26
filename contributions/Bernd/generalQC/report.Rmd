@@ -3,26 +3,119 @@ title: "child report"
 output: html_document
 ---
 
-```{r bj-gQC-setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## Scater Plot
+
+```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+if(exists("params")){
+  cat(file=stderr(), paste("Scater Plot report\n"))
+}else{
+  rm(list = ls())
+  load("~/Desktop/report.RData")
+  cat(file=stderr(), getwd())
+  
+  require(shiny)
+  require(plotly)
+  require(shinythemes)
+  require(ggplot2)
+  require(DT)
+  require(pheatmap)
+  require(threejs)
+  require(sm)
+  require(RColorBrewer)
+  require(mclust)
+  require(reshape)
+  require(cellrangerRkit)
+  require(SCORPIUS)
+  require(ggplot2)
+  require(knitr)
+  require(kableExtra)
+  require(shinyWidgets)
+  require(scater)
+  
+  source("../../../serverFunctions.R")
+  source("../../../privatePlotFunctions.R")
+  source("../../../reactives.R", local = TRUE)
+  source("reactives.R", local = TRUE)
+  
+  LOCALEXECUTION = TRUE # to know that we are debugging.
+  useCells = useCellsFunc(dataTables)
+  ipIDs = input$selectIds
+  geneListSelection = input$geneListSelection
+  minGene <- input$minGenesGS
+  
+  useGenes = useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
+  featureDataReact = dataTables$featuredata[useGenes, ]
+  featureData = dataTables$featuredata[useGenes, ]
+  gbm = dataTables$gbm[useGenes, useCells]
+  gbm_log = dataTables$gbm_log[useGenes, useCells]
+  log2cpm = dataTables$log2cpm[useGenes, useCells]
+  if(DEBUG)cat(file=stderr(), "pca\n")
+  
+  pca = pcaFunc(gbm_log)
+  if(DEBUG)cat(file=stderr(), "tsne\n")
+  seed=1
+  set.seed(seed = seed)
+  tsne = run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
+  if(DEBUG)cat(file=stderr(), "tsne: done\n")
+  if(DEBUG)cat(file=stderr(), "tsne.data\n")
+  
+  if(DEBUG)cat(file=stderr(), "kmClustering\n")
+  clustering=list()
+  
+  kNr = 10
+  for(kNr in 2:10) {
+    set.seed(seed = seed)
+    km = run_kmeans_clustering(pca, k=kNr)
+    clustering[[paste0("kmeans_",kNr,"_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)), "Cluster" = km$cluster)
+  }
+  
+  kmClustering = clustering
+  if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
+  
+  
+  tsne.data = data.frame(tsne$Y)
+  colnames(tsne.data) = c("V1", "V2", "V3")
+  tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
+  rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
+  if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
+  
+}
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r bj-gQC-cars}
-summary(cars)
+```{r bj-gQC-tsne3d, eval=TRUE, echo=FALSE}
+p <-
+  plot_ly(
+    tsne.data,
+    x = ~ V1,
+    y = ~ V2,
+    z = ~ V3,
+    type = "scatter3d",
+    color =  ~ dbCluster,
+    hoverinfo = "text",
+    text = paste('Cluster:', tsne.data$dbCluster),
+    mode = 'markers',
+    marker =
+      list(
+        line = list(width = 0),
+        size = rep(10, nrow(tsne.data)),
+        sizeref = 3
+      )
+  )
+if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
+layout(p)
+
 ```
 
-## Including Plots
+```{r plotUmiHist, eval=TRUE, echo=FALSE}
 
-You can also embed plots, for example:
-
-```{r bj-gQC-pressure, echo=FALSE}
-plot(pressure)
+hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r variancePCA, eval=TRUE, echo=FALSE}
+barplot(pca$var_pcs, main="Variance captured by first PCs")
+```

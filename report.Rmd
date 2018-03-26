@@ -129,9 +129,9 @@ useCells = useCellsFunc(dataTables)
 ```
 
 ```{r useGenes}
-  ipIDs = input$selectIds
-  geneListSelection = input$geneListSelection
-  minGene <- input$minGenesGS
+ipIDs = input$selectIds
+geneListSelection = input$geneListSelection
+minGene <- input$minGenesGS
 
 useGenes = useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
 ```
@@ -157,51 +157,6 @@ if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
 
 ```
 
-```{r scaterReads, eval=FALSE}
-if(DEBUG)cat(file=stderr(), "scaterReads\n")
-fd = featureDataReact
-
-counts = as.matrix(exprs( gbm))
-
-anno = pData(gbm)
-anno$sample_id = anno$barcode
-anno$fixed = "red"
-# anno$individual= "NA1"
-# anno$replicate = "r1"
-# anno$well = "A01"
-# anno$batch = "b1"
-pheno_data <- new("AnnotatedDataFrame", anno)
-rownames(pheno_data) <- pheno_data$sample_id
-
-reads = as.matrix(counts)
-rownames(reads) = make.unique(fd[rownames(reads),"Associated.Gene.Name"])
-rownames(reads)[is.na(rownames(reads)) ] = "na"
-reads = SingleCellExperiment(
-  assays = list(counts = reads), 
-  colData = anno
-)
-ercc <- rownames(reads)[grepl("ERCC-", rownames(reads))]
-
-mt = rownames(reads)[grepl("^MT",rownames(reads))]
-
-reads <- scater::calculateQCMetrics(
-  reads
-)
-filter_by_expr_features <- (reads$total_features > 200)
-reads$use <- (
-  # sufficient features (genes)
-  filter_by_expr_features 
-  # sufficient molecules counted
-  #filter_by_total_counts &
-  # sufficient endogenous RNA
-  #filter_by_ERCC &
-  # remove cells with unusual number of reads in MT genes
-  #filter_by_MT
-)
-
-
-scaterReads = reads
-```
 
 ```{r log2cpm, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "log2cpm\n")
@@ -218,7 +173,7 @@ pca = pcaFunc(gbm_log)
 
 ```{r tsne, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "tsne\n")
-
+seed=1
 set.seed(seed = seed)
 tsne = run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
 if(DEBUG)cat(file=stderr(), "tsne: done\n")
@@ -296,30 +251,6 @@ if(!is.null(input$db1) & ! is.null(input$db2)){
 
 ```{r selectedDge, eval=FALSE}
 # selectedDge <- reactiveValues()
-
-```
-
-```{r tsne3d, eval=FALSE}
-p <-
-  plot_ly(
-    tsne.data,
-    x = ~ V1,
-    y = ~ V2,
-    z = ~ V3,
-    type = "scatter3d",
-    color =  ~ dbCluster,
-    hoverinfo = "text",
-    text = paste('Cluster:', tsne.data$dbCluster),
-    mode = 'markers',
-    marker =
-      list(
-        line = list(width = 0),
-        size = rep(10, nrow(tsne.data)),
-        sizeref = 3
-      )
-  )
-if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
-layout(p)
 
 ```
 
@@ -543,10 +474,6 @@ if (input$clusters4 == 'All')
 
 ```
 
-```{r scaterQC, eval=FALSE}
-scater::plotQC(scaterReads, type = "highest-expression", col_by_variable="fixed")
-
-```
 
 ```{r heatmap, eval=FALSE}
 genesin <- input$heatmap_geneids
@@ -890,10 +817,28 @@ DT::datatable(dt)
 ```
 
 
-```{r}
+```{r externalContributions, results='asis', echo=FALSE}
+# here we process the full set of report files and below print them.
+# there will be no table of content
+# it is only useful when clicking the "Knit" button in RStudio
+# individual chunks can be run locally for debugging/development purposes. See Dummy package or other packages for examples.
+options(knitr.duplicate.label = 'allow')
+if(LOCALEXECUTION){
+  uiFiles = dir(path = "contributions", pattern = "report.Rmd", full.names = TRUE, recursive = TRUE)
+  fpRidx = 1
+  retReport = NULL
+  retString = ""
+  for(fp in uiFiles){
+    if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
+    
+     fpStr=readLines(fp)
+    retReport = c(retReport, knit2html(text=fpStr, quiet = TRUE, fragment.only = TRUE))
+    fpRidx = fpRidx + 1
+  }
+  paste(retReport, collapse = "\n")
+}
 
 ```
-
 
 ```{r}
 
@@ -949,7 +894,9 @@ __CHILDREPORTS__
 
 ```{r}
 print(ls())
-save(file = "~/Desktop/report.RData", list=ls())
+if(!LOCALEXECUTION){
+  save(file = "~/Desktop/report.RData", list=ls())
+}
 sessionInfo()
 ```
 

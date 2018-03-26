@@ -4,3 +4,7 @@
 .Ruserdata
 .DS_store
 README.html
+*/*/*/*.html
+*/*/*.html
+*/*.html
+*.html
