@@ -188,3 +188,9 @@ Please make sure that the code chunks are named and unique. Otherwise we might r
 
 all inputs are available for the report. When running with DEBUG=TRUE a report.RData file is generated on the desktop that can be used to develop the report as it contains all available variables. Inputs from plugins are also available.
 
+The problem for the development is that there are three modes that should be supported: 
+* the reports should be intergrated when launched from within the app
+* The reports should be producable when developing the app using the main report
+* individual reports should be executable during development.
+
+

@@ -272,18 +272,9 @@ HTML(
 
 ```
 
-```{r plotUmiHist, eval=FALSE}
 
-hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
-```
 
-```{r variancePCA, eval=FALSE}
-barplot(pca$var_pcs, main="Variance captured by first PCs")
-```
 
-```{r plotHistogramsAll, eval=FALSE}
-barplot(pca$var_pcs, main="Variance captured by first PCs")
-```
 
 ```{r selectedGenesTable, eval=FALSE}
 gbmMat = as.matrix(exprs(dataTables$gbm))
@@ -305,36 +296,6 @@ DT::datatable(dt)
 
 ```
 
-```{r tsne_plt, eval=FALSE}
-if(DEBUG)cat(file=stderr(), "output$tsne_plt\n")
-geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
-                                       toupper(input$gene_id)), ])[1]
-
-expression <- log2cpm[geneid, ]
-
-tsneData <- cbind(tsne.data, t(expression))
-names(tsneData)[names(tsneData) == geneid] <- 'values'
-
-p <-
-  plot_ly(
-    tsneData,
-    x = ~ V1,
-    y = ~ V2,
-    z = ~ V3,
-    type = "scatter3d",
-    hoverinfo = "text",
-    text = paste('Cluster:', tsne.data$dbCluster),
-    mode = 'markers',
-    marker = list(
-      size = 2,
-      line = list(width = 0),
-      color =  ~ values,
-      colors = 'Greens'
-    )
-  )
-layout(p, title = toupper(input$gene_id))
-
-```
 
 ```{r clusterPlot, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "output$clusterPlot\n")
@@ -374,103 +335,6 @@ p1 <-
   ggtitle(paste(toupper(input$gene_id), input$cluster, sep = '-Cluster')) +
   scale_colour_gradient2(low = 'grey50', high = "red")
 p1
-
-```
-
-```{r gene_vio_plot, eval=FALSE}
-if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")
-
-geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
-                                       toupper(input$gene_id)), ])[1]
-
-expression <- log2cpm[geneid, ]
-
-validate(need(is.na(sum(expression)) != TRUE, ''))
-
-tsneData <- cbind(tsne.data, t(expression))
-names(tsneData)[names(tsneData) == geneid] <- 'values'
-#tsne.data<-subset(tsne.data,dbCluster!=0)
-
-p1 <-
-  ggplot(tsneData, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
-  geom_violin(scale = "width") +
-  stat_summary(
-    fun.y = median,
-    geom = "point",
-    size = 5,
-    color = 'black'
-  ) +
-  stat_summary(fun.data = n_fun, geom = "text") +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(
-      angle = 90,
-      size = 12,
-      vjust = 0.5
-    ),
-    axis.text.y = element_text(size = 12),
-    strip.text.x = element_text(size = 16),
-    strip.text.y = element_text(size = 14),
-    axis.title.x = element_text(face = "bold", size = 16),
-    axis.title.y = element_text(face = "bold", size = 16),
-    legend.position = "none"
-  ) +
-  xlab('Cluster') +
-  ylab('Expression') +
-  ggtitle(toupper(input$gene_id))
-if(DEBUG)cat(file=stderr(), "output$gene_vio_plot:done\n")
-p1
-
-```
-
-
-```{r panelPlot, eval=FALSE}
-if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
-
-genesin <- input$panelplotids
-genesin <- toupper(genesin)
-genesin <- gsub(" ", "", genesin, fixed = TRUE)
-genesin <- strsplit(genesin, ',')
-genesin<-genesin[[1]]
-
-par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
-rbPal <- colorRampPalette(c('#f0f0f0','red'))
-
-if (input$clusters4 == 'All') 
-{
-  for (i in 1:length(genesin)){
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    plot(tsne.data[,input$dimension_x4],tsne.data[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-  }
-}else{
-  for (i in 1:length(genesin)){
-    
-    subsetTSNE <- subset(tsne.data, dbCluster == input$clusters4)
-    
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    
-    names(Col)<-rownames(tsne.data)
-    plotCol<-Col[rownames(subsetTSNE)]
-    plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-    
-  }
-}
 
 ```
 
