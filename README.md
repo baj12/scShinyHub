@@ -14,7 +14,7 @@ The original version of this app is CellView (https://github.com/mohanbolisetty/
 Download git repository from gitlab.
 
 ```R
-requiredPackages= c("shiny", "shinyTree", "shinyBS", "plotly", "shinythemes", "ggplot2", "DT", "pheatmap", "threejs", "sm", "RColorBrewer", "mclust", "reshape", "cellrangerRkit", "SCORPIUS", "knitr", "kableExtra", "shinyWidgets", "scater")
+requiredPackages= c("shiny", "shinyTree", "shinyBS", "plotly", "shinythemes", "ggplot2", "DT", "pheatmap", "threejs", "sm", "RColorBrewer", "mclust", "reshape", "cellrangerRkit", "SCORPIUS", "knitr", "kableExtra", "shinyWidgets", "scater", "biomaRt", "devtools", "dplyr", "edgeR", "gplots", "shinydashboard", "stringi")
 install.packages("rafalib")
 rafalib::install_bioc(requiredPackages)
 ```
