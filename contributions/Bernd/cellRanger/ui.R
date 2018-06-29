@@ -9,21 +9,14 @@ menuList =  list(
 tabList = list(
   crHeatMapTab = tabItem("crHeatMap",
                          tags$h3("Heatmap plot"),
-                         fluidRow(
-                           plotOutput('crHeat_plot1', brush = brushOpts(id =
-                                                                          "crh1"))
-                         ),
+                         fluidRow(column(8,
+                           plotOutput('crHeat_plot1', height='auto', brush = brushOpts(id =
+                                                                          "crh1")) %>% withSpinner()
+
+                         )),
                          column(2,
                                 uiOutput("clusters5")),
-                         DT::dataTableOutput('crPrioGenes')
-  ),
-  pheatmapTab = tabItem("cellRanger",
-                        tags$h3("CellRanger tools"),
-                        fluidRow(column(
-                          10, offset = 1
-                          # ,
-                          # plotOutput('variancePCA')
-                        ))
+                         DT::dataTableOutput('crPrioGenes') %>% withSpinner()
   )
 )
 

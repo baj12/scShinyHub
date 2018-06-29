@@ -53,5 +53,32 @@ scaterReads <- reactive({
 
 })
 
+
+sampleHistFunc <- function(samples){
+  hist(as.integer(as.factor(samples)), main="histogram of number of cell per sample")
+}
+
+inputTSNESample <- reactive({
+  if(DEBUG)cat(file=stderr(), "inputTSNESample\n")
+  tsne.data = tsne.data()
+  if( is.null(tsne.data)){
+    return(NULL)
+  }
+  if(!is.null(getDefaultReactiveDomain())){
+    showNotification("inputTSNESample", id="inputTSNESample", duration = NULL)
+  }
+  
+  if(DEBUGSAVE) save(file = "~/scShinyHubDebug/inputTSNESample.RData", list=ls())
+  # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
+
+   if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="heatmap")
+  }
+  return(tsne.data)
+  
+  
+})
+
+
 # declare function as heavy
 myHeavyCalculations = list(c("scaterReads", "scaterReads"))

@@ -6,7 +6,8 @@ menuList =  list(
   menuItem("Co-expression", tabName = "coexpression", startExpanded = FALSE,
            menuSubItem("All clusters", tabName = "coexpressionAll"),
            menuSubItem("Selected", tabName = "coexpressionSelected"),
-           menuSubItem("binarized", tabName = "coexpressionBinarized")
+           menuSubItem("binarized", tabName = "coexpressionBinarized"),
+           menuSubItem("Co-expression Violin plot", tabName = "CoExpressionViolin")
   )
 )
 
@@ -17,15 +18,15 @@ tabList = list(
   coexpressionAllTab = tabItem("coexpressionAll",
                                fluidRow(
                                  column(
-                                   2,
+                                   7, offset = 1,
                                    
-                                   textInput('heatmap_geneids', 'Comma seperated gene names', value = 'CD7,Cd3d,Genes,Umi')
+                                   textInput('heatmap_geneids', 'Comma seperated gene names', value = defaultValueMultiGenes)
                                  )
                                ),
                                
                                fluidRow(column(
                                  10, offset = 1,
-                                 plotOutput('heatmap')
+                                 plotOutput('heatmap') %>% withSpinner()
                                ))
   ),
   
@@ -40,45 +41,19 @@ tabList = list(
                                     fluidRow(
                                       column(
                                         2,
-                                        textInput('gene_id_sch', 'Enter gene', value = 'CD7')
+                                        textInput('gene_id_sch', 'Enter gene', value = defaultValueSingleGene)
                                       ),
                                       column(10,
                                              clusterUI("selected"))
                                     ),
-                                    #   column(2,
-                                    #          uiOutput("clusters2")),
-                                    #   column(
-                                    #     2,
-                                    #     selectInput(
-                                    #       'dimension_x2',
-                                    #       label = 'X',
-                                    #       choice = c('V1', 'V2', 'V3'),
-                                    #       selected = 'V1'
-                                    #     )
-                                    #   ),
-                                    #   column(
-                                    #     2,
-                                    #     selectInput(
-                                    #       'dimension_y2',
-                                    #       label = 'Y',
-                                    #       choice = c('V1', 'V2', 'V3'),
-                                    #       selected = 'V2'
-                                    #     )
-                                    #   )
-                                    # ),
-                                    # fluidRow(column(
-                                    #   5, offset = 1,
-                                    #   plotOutput('clusterPlot2', brush = brushOpts(id =
-                                    #                                                  'scb1'))
-                                    # )),
                                     fluidRow(column(
-                                      2,
+                                      6, offset = 1,
                                       
-                                      textInput('heatmap_geneids2', 'Comma seperated gene names', value = 'CD7,Cd3d')
+                                      textInput('heatmap_geneids2', 'Comma seperated gene names', value = defaultValueMultiGenes)
                                     )),
                                     fluidRow(column(
                                       10, offset = 1,
-                                      plotOutput('selectedHeatmap')
+                                      plotOutput('selectedHeatmap') %>% withSpinner()
                                     ))
   ),
   binarizeTab = tabItem("coexpressionBinarized",
@@ -101,8 +76,8 @@ tabList = list(
                             selectInput(
                               'dimension_x3',
                               label = 'X',
-                              choice = c('V1', 'V2', 'V3'),
-                              selected = 'V1'
+                              choice = c('tsne1', 'tsne2', 'tsne3'),
+                              selected = 'tsne1'
                             )
                           ),
                           column(
@@ -110,19 +85,20 @@ tabList = list(
                             selectInput(
                               'dimension_y3',
                               label = 'Y',
-                              choice = c('V1', 'V2', 'V3'),
-                              selected = 'V2'
+                              # TODO  get from tsne columns
+                              choice = c('tsne1', 'tsne2', 'tsne3'),
+                              selected = 'tsne2'
                             )
                           ),
                           column(
-                            2,
+                            6,
                             
-                            textInput('mclustids', 'Comma seperated gene names', value = 'CD7')
+                            textAreaInput('mclustids', 'Comma seperated gene names', value = defaultValueMultiGenes)
                           )
                         ),
                         fluidRow(column(
                           10, offset = 1,
-                          plotOutput('plotCoExpression')
+                          plotOutput('plotCoExpression') %>% withSpinner()
                         )),
                         fluidRow(
                           div(
@@ -141,9 +117,51 @@ tabList = list(
                         fluidRow(
                           h4('Positive Cells in all clusters', align = "center"),
                           column(6, offset = 3,
-                                 DT::dataTableOutput('onOffTable'))
+                                 DT::dataTableOutput('onOffTable') %>% withSpinner()
+                          )
                         )
+  ),
+  tabList = list(
+    expressionTab = tabItem("CoExpressionViolin",
+                            fluidRow(div(
+                              p(strong('\tInformation:')),
+                              tags$ul(
+                                tags$li(
+                                  strong('Violin plot'),
+                                  'for each cell we count how many of the genes specified have an expression larger or equal than the minimum exprssion.\nThese counts are then divided up for any variable that can be used as a factor (has less than 20 levels).'
+                                )
+                              )
+                            )),
+                            br(),
+                            br(),
+                            
+                            fluidRow(
+                              column(
+                                3,
+                                
+                                textInput('geneGrpVioIds', 'Comma seperated gene names', value = defaultValueMultiGenes)
+                              ),    
+                              column(3,
+                                     selectInput(
+                                       'dimension_xVioiGrp',
+                                       label = 'X',
+                                       choice = c('tsne1', 'tsne2', 'tsne3'),
+                                       selected = 'tsne1'
+                                     )
+                              ),
+                              column(3,
+                                     numericInput("coEminExpr", "min expression of genes:",
+                                                  10, min = 1, max = 100000)
+                              )
+                            ),
+                            br(),
+                            fluidRow(column(12, 
+                                            plotOutput('geneGrp_vio_plot') %>% withSpinner()
+                            ))
+                            
+    )
   )
+  
   
   
 )

@@ -10,7 +10,7 @@ output: html_document
 ```{r , include=FALSE}
 if(exists("DEVELOPMENT") ){
   # rm(list = ls())
-  # load("~/Desktop/report.RData")
+  # load("~/scShinyHubDebug/report.RData")
 }
 ```
 
