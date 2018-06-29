@@ -16,14 +16,15 @@ tabList = list(
                    
                    fluidRow(
                      column(2,
-                            uiOutput("clusters1")),
+                            uiOutput("clusters1") %>% withSpinner()
+                            ),
                      column(
                        2,
                        selectInput(
                          'dimension_x1',
                          label = 'X',
-                         choice = c('V1', 'V2', 'V3'),
-                         selected = 'V1'
+                         choice = c('tsne1', 'tsne2', 'tsne3'),
+                         selected = 'tsne1'
                        )
                      ),
                      column(
@@ -31,29 +32,31 @@ tabList = list(
                        selectInput(
                          'dimension_y1',
                          label = 'Y',
-                         choice = c('V1', 'V2', 'V3'),
-                         selected = 'V2'
+                         choice = c('tsne1', 'tsne2', 'tsne3'),
+                         selected = 'tsne2'
                        )
                      )
                    ),
                    
                    fluidRow(
-                     column(4,
+                     column(6,
                             plotOutput('dge_plot1', brush = brushOpts(id =
-                                                                        "db1"))),
-                     column(4,
+                                                                        "db1")) %>% withSpinner()
+                            ),
+                     column(6,
                             plotOutput('dge_plot2', brush = brushOpts(id =
-                                                                        'db2')))
+                                                                        'db2')) %>% withSpinner()
+                            )
                    ),
-                   fluidRow(
+                   fluidRow(column(11, offset = 1,
                      h4('Selected genes'),br(),
                      textOutput("crSelectedGenes", inline = FALSE)
                      
-                   ),br(),
-                   fluidRow(
+                   )),br(),
+                   fluidRow(column(11, offset = 1,
                      h4('Top Differentially Expressed Genes', offset = 1),
-                     DT::dataTableOutput('dge')
-                   ),br(),
+                     DT::dataTableOutput('dge') %>% withSpinner()
+                   )),br(),
                    fluidRow(
                      div(
                        align = "right",

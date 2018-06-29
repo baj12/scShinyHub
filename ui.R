@@ -16,12 +16,13 @@ library(edgeR)
 library(pheatmap)
 library(threejs)
 library(shinyTree)
+library(shinycssloaders)
 
 # this is where the general tabs are defined:
+if(file.exists('defaultValues.R')){
+  source('defaultValues.R')
+}
 source('tabs.R')
-
-
-DEBUG = FALSE
 
 
 # general tabs
@@ -49,13 +50,13 @@ for(fp in uiFiles){
   
   for (li in menuList){
     if(length(li)>0){
-      if(DEBUG)cat(file=stderr(), paste("menuList:", length(allMenus)," ", li$children, "\n"))
+      # if(DEBUG)cat(file=stderr(), paste("menuList:", length(allMenus)," ", li$children, "\n"))
       allMenus[[length(allMenus) + 1 ]] = li
     }
   }
   for (li in tabList){
     if(length(li)>0){
-      if(DEBUG)cat(file=stderr(), paste(li$children[[1]], "\n"))
+      # if(DEBUG)cat(file=stderr(), paste(li$children[[1]], "\n"))
       allTabs[[length(allTabs) + 1]] = li
     }
   }
@@ -66,18 +67,22 @@ for(fp in uiFiles){
 
 shinyUI(
   dashboardPage(
-    dashboardHeader(title = "10X cell and gene selection"),
+    dashboardHeader(title = "scShinyHub"),
     dashboardSidebar(
       sidebarMenu(
         allMenus
         
       ),
-      
+      tipify(checkboxInput("noStats", "don't display stats", FALSE),
+             "check this if you are working on the cell/gene selection to avoid certain calculations"),
       
       tipify(htmlOutput('summaryStatsSideBar'),
-             "medium UMI shows how many genes are expressed in log2 space of normalized data","right"),
+            "<h3>Data summary</h3> <ul><li>medium UMI: shows how many genes are  expressed in log2 space of normalized data</li> </ul> ", "right"),
       downloadButton("report", "Generate report"),
-      actionButton('goCalc', 'Force Calculations')
+      actionButton('goCalc', 'Force Calculations'),
+      # bookmarkButton(id = "bookmark1"),
+      checkboxInput("DEBUGSAVE", "Save for DEBUG", FALSE),
+      verbatimTextOutput("DEBUGSAVEstring")
       
     ), # dashboard side bar
     dashboardBody(
@@ -89,6 +94,5 @@ shinyUI(
     ) # dashboard body
   ) # main dashboard
 )
-
 
 

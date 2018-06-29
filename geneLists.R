@@ -5,8 +5,8 @@ library(stringi)
 rm(list = ls())
 
 
-dt = read.delim(file = "proteinatlas.tsv", sep = "\t", stringsAsFactors = FALSE)
-load('Jim2.Rds')
+dt = read.delim(file = "~/GoogleDrive/Rstudio/10Xselector/proteinatlas.tsv", sep = "\t", stringsAsFactors = FALSE)
+load('some.Rds')
 rownames(featuredata)
 rownames(dt) = dt$Ensembl
 rownames(featuredata)[!rownames(featuredata) %in% rownames(dt)]
@@ -29,6 +29,7 @@ subCellularLocationList = list()
 for(clIdx in 1:length(locClasses)){
   subCellularLocationList[[locClasses[clIdx]]] = dat[grep(locClasses[clIdx], dat$Subcellular.location), "Ensembl"]
 }
+
 
 geneLists = list(
   "protein Classes" = proteinClassList,

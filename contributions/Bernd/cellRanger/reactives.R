@@ -1,17 +1,102 @@
+require(ggplot2)
+crHeatImage <- reactive({
+  if(DEBUG)cat(file=stderr(), "output$crHeat_plot1\n")
+  gbm = gbm()
+  tsne.data = tsne.data()
+  prioritized_genes = prioritized_genes()
+  if( is.null(gbm) | is.null(gbm) | is.null(prioritized_genes)){
+    if(DEBUG)cat(file=stderr(), "output$crHeat_plot1:NULL\n")
+    return(NULL)
+  }
+  if(!is.null(getDefaultReactiveDomain())){
+    showNotification("cell ranger heat map", id="crHeatMap", duration = NULL)
+  }
+  
+  example_K <- 10 
+  example_Cols <- rev(brewer.pal(10,"Set3")) # customize plotting colors
+  
+  cells_to_plot <- order_cell_by_clusters(gbm, as.numeric(as.character(tsne.data$dbCluster)))
+  
+  example_col = example_Cols[1:example_K]
+  
+  # For high-res displays, this will be greater than 1
+  pixelratio <- session$clientData$pixelratio
+  if(is.null(pixelratio)) pixelratio = 1
+  width  <- session$clientData$output_plot_width
+  height <- session$clientData$output_plot_height
+  if(is.null(width)){width=96*7} # 7x7 inch output
+  if(is.null(height)){height=96*7}
+  
+  # px to inch conversion
+  myPNGwidth <- width/96
+  myPNGheight <- height/96
+  
+  # outfile <- paste0(tempdir(),'/crHeatImage.svg')
+  outfile <- paste0("~/scShinyHubDebug",'/crHeatImage.png')
+  if(DEBUG)cat(file=stderr(), paste("output file: ", outfile, "\n"))
+  if(DEBUG)cat(file=stderr(), paste("output file normalized: ", normalizePath(outfile), "\n"))
+  if(DEBUGSAVE) save(file='~/scShinyHubDebug/crHeatImage.RData', list=ls())
+  # load(file='~/scShinyHubDebug/crHeatImage.RData')
+  logGB = log_gene_bc_matrix(gbm)
+  p = gbm_pheatmap(gbm=logGB, 
+                   genes_to_plot=prioritized_genes, 
+                   cells_to_plot=cells_to_plot,
+                   n_genes = 10, 
+                   colour = example_col,
+                   limits = c(-3, 3))
+  ggsave(file = normalizePath(outfile), plot = p$gtable, width = myPNGwidth, height = myPNGheight, units = "in", dpi = 300*pixelratio)
+  
+  if(DEBUG)cat(file=stderr(), "done:crHeatImage\n")
+  if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="crHeatMap")
+  }
+  if(DEBUG)cat(file=stderr(), paste("width: ", width, "\n"))
+  if(DEBUG)cat(file=stderr(), paste("height: ", height, "\n"))
+  
+  return(list(src = normalizePath(outfile),
+              width = width,
+              height = height,
+              alt = "Heat map plot should be here"))
+  
+})
+
+
+
+
+
 prioritized_genes = reactive({
   tsne.data = tsne.data()
   gbm = gbm()
-  if(is.null(tsne) | is.null(gbm)){
+  if(is.null(tsne.data) | is.null(gbm)){
     if(DEBUG)cat(file=stderr(), "tsne.data: NULL\n")
     return(NULL)
   }
+  if(!is.null(getDefaultReactiveDomain())){
+    showNotification("prioritizing genes", id="crpriotGenes", duration = NULL)
+  }
+  
+  if(DEBUGSAVE) save(file='~/scShinyHubDebug/prioritized_genes.Rdata', list=ls())
+  # load(file='~/scShinyHubDebug/prioritized_genes.Rdata')
   set.seed(seed = seed)
-  prioritize_top_genes(gbm, tsne.data$dbCluster, "sseq",
+  retVal = tryCatch({
+  prioritize_top_genes(gbm, as.numeric(as.character(tsne.data$dbCluster)), "sseq",
                        logscale = FALSE, 
                        min_mean=0.5, 
                        p_cutoff=0.05,
-                       order_by='pvalue')
+                       order_by='pvalue')},
+  error=function(cond) {
+    cat(file=stderr(), "prioritized_genes.Rdata: problem\n")
+    if(!is.null(getDefaultReactiveDomain())){
+      removeNotification( id="crpriotGenes")
+    }
+    
+    return(NULL)},
+  warning=function(cond){return("prioritize warning")})
+  if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="crpriotGenes")
+  }
+  return(retVal)
 })
 
-myHeavyCalculations=list(c("prioritized_genes", "prioritized_genes"))
+myHeavyCalculations=list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
 

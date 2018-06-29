@@ -1,7 +1,32 @@
+source("reactives.R")
+
+# myHeavyCalculations = list(c("scaterPNG", "scaterPNG"))
+
 # Expression ------------------------------------------------------------------
 expCluster <- callModule(clusterServer, "expclusters", tsne.data, reactive(input$gene_id))
 
+# these observes should be independant of tsne.data since this will be then executed by default for any changes
+updateInputx4 = reactive({
+  tsneData <- tsne.data()
+  
+  # Can use character(0) to remove all choices
+  if (is.null(tsneData)) {
+    return(NULL)
+  }
+  
+  # Can also set the label and select items
+  updateSelectInput(session, "dimension_x4",
+                    choices = colnames(tsneData),
+                    selected = colnames(tsneData)[1]
+  )
 
+  # Can also set the label and select items
+  updateSelectInput(session, "dimension_y4",
+                    choices = colnames(tsneData),
+                    selected = colnames(tsneData)[2]
+  )
+  return(TRUE)
+})
 
 
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
@@ -13,8 +38,8 @@ output$gene_vio_plot <- renderPlot({
   featureData = featureDataReact()
   log2cpm = log2cpm()
   tsne.data = tsne.data()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
-    if(DEBUG)cat(file=stderr(), "output$gene_vio_plot:NULL\n")
+  if ( is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)) {
+    if( DEBUG )cat(file=stderr(), "output$gene_vio_plot:NULL\n")
     return(NULL)
   }
   
@@ -119,6 +144,24 @@ output$downloadExpression <- downloadHandler(
 
 ##############################
 ### Panel Plot
+# TODO as module
+# data expression panel plot 
+output$clusters4 <- renderUI({
+  if(DEBUG)cat(file=stderr(), "output$clusters4\n")
+  tsne.data = tsne.data()
+  upI = updateInputx4()
+  if(is.null(tsne.data)){
+    HTML("Please load data firts")
+  }else{
+    noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+    selectInput(
+      "clusters4",
+      label = "Cluster",
+      choices = c(c('All'),c(0:noOfClusters)),
+      selected = 0
+    )
+  }
+})  
 
 output$panelPlot <- renderPlot({
   if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
@@ -135,13 +178,18 @@ output$panelPlot <- renderPlot({
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
   genesin<-genesin[[1]]
+  cl4 = input$clusters4
+  dimx4 = input$dimension_x4
+  dimy4 = input$dimension_y4
+  if(DEBUGSAVE) save(file="~/scShinyHubDebug/panelPlot.RData", list=ls())
+  # load(file="~/scShinyHubDebug/panelPlot.RData")
   
   if(DEBUG)cat(file=stderr(),length(genesin))
   par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
   rbPal <- colorRampPalette(c('#f0f0f0','red'))
-  if(DEBUG)cat(file=stderr(),input$clusters4)
+  if(DEBUG)cat(file=stderr(),cl4)
   
-  if (input$clusters4 == 'All') 
+  if (cl4 == 'All') 
   {
     for (i in 1:length(genesin)){
       Col <- rbPal(10)[
@@ -152,7 +200,7 @@ output$panelPlot <- renderPlot({
                 rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
                 ,]
             ),breaks = 10))]
-      plot(tsne.data[,input$dimension_x4],tsne.data[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+      plot(tsne.data[, dimx4],tsne.data[, dimy4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
       if(DEBUG)cat(file=stderr(),genesin[i])
     }
@@ -160,7 +208,7 @@ output$panelPlot <- renderPlot({
   else{
     for (i in 1:length(genesin)){
       
-      subsetTSNE <- subset(tsne.data, dbCluster == input$clusters4)
+      subsetTSNE <- subset(tsne.data, dbCluster == cl4)
       
       Col <- rbPal(10)[
         as.numeric(
@@ -173,9 +221,9 @@ output$panelPlot <- renderPlot({
       
       names(Col)<-rownames(tsne.data)
       plotCol<-Col[rownames(subsetTSNE)]
-      plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+      plot(subsetTSNE[, dimx4],subsetTSNE[, dimy4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-      if(DEBUG)cat(file=stderr(),input$clusters4)
+      if(DEBUG)cat(file=stderr(), cl4)
     }
   }
 })
@@ -184,17 +232,15 @@ output$panelPlot <- renderPlot({
 ##############################
 ### Scater QC
 
-output$scaterQC <- renderPlot({
+
+output$scaterQC <- renderImage({
   if(DEBUG)cat(file=stderr(), "output$scaterQC\n")
   scaterReads = scaterReads()
   if(is.null(scaterReads)){
     return(NULL)
   }
-  withProgress(message = 'calculating scater plot', value = 0, {
-    p1 <- scater::plotQC(scaterReads, type = "highest-expression", col_by_variable="fixed")
-  })
-  p1
-  #if(DEBUG)cat(file=stderr(), "DiffExpTest\n")
+  
+  scaterPNG()
 }
 )
 
@@ -225,12 +271,12 @@ output$tsne_plt <- renderPlotly({
   p <-
     plot_ly(
       tsne.data,
-      x = ~ V1,
-      y = ~ V2,
-      z = ~ V3,
+      x = ~ tsne1,
+      y = ~ tsne2,
+      z = ~ tsne3,
       type = "scatter3d",
       hoverinfo = "text",
-      text = paste('Cluster:', tsne.data$dbCluster),
+      text = paste('Cluster:', as.numeric(as.character(tsne.data$dbCluster))),
       mode = 'markers',
       marker = list(
         size = 2,

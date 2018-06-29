@@ -1,40 +1,102 @@
-# TODO mnodule for heatmap?  
-output$heatmap <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output$heatmap\n")
-  featureData = featureDataReact()
-  log2cpm = log2cpm()
-  tsne.data = tsne.data()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
+updateInputx3 = reactive({
+  tsneData <- tsne.data()
+  
+  # Can use character(0) to remove all choices
+  if (is.null(tsneData)) {
     return(NULL)
   }
   
-  genesin <- input$heatmap_geneids
+  # Can also set the label and select items
+  updateSelectInput(
+    session,
+    "dimension_x3",
+    choices = colnames(tsneData),
+    selected = colnames(tsneData)[1]
+  )
+  updateSelectInput(
+    session,
+    "dimension_y3",
+    choices = colnames(tsneData),
+    selected = colnames(tsneData)[2]
+  )
+  
+  coln = colnames(tsneData)
+  choices = c()
+  for(cn in coln){
+    if(length(levels(as.factor(tsneData[,cn]))) < 20)
+      choices = c(choices, cn)
+  }
+  if(length(choices)==0){
+    choices = c("no valid columns")
+  }
+  updateSelectInput(
+    session,
+    "dimension_xVioiGrp",
+    choices = choices,
+    selected = choices[1]
+  )
+})
+
+heatmapFunc <- function(featureData, gbm_matrix, tsne.data, genesin, cells){
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
   
   map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
   cat(file = stderr(), length(map))
-  
-  expression <- log2cpm[map, ]
+  if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="heatmapWarning")
+    removeNotification( id="heatmapNotFound")
+  }
+  if(length(map) == 0){
+    if(!is.null(getDefaultReactiveDomain())){
+      showNotification("no genes found", id = "heatmapWarning", type = "warning", duration = 20)
+    }
+    return(list(src = "empty.png",
+         contentType = 'image/png',
+         width = 96,
+         height = 96,
+         alt = "heatmap should be here")
+         )
+  }
+  expression <- gbm_matrix[map, cells]
   
   validate(need(
     is.na(sum(expression)) != TRUE,
     'Gene symbol incorrect or genes not expressed'
   ))
   
-  tsne.data <- tsne.data[order(tsne.data$dbCluster), ]
+  # display genes not found
+  notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
+  if(length(notFound)>0){
+    if(!is.null(getDefaultReactiveDomain())){
+      showNotification(paste("following genes were not found", notFound,collapse = " "), id="heatmapNotFound", type = "warning", duration = 20)
+    }
+  }
+
+  tsne.data <- tsne.data[order(as.numeric(as.character(tsne.data$dbCluster))), ]
   
-  expression <- expression[, rownames(tsne.data)]
+  # expression <- expression[, rownames(tsne.data)]
   expression <- expression[complete.cases(expression), ]
   
-  annotation <- data.frame(factor(tsne.data$dbCluster))
+  if(!("sample" %in% colnames(tsne.data))){
+    tsne.data$sample=1
+  }
+  annotation <- data.frame(tsne.data[cells, c("dbCluster", "sample")])
   rownames(annotation) <- colnames(expression)
-  colnames(annotation) <- c('Cluster')
+  colnames(annotation) <- c('Cluster', 'sample')
   
-  h <-
-    pheatmap(
-      as.matrix(expression),
+  # For high-res displays, this will be greater than 1
+  pixelratio <- session$clientData$pixelratio
+  if(is.null(pixelratio)) pixelratio = 1
+  width  <- session$clientData$output_plot_width
+  height <- session$clientData$output_plot_height
+  if (is.null(width)) {width = 96*7} # 7x7 inch output
+  if (is.null(height)) {height = 96*7}
+  outfile <- paste0(tempdir(), '/heatmap', sample(1:10000, 1), '.png')
+  
+  pheatmap(
+      as.matrix(expression)[,order(annotation[,1], annotation[,2])],
       cluster_rows = TRUE,
       cluster_cols = FALSE,
       scale = 'row',
@@ -46,224 +108,235 @@ output$heatmap <- renderPlot({
       show_colnames = FALSE,
       annotation_legend = TRUE,
       breaks = seq(-6, 6, by = .12),
+      filename = normalizePath(outfile),
       colorRampPalette(rev(brewer.pal(
         n = 6, name =
           "RdBu"
       )))(100)
       
     )
-  h
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification( id = "heatmap")
+  }
+  return(list(src = normalizePath(outfile),
+              contentType = 'image/png',
+              width = width,
+              height = height,
+              alt = "heatmap should be here"))
   
-  # })
-})
+}
 
-
-# TODO module for cluster plot?  
-
-selctedCluster <- callModule(clusterServer, "selected", tsne.data, reactive(input$gene_id_sch))
-
-# output$clusterPlot2 <- renderPlot({
-#   if(DEBUG)cat(file=stderr(), "output$clusterPlot2\n")
-#   featureData = featureDataReact()
-#   log2cpm = log2cpm()
-#   tsne.data = tsne.data()
-#   if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
-#     return(NULL)
-#   }
-#   
-#   # isolate({
-#   geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
-#                                          toupper(input$gene_id_sch)), ])[1]
-#   
-#   expression <- log2cpm[geneid, ]
-#   
-#   validate(need(is.na(sum(expression)) != TRUE, ''))
-#   
-#   tsne.data <- cbind(tsne.data, t(expression))
-#   names(tsne.data)[names(tsne.data) == geneid] <- 'values'
-#   
-#   if(DEBUG)cat(file=stderr(), paste("output$dge_plot1:---",input$clusters2,"---\n"))
-#   subsetData <- subset(tsne.data, dbCluster %in% input$clusters2)
-#   p1 <-
-#     ggplot(subsetData,
-#            aes_string(x = input$dimension_x2, y = input$dimension_y2)) +
-#     geom_point(aes_string(size = 2, color = 'values')) +
-#     geom_point(shape = 1,
-#                size = 4,
-#                aes(colour = dbCluster)) +
-#     theme_bw() +
-#     theme(
-#       axis.text.x = element_text(
-#         angle = 90,
-#         size = 12,
-#         vjust = 0.5
-#       ),
-#       axis.text.y = element_text(size = 10),
-#       strip.text.x = element_text(size = 16),
-#       strip.text.y = element_text(size = 14),
-#       axis.title.x = element_text(face = "bold", size = 16),
-#       axis.title.y = element_text(face = "bold", size = 16),
-#       legend.position = "none"
-#     ) +
-#     ggtitle(paste(toupper(input$gene_id_sch), input$clusters2, sep =
-#                     '-Cluster')) +
-#     scale_colour_gradient2(low = 'grey50', high = "red")
-#   p1
-#   # })
-# })
-
-
-# TODO module for heatmap?  
-output$selectedHeatmap <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output$selectedHeatmap\n")
+# TODO mnodule for heatmap?  
+output$heatmap <- renderImage({
+  if(DEBUG)cat(file=stderr(), "output$heatmap\n")
   featureData = featureDataReact()
-  log2cpm = log2cpm()
+  gbm_matrix = gbm_matrix()
   tsne.data = tsne.data()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
-    return(NULL)
+  genesin <- input$heatmap_geneids
+  if(is.null(featureData) | is.null(gbm_matrix) | is.null(tsne.data)){
+    return(list(src = "empty.png",
+                contentType = 'image/png',
+                width = 96,
+                height = 96,
+                alt = "heatmap should be here")
+    )
+  }
+  if(!is.null(getDefaultReactiveDomain())){
+    showNotification("heatmap", id="heatmap", duration = NULL)
   }
   
-  genesin <- input$heatmap_geneids2
-  genesin <- toupper(genesin)
-  genesin <- gsub(" ", "", genesin, fixed = TRUE)
-  genesin <- strsplit(genesin, ',')
+  if(DEBUGSAVE) save(file = "~/scShinyHubDebug/heatmap.RData", list=ls())
+  # load(file = "~/scShinyHubDebug/heatmap.RData")
   
-  sc =selctedCluster()
-  
-  subsetData <-
-    subset(tsne.data, tsne.data$dbCluster %in% sc$cluster)
-  cells.1 <- rownames(brushedPoints(subsetData, sc$brushedPs()))
-
-  map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
-  #if(DEBUG)cat(file=stderr(),map[1])
-  
-  expression <- log2cpm[map, cells.1]
-  if(DEBUG)cat(file = stderr(), rownames(expression))
-  
-  expression <- expression[complete.cases(expression), ]
-  if(DEBUG)cat(file = stderr(), rownames(expression))
-  mColor <- max(expression)
-  
-  validate(need(
-    is.na(sum(expression)) != TRUE,
-    'Gene symbol incorrect or genes not expressed'
-  ))
-  
-
-  h <-
-    pheatmap(
-      as.matrix(expression),
-      cluster_rows = TRUE,
-      cluster_cols = TRUE,
-      scale = 'row',
-      fontsize_row = 10,
-      labels_col = colnames(expression),
-      labels_row = featureData[rownames(expression), 'Associated.Gene.Name'],
-      show_rownames = TRUE,
-      show_colnames = FALSE,
-      breaks = seq(-6, 6, by = .12),
-      colorRampPalette(rev(brewer.pal(
-        n = 6, name =
-          "RdBu"
-      )))(100)
-      
-    )
-  h
+   retval = heatmapFunc(featureData, gbm_matrix, tsne.data, genesin, cells = colnames(gbm_matrix))
+    
+   if(!is.null(getDefaultReactiveDomain())){
+      removeNotification( id="heatmap")
+   }
+   return(retval)
 })
 
 
+# TODO module for cluster plot?
 
-# TODO module?  
+selctedCluster <-
+  callModule(clusterServer,
+             "selected",
+             tsne.data,
+             reactive(input$gene_id_sch))
+
+
+
+# TODO module for heatmap?
+output$selectedHeatmap <- renderImage({
+  if (DEBUG)
+    cat(file = stderr(), "output$selectedHeatmap\n")
+  featureData = featureDataReact()
+  gbm_matrix = gbm_matrix()
+  tsne.data = tsne.data()
+  genesin <- input$heatmap_geneids2
+  sc = selctedCluster()
+  scCL = sc$cluster
+  scBP = sc$brushedPs()
+  
+  if (is.null(featureData) |
+      is.null(gbm_matrix) |
+      is.null(tsne.data) | is.null(sc$brushedPs())) {
+    return(
+      list(
+        src = "empty.png",
+        contentType = 'image/png',
+        width = 96,
+        height = 96,
+        alt = "heatmap should be here"
+      )
+    )
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
+  }
+  
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = ls())
+  # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
+  
+  subsetData <-
+    subset(tsne.data, as.numeric(as.character(tsne.data$dbCluster)) %in% scCL)
+  cells.1 <- rownames(brushedPoints(subsetData, scBP))
+  
+  retval = heatmapFunc(featureData, gbm_matrix, tsne.data, genesin, cells = cells.1)
+  
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "selectedHeatmap")
+  }
+  return(retval)
+  
+})
+
+plotCoExpressionFunc <-
+  function(featureData,
+           gbm_log,
+           upI,
+           tsne.data,
+           genesin,
+           cl3,
+           dimx3,
+           dimy3) {
+    genesin <- toupper(genesin)
+    genesin <- gsub(" ", "", genesin, fixed = TRUE)
+    genesin <- strsplit(genesin, ',')
+    
+    subsetData <-
+      subset(tsne.data, dbCluster %in% cl3)
+    cells.1 <- rownames(subsetData)
+    
+    
+    map <-
+      rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+    #if(DEBUG)cat(file=stderr(),map[1])
+    
+    expression <- gbm_log[map, ]
+    #if(DEBUG)cat(file=stderr(),rownames(expression))
+    
+    #expression<-expression[complete.cases(expression),]
+    #if(DEBUG)cat(file=stderr(),rownames(expression))
+    
+    # display genes not found
+    notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
+    if (length(notFound) > 0) {
+      if (!is.null(getDefaultReactiveDomain())) {
+        showNotification(
+          paste("following genes were not found", notFound, collapse = " "),
+          id = "plotCoExpressionNotFound",
+          type = "warning",
+          duration = 20
+        )
+      }
+    }
+    
+    validate(need(
+      is.na(sum(expression)) != TRUE,
+      'Gene symbol incorrect or genes not expressed'
+    ))
+    
+    bin <- expression
+    bin[] <- 0
+    
+    for (i in 1:nrow(expression))
+    {
+      x <- Mclust(expression[i, ], G = 2)
+      bin[i, ] <- x$classification
+    }
+    bin <- bin - 1
+    allexprs <- apply(bin, 2, sum)
+    plotexprs <- allexprs
+    plotexprs[] <- 0
+    plotexprs[allexprs >= length(rownames(bin))] <- 1
+    positiveCells$positiveCells <- allexprs >= length(rownames(bin))
+    positiveCells$positiveCellsAll <- plotexprs
+    
+    mergeExprs <- plotexprs[rownames(subsetData)]
+    #if(DEBUG)cat(file=stderr(),length(mergeExprs))
+    
+    subsetData$CoExpression <- factor(mergeExprs)
+    subsetData$dbCluster <- as.factor(subsetData$dbCluster)
+    p1 <-
+      ggplot(subsetData,
+             aes_string(x = dimx3, y = dimy3)) +
+      geom_point(aes_string(
+        shape = "sample",
+        alpha = 'CoExpression',
+        color = "dbCluster"
+      ),
+      size = 4) +
+      theme_bw()
+    
+    if (DEBUG)
+      cat(file = stderr(), "output$plotCoExpression:done\n")
+    return(p1)
+    
+  }
+# TODO module?
 output$plotCoExpression <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output$plotCoExpression\n")
+  if (DEBUG)
+    cat(file = stderr(), "output$plotCoExpression\n")
   # if (vvvvvvv$doPlot == FALSE)
   #   return()
   featureData = featureDataReact()
-  log2cpm = log2cpm()
+  gbm_log = log2cpm()
+  upI = updateInputx3() # no need to check because this is done in tsne.data
   tsne.data = tsne.data()
-  if(is.null(featureData) | is.null(tsne.data) | is.null(log2cpm) | is.null(input$clusters3)){
+  if (is.null(featureData) |
+      is.null(tsne.data) |
+      is.null(log2cpm) | is.null(input$clusters3)) {
     return(NULL)
   }
   
-  # isolate({
   genesin <- input$mclustids
-  genesin <- toupper(genesin)
-  genesin <- gsub(" ", "", genesin, fixed = TRUE)
-  genesin <- strsplit(genesin, ',')
-  
-  subsetData <-
-    subset(tsne.data, dbCluster %in% input$clusters3)
-  cells.1 <- rownames(subsetData)
+  cl3 = input$clusters3
+  dimx3 = input$dimension_x3
+  dimy3 = input$dimension_y3
+  posCells = positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
+  posCellsAll = positiveCells$positiveCellsAll
   
   
-  map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
-  #if(DEBUG)cat(file=stderr(),map[1])
-  
-  expression <- log2cpm[map, ]
-  #if(DEBUG)cat(file=stderr(),rownames(expression))
-  
-  #expression<-expression[complete.cases(expression),]
-  #if(DEBUG)cat(file=stderr(),rownames(expression))
-  
-  validate(need(
-    is.na(sum(expression)) != TRUE,
-    'Gene symbol incorrect or genes not expressed'
-  ))
-  
-  bin <- expression
-  bin[] <- 0
-  
-  for (i in 1:nrow(expression))
-  {
-    x <- Mclust(expression[i, ], G = 2)
-    bin[i, ] <- x$classification
-  }
-  bin <- bin - 1
-  allexprs <- apply(bin, 2, sum)
-  plotexprs <- allexprs
-  plotexprs[] <- 0
-  plotexprs[allexprs >= length(rownames(bin))] <- 1
-  positiveCells$positiveCells <- allexprs >= length(rownames(bin))
-  positiveCells$positiveCellsAll <- plotexprs
-  #save(subsetData,bin,allexprs,file='~/Desktop/test.Rds')
-  #if(DEBUG)cat(file=stderr(),names(allexprs))
-  
-  mergeExprs <- plotexprs[rownames(subsetData)]
-  #if(DEBUG)cat(file=stderr(),length(mergeExprs))
-  
-  subsetData$CoExpression <- mergeExprs
-  #if(DEBUG)cat(file=stderr(),colnames(subsetData))
-  
-  p1 <-
-    ggplot(subsetData,
-           aes_string(x = input$dimension_x3, y = input$dimension_y3)) +
-    geom_point(aes_string(size = 2, color = 'CoExpression')) +
-    geom_point(shape = 1,
-               size = 4,
-               aes(colour = dbCluster)) +
-    theme_bw() +
-    theme(
-      axis.text.x = element_text(
-        angle = 90,
-        size = 12,
-        vjust = 0.5
-      ),
-      axis.text.y = element_text(size = 12),
-      strip.text.x = element_text(size = 16),
-      strip.text.y = element_text(size = 14),
-      axis.title.x = element_text(face = "bold", size = 16),
-      axis.title.y = element_text(face = "bold", size = 16),
-      legend.position = "none"
-    ) +
-    #ggtitle(paste(toupper(input$gene_id),input$cluster,sep='-Cluster'))+
-    scale_colour_gradient2(low = 'grey50', high = "red")
-  p1
-  # })
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = ls())
+  # load(file="~/scShinyHubDebug/plotCoExpression.RData")
+  p1 = plotCoExpressionFunc(featureData,
+                            gbm_log,
+                            upI,
+                            tsne.data,
+                            genesin,
+                            cl3,
+                            dimx3,
+                            dimy3)
+  return(p1)
 })
 
 
 
-# TODO module download  
+# TODO module download
 output$downloadExpressionOnOff <- downloadHandler(
   filename = function() {
     paste(input$clusters3, "PositiveCells.csv", sep = '_')
@@ -299,26 +372,164 @@ output$downloadExpressionOnOff <- downloadHandler(
   }
 )
 
-# TODO do we need it?  
+# TODO do we need it?
 output$onOffTable <- DT::renderDataTable({
-  if(DEBUG)cat(file=stderr(), "output$onOffTable\n")
+  if (DEBUG)
+    cat(file = stderr(), "output$onOffTable\n")
   tsne.data = tsne.data()
+  posCellsAll = positiveCells$positiveCellsAll # we use this variable to be able to save the global variable in this context
   
-  if( is.null(tsne.data | is.null(positiveCells$positiveCellsAll)) ){
+  if (is.null(tsne.data)) {
     return(NULL)
   }
   
-  merge <- tsne.data
-  if(DEBUG)cat(file=stderr(), paste("positiveCells$positiveCellsAll:---",positiveCells$positiveCellsAll,"---\n"))
   
-  merge$CoExpression <- positiveCells$positiveCellsAll
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/onOffTable.RData", list = ls())
+  # load(file="~/scShinyHubDebug/onOffTable.RData")
+  
+  merge <- tsne.data
+  if (DEBUG)
+    cat(file = stderr(),
+        paste("positiveCells$positiveCellsAll:---", posCellsAll, "---\n"))
+
+  merge$CoExpression <- posCellsAll
   df <-
     as.data.frame(table(merge[, c('dbCluster', 'CoExpression')]))
   dfOut <- cast(df, dbCluster ~ CoExpression)
   colnames(dfOut) <- c("Cluster", 'OFF', 'ON')
   rownames(dfOut) <- dfOut$Cluster
   dfOut['Sum', ] <- c('', sum(dfOut$OFF), sum(dfOut$ON))
+  if (DEBUG)
+    cat(file = stderr(), "output$onOffTable:done\n")
   DT::datatable(dfOut)
   
 })
 
+# TODO as module
+# coexpression binarized
+output$clusters3 <- renderUI({
+  if (DEBUG)
+    cat(file = stderr(), "output$clusters3\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    HTML("Please load data first")
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/clusters3.RData", list = ls())
+  # load(file="~/scShinyHubDebug/clusters3.RData")
+  
+  noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+  selectizeInput(
+    "clusters3",
+    label = "Cluster",
+    choices = c(0:noOfClusters),
+    selected = 0,
+    multiple = TRUE
+  )
+  
+})
+
+geneGrp_vioFunc <- function(genesin, tsne.data, gbm, featureData, minExpr=1, dbCluster) {
+  genesin <- toupper(genesin)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ',')
+  
+  map <-
+    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+  if (DEBUG)
+    cat(file = stderr(), length(map))
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "heatmapWarning")
+    removeNotification(id = "heatmapNotFound")
+  }
+  if (length(map) == 0) {
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification(
+        "no genes found",
+        id = "heatmapWarning",
+        type = "warning",
+        duration = 20
+      )
+    }
+    return(
+      NULL
+    )
+  }
+  
+  expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+  
+  
+ 
+  tsne.data <- cbind(tsne.data, coExpVal = expression)
+  # if(class(tsne.data[,dbCluster])=="factor"){
+  p1 <-
+    ggplot(tsne.data, aes_string(factor(tsne.data[,dbCluster]), "coExpVal", fill = factor(tsne.data[,dbCluster]))) +
+    geom_violin(scale = "width") +
+    stat_summary(
+      fun.y = median,
+      geom = "point",
+      size = 5,
+      color = 'black'
+    ) +
+    stat_summary(fun.data = n_fun, geom = "text") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 60,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    xlab(dbCluster) +
+    ylab('number genes from list') 
+  # }else{
+  #   return(NULL)
+  # }
+  if (DEBUG)
+    cat(file = stderr(), "output$gene_vio_plot:done\n")
+  return(p1)
+  
+}
+
+# EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
+# TODO module for violin plot  ??
+output$geneGrp_vio_plot <- renderPlot({
+  if (DEBUG)
+    cat(file = stderr(), "output$geneGrp_vio_plot\n")
+  # if (v$doPlot == FALSE)
+  #   return()
+  featureData = featureDataReact()
+  tsne.data = tsne.data()
+  gbm = gbm()
+  geneListStr = input$geneGrpVioIds
+  projectionVar = input$dimension_xVioiGrp
+  minExpr = input$coEminExpr
+  upI = updateInputx3() # no need to check because this is done in tsne.data
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "output$geneGrp_vio_plot:NULL\n")
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/geneGrp_vio_plot.RData", list = ls())
+  # load(file="~/scShinyHubDebug/geneGrp_vio_plot.RData")
+  
+  retVal = geneGrp_vioFunc(genesin = geneListStr,
+                           tsne.data = tsne.data,
+                           gbm = gbm,
+                           featureData = featureData,
+                           minExpr = minExpr,
+                           dbCluster = projectionVar)
+  if (DEBUG)
+    cat(file = stderr(), "output$plotCoExpression:done\n")
+  return(retVal)
+  
+})

@@ -10,7 +10,7 @@ if(exists("params")){
   cat(file=stderr(), paste("Scater Plot report\n"))
 }else{
   rm(list = ls())
-  load("~/Desktop/report.RData")
+  load("~/scShinyHubDebug/report.RData")
   cat(file=stderr(), getwd())
   
   require(shiny)
@@ -38,7 +38,7 @@ if(exists("params")){
   source("reactives.R", local = TRUE)
   
   LOCALEXECUTION = TRUE # to know that we are debugging.
-  useCells = useCellsFunc(dataTables)
+  useCells = useCellsFunc(dataTables, minG = input$minGenes, maxG = input$maxGenes, geneNames = input$minExpGenes)
   ipIDs = input$selectIds
   geneListSelection = input$geneListSelection
   minGene <- input$minGenesGS
@@ -74,38 +74,51 @@ if(exists("params")){
   
   
   tsne.data = data.frame(tsne$Y)
-  colnames(tsne.data) = c("V1", "V2", "V3")
+  colnames(tsne.data) = c("tsne1", "tsne2", "tsne3")
   tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
   rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
   if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
   
 }
+
+cat(file=stderr(),paste(ls(),collapse = "\n"))
+  cat(file=stderr(), paste("\nmy Scater Plot report\n"))
+cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
+  
 ```
 
 
 
 
 ```{r bj-gQC-tsne3d, eval=TRUE, echo=FALSE}
-p <-
-  plot_ly(
-    tsne.data,
-    x = ~ V1,
-    y = ~ V2,
-    z = ~ V3,
-    type = "scatter3d",
-    color =  ~ dbCluster,
-    hoverinfo = "text",
-    text = paste('Cluster:', tsne.data$dbCluster),
-    mode = 'markers',
-    marker =
-      list(
-        line = list(width = 0),
-        size = rep(10, nrow(tsne.data)),
-        sizeref = 3
-      )
-  )
-if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
-layout(p)
+cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
+  
+  tsne.data <- as.data.frame(tsne.data)
+  cat(file=stderr(),colnames(tsne.data)[1:5])
+  tsne.data$dbCluster <- as.factor(tsne.data$dbCluster)
+  
+  p <-
+    plot_ly(
+      tsne.data,
+      x = ~ tsne1,
+      y = ~ tsne2,
+      z = ~ tsne3,
+      type = "scatter3d",
+      color =  ~ dbCluster,
+      hoverinfo = "text",
+      text = paste('Cluster:', as.numeric(as.character(tsne.data$dbCluster))),
+      mode = 'markers',
+      marker =
+        list(
+          line = list(width = 0),
+          size = rep(10, nrow(tsne.data)),
+          sizeref = 3
+        )
+    )
+  if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
+  layout(p)
+  
+
 
 ```
 
@@ -115,7 +128,18 @@ hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of U
 ```
 
 
-
 ```{r variancePCA, eval=TRUE, echo=FALSE}
-barplot(pca$var_pcs, main="Variance captured by first PCs")
+if(exists("pca$var_pcs")){
+  barplot(pca$var_pcs, main="Variance captured by first PCs")
+}
 ```
+
+## Histogram of samples
+
+
+```{r}
+if(DEBUGSAVE) save(file = "~/scShinyHubDebug/sampleHistRMD.RData", list=ls())
+sampleInf <- sampleInfoFunc(gbm)
+sampleHistFunc(sampleInf)
+```
+

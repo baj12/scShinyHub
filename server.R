@@ -23,17 +23,45 @@ library(kableExtra)
 library(shinyWidgets)
 library(scater)
 
+if(file.exists("defaultValues.R")){
+  source(file = "defaultValues.R")
+}else{
+  warning("no defaultsValues.R file")
+  stop("stop")
+} 
+
 source("serverFunctions.R")
 source("privatePlotFunctions.R")
-DEBUG=TRUE
+
+
+# create large example files from split
+if(!file.exists("Examples/PBMC-Apheresis.new.Rds")){
+  xaaName <- "Examples/PBMC.xaa"
+  xabName <- "Examples/PBMC.xab"
+  contents <- readBin(xaaName, "raw", file.info(xaaName)$size)
+  contents2 <- readBin(xabName, "raw", file.info(xabName)$size)
+  outFile <- file("Examples/PBMC-Apheresis.new.Rds", 'ab')
+  writeBin(contents, outFile)
+  writeBin(contents2, outFile )
+  close(outFile)
+}
 
 #needs to be an option
-seed=1
+seed=2
+
+enableBookmarking(store = "server")
 
 shinyServer(function(input, output, session) {
+  
   # TODO create a UI element for seed
   set.seed(seed)
-  
+  # check that directory is availabl, otherwise create it
+  if(DEBUG){
+    if(!dir.exists("~/scShinyHubDebug")){
+      dir.create("~/scShinyHubDebug")
+    }
+    # TODO ??? clean directory??
+  }
   
   options(shiny.maxRequestSize = 2000 * 1024 ^ 2)
   
@@ -44,6 +72,7 @@ shinyServer(function(input, output, session) {
   if(DEBUG) cat(file=stderr(), "ShinyServer running\n")
   
   # base calculations that are quite expensive to calculate
+  # display name, reactive name to be executed
   heavyCalculations = list(c("pca", "pca"),
                            c("kmClustering", "kmClustering"),
                            c("tsne", "tsne")
@@ -56,11 +85,23 @@ shinyServer(function(input, output, session) {
   source("modulesUI.R", local = TRUE)  
   source("moduleServer.R", local = TRUE)
   
+  # ------------------------------------------------------------------------------------------------------------
+  # bookmarking
+  setBookmarkExclude(c("bookmark1"))
+  observeEvent(input$bookmark1, {
+    if(DEBUG)cat(file=stderr(), paste("bookmarking: \n"))
+    if(DEBUG)cat(file=stderr(), paste(names(input), collapse = "\n"))
+
+    session$doBookmark()
+    if(DEBUG)cat(file=stderr(), paste("bookmarking: DONE\n"))
+  })
+  # Need to exclude the buttons from themselves being bookmarked
   
   # ------------------------------------------------------------------------------------------------------------
   # load contribution reactives
   # parse all reactives.R files under contributions to include in application
-  uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  uiFiles = dir(path = "contributions", pattern = "reactives.R", 
+                full.names = TRUE, recursive = TRUE)
   for(fp in uiFiles){
     if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations = NULL
@@ -77,9 +118,10 @@ shinyServer(function(input, output, session) {
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
   }
   
+  # TODO move somewhere else
+  # in reactives., report, server, coexpression/output
   positiveCells <- reactiveValues(positiveCells = NULL,
                                   positiveCellsAll = NULL)
-  selectedDge <- reactiveValues()
   
   # ------------------------------------------------------------------------------------------------------------
   # handling expensive calcualtions
@@ -99,87 +141,8 @@ shinyServer(function(input, output, session) {
       })
     })
   })
-  
-  # ------------------------------------------------------------------------------------------------------------
-  
-  
-  # TODO as module
-  # sub cluster analysis ( used for 2 panels )
-  output$clusters1 <- renderUI({
-    if(DEBUG)cat(file=stderr(), "output$clusters1\n")
-    tsne.data = tsne.data()
-    if(is.null(tsne.data)){
-      HTML("Please load data firts")
-    }else{
-      noOfClusters <- max(tsne.data$dbCluster)
-      selectizeInput(
-        "clusters1",
-        label = "Cluster",
-        choices = c(0:noOfClusters),
-        selected = 0, 
-        multiple = TRUE
-      )
-    }
-  })
-  
-  # # TODO as module
-  # output$clusters2 <- renderUI({
-  #   if(DEBUG)cat(file=stderr(), "output$clusters2\n")
-  #   tsne.data = tsne.data()
-  #   if(is.null(tsne.data)){
-  #     HTML("Please load data firts")
-  #   }else{
-  #     noOfClusters <- max(tsne.data$dbCluster)
-  #     selectizeInput(
-  #       "clusters2",
-  #       label = "Cluster",
-  #       choices = c(0:noOfClusters),
-  #       selected = 0, 
-  #       multiple = TRUE
-  #     )
-  #   }
-  # })
-  
-  # TODO as module
-  # coexpression binarized
-  output$clusters3 <- renderUI({
-    if(DEBUG)cat(file=stderr(), "output$clusters3\n")
-    tsne.data = tsne.data()
-    if(is.null(tsne.data)){
-      HTML("Please load data firts")
-    }else{
-      noOfClusters <- max(tsne.data$dbCluster)
-      selectizeInput(
-        "clusters3",
-        label = "Cluster",
-        choices = c(0:noOfClusters),
-        selected = 0, 
-        multiple = TRUE
-      )
-    }
-  })
-  
-  # TODO as module
-  # data expression panel plot 
-  output$clusters4 <- renderUI({
-    if(DEBUG)cat(file=stderr(), "output$clusters4\n")
-    tsne.data = tsne.data()
-    if(is.null(tsne.data)){
-      HTML("Please load data firts")
-    }else{
-      noOfClusters <- max(tsne.data$dbCluster)
-      selectInput(
-        "clusters4",
-        label = "Cluster",
-        choices = c(c('All'),c(0:noOfClusters)),
-        selected = 0
-      )
-    }
-  })  
-  
-  
-  
-  
+
+      
   # Report creation ------------------------------------------------------------------
   output$report <- downloadHandler(
     filename = "report.html",
@@ -192,12 +155,18 @@ shinyServer(function(input, output, session) {
         return(NULL)
       }
       tDir = tempdir()
-
+      reactiveFiles = ""
+      
+      #-----------
+      # fixed files
+      "geneLists.RData"
+      tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
+      file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
+      reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpFile,"\")\n", collapse = "\n")
       # ------------------------------------------------------------------------------------------------------------
       # the reactive.R cam hold functions that can be used in the report to reduce the possibility of code replication
       # we copy them to the temp directory and load them in the markdown
       uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
-      reactiveFiles = ""
       for(fp in c("reactives.R", uiFiles)){
         if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
         tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".R")
@@ -208,7 +177,7 @@ shinyServer(function(input, output, session) {
       
       
       
-            # ------------------------------------------------------------------------------------------------------------
+      # ------------------------------------------------------------------------------------------------------------
       # handle plugin reports
       # load contribution reports
       # parse all report.Rmd files under contributions to include in application
@@ -264,10 +233,14 @@ shinyServer(function(input, output, session) {
       if(DEBUG)cat(file=stderr(), paste("\n", tempReport,"\n"))
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
-      # from the code in this app).
+      # from the code in this app)
+      renderEnv = new.env(parent = globalenv())
+      if(DEBUG)file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
+      myparams = params
+      if(DEBUG)save(file= '~/scShinyHubDebug/tempReport.RData', list=c("myparams","renderEnv"))
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
-                        envir = new.env(parent = globalenv())
+                        envir = renderEnv
       )
     }
   )
@@ -275,6 +248,4 @@ shinyServer(function(input, output, session) {
 })# END SERVER
 
 
-
-
-
+# enableBookmarking(store = "server")

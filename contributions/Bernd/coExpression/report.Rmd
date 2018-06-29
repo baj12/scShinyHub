@@ -11,7 +11,7 @@ if(exists("params")){
   cat(file=stderr(), paste("Scater Plot report\n"))
 }else{
   rm(list = ls())
-  load("~/Desktop/report.RData")
+  load("~/scShinyHubDebug/report.RData")
   cat(file=stderr(), getwd())
   
   require(shiny)
@@ -39,7 +39,7 @@ if(exists("params")){
   # source("reactives.R", local = TRUE)
   
   LOCALEXECUTION = TRUE # to know that we are debugging.
-  useCells = useCellsFunc(dataTables)
+  useCells = useCellsFunc(dataTables, minG = input$minGenes, maxG = input$maxGenes, geneNames = input$minExpGenes)
   ipIDs = input$selectIds
   geneListSelection = input$geneListSelection
   minGene <- input$minGenesGS
@@ -55,53 +55,8 @@ if(exists("params")){
 ```
 
 
-```{r bj-coExp-panelPlot, eval=TRUE}
-if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
+```{r}
 
-genesin <- input$panelplotids
-genesin <- toupper(genesin)
-genesin <- gsub(" ", "", genesin, fixed = TRUE)
-genesin <- strsplit(genesin, ',')
-genesin<-genesin[[1]]
+````
 
-par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
-rbPal <- colorRampPalette(c('#f0f0f0','red'))
-
-if (input$clusters4 == 'All') 
-{
-  for (i in 1:length(genesin)){
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    plot(tsne.data[,input$dimension_x4],tsne.data[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-  }
-}else{
-  for (i in 1:length(genesin)){
-    
-    subsetTSNE <- subset(tsne.data, dbCluster == input$clusters4)
-    
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    
-    names(Col)<-rownames(tsne.data)
-    plotCol<-Col[rownames(subsetTSNE)]
-    plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-    
-  }
-}
-
-```
 

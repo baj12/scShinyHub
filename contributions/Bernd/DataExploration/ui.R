@@ -40,15 +40,15 @@ tabList = list(
                             column(6,
                                    fluidRow(
                                      column(
-                                       2,
-                                       textInput('gene_id', 'Enter gene', value = 'CD7')
+                                       4,
+                                       textInput('gene_id', 'Enter gene', value = defaultValueSingleGene)
                                      )
                                      ,
                                      
                                      column(
                                        2,
                                        div(
-                                         align = "center",
+                                         align = "right",
                                          style = "margin-center:50px; margin-top:25px",
                                          downloadButton("downloadExpression", "Download Expression")
                                        )
@@ -61,7 +61,8 @@ tabList = list(
                           ),
                           br(),
                           fluidRow(column(12, 
-                                          plotOutput('gene_vio_plot')))
+                                          plotOutput('gene_vio_plot') %>% withSpinner()
+                                          ))
                           
   ),
   
@@ -85,8 +86,8 @@ tabList = list(
                              selectInput(
                                'dimension_x4',
                                label = 'X',
-                               choice = c('V1', 'V2', 'V3'),
-                               selected = 'V1'
+                               choice = c('tsne1', 'tsne2', 'tsne3'),
+                               selected = 'tsne1'
                              )
                            ),
                            column(
@@ -94,19 +95,19 @@ tabList = list(
                              selectInput(
                                'dimension_y4',
                                label = 'Y',
-                               choice = c('V1', 'V2', 'V3'),
-                               selected = 'V2'
+                               choice = c('tsne1', 'tsne2', 'tsne3'),
+                               selected = 'tsne2'
                              )
                            ),
                            column(
                              2,
                              
-                             textInput('panelplotids', 'Comma seperated gene names', value = 'CD7')
+                             textInput('panelplotids', 'Comma seperated gene names', value = defaultValueMultiGenes)
                            )
                          ),
                          fluidRow(column(
                            12, 
-                           plotOutput('panelPlot')
+                           plotOutput('panelPlot') %>% withSpinner()
                          ))
                          
   ),
@@ -119,7 +120,7 @@ tabList = list(
                           fluidRow(
                             column(
                               10, offset = 1,
-                              plotOutput('scaterQC')
+                              imageOutput('scaterQC') %>% withSpinner() # PNG output with temp file
                             )
                           )
                           

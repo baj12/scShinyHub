@@ -12,13 +12,13 @@ output$tsne_main <- renderPlotly({
   p <-
     plot_ly(
       tsne.data,
-      x = ~ V1,
-      y = ~ V2,
-      z = ~ V3,
+      x = ~ tsne1,
+      y = ~ tsne2,
+      z = ~ tsne3,
       type = "scatter3d",
       color =  ~ dbCluster,
       hoverinfo = "text",
-      text = paste('Cluster:', tsne.data$dbCluster),
+      text = paste('Cluster:', as.numeric(as.character(tsne.data$dbCluster))),
       mode = 'markers',
       marker =
         list(
@@ -32,6 +32,11 @@ output$tsne_main <- renderPlotly({
   
   
 })
+source("moduleServer.R", local=TRUE)
+source("reactives.R", local=TRUE)
+
+
+r<-callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)
 
 
 output$plotUmiHist <- renderPlot({
@@ -39,10 +44,19 @@ output$plotUmiHist <- renderPlot({
   gbm = gbm()
   if(is.null(gbm))
     return(NULL)
-  hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
+  hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main = "histogram of number of UMIs per cell")
 })
 
-# TODO move to generalQC
+output$plotSampleHist <- renderPlot({
+  if(DEBUG)cat(file=stderr(), "output_sampleHist\n")
+  sampleInf = sampleInfo()
+  if(is.null(sampleInf))
+    return(NULL)
+  if(DEBUGSAVE) save(file = "~/scShinyHubDebug/sampleHist.RData", list = ls())
+  # load(file = "~/scShinyHubDebug/sampleHist.RData")
+  sampleHistFunc(sampleInf)
+})
+
 output$variancePCA <- renderPlot({
   if(DEBUG)cat(file=stderr(), "output$variancePCA\n")
   h2("hello")

@@ -1,24 +1,30 @@
 # SUMMARY STATS ----------------------------------------------------------------
-
+source("moduleServer.R", local=TRUE)
+source("reactives.R", local=TRUE)
 
 output$summaryStatsSideBar<-renderUI({
   if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar\n")
-  log2cpm = log2cpm()
-  if(is.null(log2cpm) ){
+  gbm = gbm_matrix()
+  if(is.null(gbm) ){
     if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar:NULL\n")
     return(NULL)
   }
-  
-  line1<-paste('No. of cells:', dim(log2cpm)[2],sep='\t')
-  line2<-paste('No. of genes:',  dim(log2cpm)[1],sep='\t')
-  line3<-paste('Median UMIs per cell:', medianUMI(),sep='\t')
-  line4<-paste('Median Genes with min 1 UMI:', medianENSG(),sep='\t')
+  if(input$noStats){
+    if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar:off\n")
+    return(NULL)
+  }
+  line1<-paste('No. of cells: ', dim(gbm)[2],sep='\t')
+  line2<-paste('No. of genes: ' ,  dim(gbm)[1],sep='\t')
+  line3<-paste('Median UMIs per cell: ', medianUMI(),sep='\t')
+  line4<-paste('Median Genes with min 1 UMI: ', medianENSG(),sep='\t')
+  line5<-paste('Total number of reads: ' , sum(gbm))
   HTML(
     paste0("Summary statistics of this dataset:", '<br/>','<br/>',
            line1, '<br/>',
            line2, '<br/>',
            line3, '<br/>',
-           line4
+           line4, '<br/>',
+           line5
     )
   )
 })
@@ -102,6 +108,9 @@ output$gsrmGenes <- renderText({
   paste0(dt$Associated.Gene.Name[input$removedGenesTable_rows_selected],",")
 })
 
+output$DEBUGSAVEstring <-  renderText({ DEBUGSAVE <<- input$DEBUGSAVE })
+
+r<-callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 
 
 

@@ -1,13 +1,42 @@
-# TODO module?  
-output$dge_plot1 <- renderPlot({
-  tsne.data = tsne.data()
-  if( is.null(tsne.data) ){
+updateInputx1 <- reactive({
+  tsneData <- tsne.data()
+  
+  # Can use character(0) to remove all choices
+  if (is.null(tsneData)){
     return(NULL)
   }
   
+  # Can also set the label and select items
+  updateSelectInput(session, "dimension_x1",
+                    choices = colnames(tsneData),
+                    selected = colnames(tsneData)[1]
+  )
+  
+  updateSelectInput(session, "dimension_y1",
+                    choices = colnames(tsneData),
+                    selected = colnames(tsneData)[2]
+  )
+})
+
+
+
+# TODO module?  
+output$dge_plot1 <- renderPlot({
+  tsne.data = tsne.data()
+  up1 <- updateInputx1()
   x1 = input$dimension_x1
   y1 = input$dimension_y1
   c1 = input$clusters1
+  if( is.null(tsne.data) | length(c1)==0 | length(x1)==0 | length(y1)==0 ){
+    return(NULL)
+  }
+  
+  if(DEBUG)cat(file=stderr(), paste("dge_plot1: x1: ", x1,"\n"))
+  if(DEBUG)cat(file=stderr(), paste("dge_plot1: y1: ", y1,"\n"))
+  if(DEBUG)cat(file=stderr(), paste("dge_plot1: c1: ", c1,"\n"))
+  if(DEBUGSAVE) save(file="~/scShinyHubDebug/dge_plot1.RData", list=ls())
+  # load(file="~/scShinyHubDebug/dge_plot1.RData")
+  
   subsetData <- subset(tsne.data, dbCluster %in% c1)
   p1 <-
     ggplot(subsetData,
@@ -32,8 +61,6 @@ output$dge_plot1 <- renderPlot({
       legend.position = "none"
     ) +
     ggtitle(c1)
-  #save(file="~/Desktop/test.RData", list=ls())
-  
   p1
   
 })
@@ -44,6 +71,7 @@ output$dge_plot1 <- renderPlot({
 output$dge_plot2 <- renderPlot({
   if(DEBUG)cat(file=stderr(), "output$dge_plot2\n")
   tsne.data = tsne.data()
+  
   if( is.null(tsne.data) ){
     return(NULL)
   }
@@ -89,13 +117,16 @@ output$dge <- DT::renderDataTable({
   top.genes <- dge()
   top.genes$Associated.Gene.Name <-
     featureData[rownames(top.genes), 'Associated.Gene.Name']
-  if (dim(top.genes)[1] > 1) {
-    DT::datatable(top.genes,
+  if (dim(top.genes)[1] > 0) {
+    return(DT::datatable(top.genes,
                   options = list(
                     orderClasses = TRUE,
                     lengthMenu = c(10, 30, 50),
                     pageLength = 10
                   ))
+           )
+  }else{
+    return(NULL)
   }
   # })
 })
@@ -113,4 +144,23 @@ output$download_dge_table <- downloadHandler(
 )
 
 
+# TODO as module
+# sub cluster analysis ( used for 2 panels )
+output$clusters1 <- renderUI({
+  if(DEBUG)cat(file=stderr(), "output$clusters1\n")
+  tsne.data = tsne.data()
+  up1 <- updateInputx1()
+  if(is.null(tsne.data)){
+    HTML("Please load data firts")
+  }else{
+    noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+    selectizeInput(
+      "clusters1",
+      label = "Cluster",
+      choices = c(0:noOfClusters),
+      selected = 0, 
+      multiple = TRUE
+    )
+  }
+})
 
