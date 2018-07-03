@@ -30,7 +30,7 @@ if(file.exists('defaultValues.R')){
 # defaultValueRegExGene='' # tip: '^CD7$|^KIT$; genes with min expression
 
 inputTab = tabItem(tabName = "input",
-                   fluidRow(div(h3('CellView2'), align = 'center')),
+                   fluidRow(div(h3('scShinyHub Input'), align = 'center')),
                    br(),
                    fluidRow(div(
                      h5(
