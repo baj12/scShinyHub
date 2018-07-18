@@ -11,6 +11,8 @@ crHeatImage <- reactive({
   if(!is.null(getDefaultReactiveDomain())){
     showNotification("cell ranger heat map", id="crHeatMap", duration = NULL)
   }
+  if(DEBUGSAVE) save(file='~/scShinyHubDebug/crHeatImage.RData', list=ls())
+  # load(file='~/scShinyHubDebug/crHeatImage.RData')
   
   example_K <- 10 
   example_Cols <- rev(brewer.pal(10,"Set3")) # customize plotting colors
@@ -35,9 +37,7 @@ crHeatImage <- reactive({
   outfile <- paste0("~/scShinyHubDebug",'/crHeatImage.png')
   if(DEBUG)cat(file=stderr(), paste("output file: ", outfile, "\n"))
   if(DEBUG)cat(file=stderr(), paste("output file normalized: ", normalizePath(outfile), "\n"))
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/crHeatImage.RData', list=ls())
-  # load(file='~/scShinyHubDebug/crHeatImage.RData')
-  logGB = log_gene_bc_matrix(gbm)
+   logGB = log_gene_bc_matrix(gbm)
   p = gbm_pheatmap(gbm=logGB, 
                    genes_to_plot=prioritized_genes, 
                    cells_to_plot=cells_to_plot,
@@ -78,8 +78,10 @@ prioritized_genes = reactive({
   if(DEBUGSAVE) save(file='~/scShinyHubDebug/prioritized_genes.Rdata', list=ls())
   # load(file='~/scShinyHubDebug/prioritized_genes.Rdata')
   set.seed(seed = seed)
+  # colMeans=Matrix::colMeans
+  # rowSums=Matrix::rowSums
   retVal = tryCatch({
-  prioritize_top_genes(gbm, as.numeric(as.character(tsne.data$dbCluster)), "sseq",
+  prioritize_top_genes(gbm, clu = as.numeric(as.character(tsne.data$dbCluster)), method = "sseq",
                        logscale = FALSE, 
                        min_mean=0.5, 
                        p_cutoff=0.05,
