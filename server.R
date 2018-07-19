@@ -142,6 +142,17 @@ shinyServer(function(input, output, session) {
     })
   })
 
+  
+  output$countscsv <- downloadHandler(
+    filename = paste0("counts.",Sys.Date(),".csv"),
+    content = function(file){
+      gbm = gbm()
+      if(is.null(gbm)){
+        return(NULL)
+      }
+      write.csv(as.matrix(exprs(gbm)), file)
+    }
+  )
       
   # Report creation ------------------------------------------------------------------
   output$report <- downloadHandler(

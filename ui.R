@@ -81,6 +81,8 @@ shinyUI(
       downloadButton("report", "Generate report"),
       actionButton('goCalc', 'Force Calculations'),
       # bookmarkButton(id = "bookmark1"),
+      tipify(downloadButton("countscsv", "Download counts.csv"),
+             '<h3>download current count data as CSV file</h3>'),
       checkboxInput("DEBUGSAVE", "Save for DEBUG", FALSE),
       verbatimTextOutput("DEBUGSAVEstring")
       

@@ -68,6 +68,9 @@ inputDataFunc <- function(inFile) {
     showNotification("gbm contains infinite values")
     return(NULL)
   }
+  if (sum(c("id","symbol") %in% colnames(fData(gbm)))<2) {
+    showNotification("gbm - fData doesn't contain id and symbol columns", duration = NULL)
+  }
   if (DEBUG)
     cat(file = stderr(), "inputData: done\n")
   if (!is.null(getDefaultReactiveDomain())) {
