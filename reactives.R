@@ -653,7 +653,8 @@ kmClustering = reactive({
   return(retVal)
 })
 
-# TODO separate  function from reactive
+# TODO separate  function from reactive : done? run_tsne is already the function. 
+# Maybe we need a normalized name like tsneFunc?
 tsne = reactive({
   if (DEBUG)
     cat(file = stderr(), "tsne\n")
@@ -699,8 +700,23 @@ tsne = reactive({
   return(retval)
 })
 
+# projections
+# each column is of length of number of cells
+# if factor than it is categorical and can be cluster number of sample etc
+# if numeric can be projection
 
-
+projections = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "tsne.data\n")
+  withProgress(message = 'Performing projections', value = 0, {
+    n=length(projectionFunctions)
+    for(proj in projectionFunctions){
+      incProgress(1/n, detail = paste("Creating ", proj[1]))
+      if(DEBUG)cat(file=stderr(), paste("forceCalc ", proj[1],"\n"))
+      assign(projections[,proj[1]], eval(parse(text = paste0( proj[2], "()"))))
+    }
+  })
+})
 
 tsne.data = reactive({
   if (DEBUG)
