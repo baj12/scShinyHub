@@ -146,6 +146,7 @@ shinyServer(function(input, output, session) {
   output$countscsv <- downloadHandler(
     filename = paste0("counts.",Sys.Date(),".csv"),
     content = function(file){
+      if(DEBUG)cat(file=stderr(), paste("countcsv: \n"))
       gbm = gbm()
       if(is.null(gbm)){
         return(NULL)
