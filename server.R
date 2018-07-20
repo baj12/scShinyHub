@@ -80,12 +80,13 @@ shinyServer(function(input, output, session) {
   
   # base projections 
   # display name, reactive to calculate projections
-  projectionFunctions = list(c("tsne1", "tsne1"),
+  projectionFunctions <<- list(c("tsne1", "tsne1"),
                              c("tsne2", "tsne2"),
                              c("tsne3", "tsne3"),
                              c("tsne4", "tsne4"),
                              c("tsne5", "tsne5"),
                              c("dbCluster", "dbCluster"),
+                             c("sample", "sample"),
                              c("Gene count", "geneCount"),
                              c("UMI count", "umiCount")
   )
@@ -119,6 +120,7 @@ shinyServer(function(input, output, session) {
   for(fp in uiFiles){
     if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations = NULL
+    myProjections = NULL
     source(fp, local = TRUE)
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions = appendHeavyCalculations(myProjections, projectionFunctions)
@@ -129,9 +131,10 @@ shinyServer(function(input, output, session) {
   for(fp in uiFiles){
     if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations = NULL
+    myProjections = NULL
     source(fp, local = TRUE)
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
-    projectionFunctions = appendHeavyCalculations(myProjections, projectionFunctions)
+    projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
   }
   
   # TODO move somewhere else

@@ -35,7 +35,7 @@ tabList = list(
                         fluidRow(div(h3('TSNE Plot'), align = 'center')),
                         br(),
                         fluidRow(column(12,
-                                        numericInput("tsneDim","Tsne dimensions", 3, min=3,max=10))),
+                                        numericInput("tsneDim","Tsne dimensions", 3, min=3,max=5))),
                         fluidRow(column(12,
                                         numericInput("tsnePerplexity","Tsne tsnePerplexity", 30, min=1,max=100))),
                         fluidRow(column(12,

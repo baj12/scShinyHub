@@ -705,17 +705,165 @@ tsne = reactive({
 # if factor than it is categorical and can be cluster number of sample etc
 # if numeric can be projection
 
+# projections is a reactive and cannot be used in reports. Reports have to organize 
+# themselves as it is done here with tsne.data.
+
+# TODO: currently this will not be updated since the reactive are not really reactive.
 projections = reactive({
+  # gbm is the fundamental variable with the raw data, which is available after loading 
+  # data. Here we ensure that everything is loaded and all varialbles are set by waiting
+  # input data being loaded
+  gbm = gbm()
+  if (!exists("gbm") | is.null(gbm)) {
+    if (DEBUG)
+      cat(file = stderr(), "sampleInfo: NULL\n")
+    return(NULL)
+  }
+  projections = data.frame()
   if (DEBUG)
-    cat(file = stderr(), "tsne.data\n")
+    cat(file = stderr(), "projections\n")
+  
+  if (DEBUGSAVE)
+  save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/projections.RData")
   withProgress(message = 'Performing projections', value = 0, {
     n=length(projectionFunctions)
     for(proj in projectionFunctions){
       incProgress(1/n, detail = paste("Creating ", proj[1]))
       if(DEBUG)cat(file=stderr(), paste("forceCalc ", proj[1],"\n"))
-      assign(projections[,proj[1]], eval(parse(text = paste0( proj[2], "()"))))
+      assign("tmp", eval(parse(text = paste0( proj[2], "()"))))
+      cn = make.names(c(colnames(projections), make.names(proj[1])))
+      if(length(tmp) == 0){
+        showNotification(
+          paste("warning: ", proj[1], "didn't produce a result"),
+          type = "warning",
+          duration = NULL
+        )
+        next()
+      }
+      if(ncol(projections)==0){
+        projections = data.frame(tmp = tmp)
+      }else{
+        if(nrow(projections) == length(tmp)){
+        projections = cbind(projections, tmp)
+        }else{
+          showNotification(
+            paste("warning: ", proj[1], "didn't produce a result"),
+            type = "warning",
+            duration = NULL
+          )
+        }
+      }
+      
+      colnames(projections) = cn
+      observe(proj[2],quoted = TRUE)
     }
   })
+})
+
+tsne1 = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "tsne1\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "tsne1: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$tsne1)
+})
+tsne2 = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "tsne1\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "tsne2: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$tsne2)
+})
+tsne3 = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "tsne1\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "tsne3: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$tsne3)
+})
+tsne4 = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "tsne1\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "tsne4: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$tsne4)
+})
+tsne5 = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "tsne1\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "tsne5: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$tsne5)
+})
+dbCluster = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "dbCluster\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "dbCluster: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$dbCluster)
+})
+sample = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "sample\n")
+  tsne.data = tsne.data()
+  if (is.null(tsne.data)) {
+    if (DEBUG)
+      cat(file = stderr(), "sample: NULL\n")
+    return(NULL)
+  }
+  return(tsne.data$sample)
+})
+geneCount = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "geneCount\n")
+  gbm = gbm()
+  if(!exists(gbm) | is.null(gbm)){
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/geneCount.RData")
+  retVal = colSums(as.matrix(exprs(gbm))>0)
+  return(retVal)
+})
+umiCount = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "umiCount\n")
+  gbm = gbm()
+  if(!exists(gbm) | is.null(gbm)){
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/umiCount.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/umiCount.RData")
+  retVal = colSums(as.matrix(exprs(gbm)))
+  return(retVal)
+  
 })
 
 tsne.data = reactive({
