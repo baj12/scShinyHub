@@ -759,6 +759,7 @@ projections = reactive({
       observe(proj[2],quoted = TRUE)
     }
   })
+  return(projections)
 })
 
 tsne1 = reactive({
@@ -842,7 +843,7 @@ geneCount = reactive({
   if (DEBUG)
     cat(file = stderr(), "geneCount\n")
   gbm = gbm()
-  if(!exists(gbm) | is.null(gbm)){
+  if( is.null(gbm)){
     return(NULL)
   }
   if (DEBUGSAVE)
@@ -855,7 +856,7 @@ umiCount = reactive({
   if (DEBUG)
     cat(file = stderr(), "umiCount\n")
   gbm = gbm()
-  if(!exists(gbm) | is.null(gbm)){
+  if( is.null(gbm)){
     return(NULL)
   }
   if (DEBUGSAVE)

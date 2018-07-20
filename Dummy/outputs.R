@@ -1,8 +1,8 @@
 # The output type has to be in line with the tablist item. I.e. plotOutput in this case
 output$Dummy_plot <- renderPlot({
-  tsne.data = tsne.data()
+  projections = projections()
   dummyNRow = DummyReactive()
-  if( is.null(tsne.data) | is.null(dummyNRow) ){
+  if( is.null(projections) | is.null(dummyNRow) ){
     return(NULL)
   }
   

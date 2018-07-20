@@ -223,21 +223,21 @@ if(DEBUG)cat(file=stderr(), "tsne: done\n")
 ```
 
 
-```{r tsne.data, eval=TRUE}
-if(DEBUG)cat(file=stderr(), "tsne.data\n")
+```{r projections, eval=TRUE}
+if(DEBUG)cat(file=stderr(), "projections\n")
 clustering = kmClustering
-tsne.data = data.frame(tsne$Y)
-colnames(tsne.data) = paste0("tsne",c(1:ncol(tsne.data)))
-tsne.data$dbCluster = factor(clustering$kmeans_10_clusters$Cluster-1)
-rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
-samp = gsub(".*-(.*)","\\1", rownames(tsne.data))
+projections = data.frame(tsne$Y)
+colnames(projections) = paste0("tsne",c(1:ncol(projections)))
+projections$dbCluster = factor(clustering$kmeans_10_clusters$Cluster-1)
+rownames(projections) = clustering$kmeans_10_clusters$Barcode
+samp = gsub(".*-(.*)","\\1", rownames(projections))
 if(length(levels(as.factor(samp)))>1){
-  tsne.data$sample = samp
+  projections$sample = samp
 }else{
-  tsne.data$sample = "1"
+  projections$sample = "1"
 }
 
-if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
+if(DEBUG)cat(file=stderr(), "projections: done\n")
 ```
 
 ```{r sampleInfo}
@@ -254,7 +254,7 @@ inputSample = data.frame(cellName = colnames(dataTables$gbm),
 
 ```{r prioritized_genes, eval=FALSE}
 set.seed(seed = seed)
-prioritized_genes =    prioritize_top_genes(gbm, as.numeric(as.character(tsne.data$dbCluster)), "sseq",
+prioritized_genes =    prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
                                             logscale = FALSE, 
                                             min_mean=0.5, 
                                             p_cutoff=0.05,
@@ -295,7 +295,7 @@ HTML(
 cat(file=stderr(),paste(ls(),collapse = "\n"))
 
 bernd=TRUE
-# tsne.data = data.frame(tsne$Y)
+# projections = data.frame(tsne$Y)
 
 ```
 

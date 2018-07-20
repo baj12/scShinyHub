@@ -1,8 +1,8 @@
 selectedDge <- reactiveValues()
 
-dge_func <- function(tsne.data, log2cpm, featureData, dbCluster, cl1, db1, db2){
+dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2){
   if(DEBUG)cat(file=stderr(), "dge1\n")
-  subsetData <- subset(tsne.data, dbCluster %in% cl1)
+  subsetData <- subset(projections, dbCluster %in% cl1)
   if(DEBUG)cat(file=stderr(), "dge2\n")
   cells.1 <- rownames(brushedPoints(subsetData, db1))
   if(DEBUG)cat(file=stderr(), "dge3\n")
@@ -41,12 +41,12 @@ dge <- reactive({
   if(DEBUG)cat(file=stderr(), "dge\n")
   featureData = featureDataReact()
   log2cpm = log2cpm()
-  tsne.data = tsne.data()
+  projections = projections()
   cl1 = input$clusters1
   db1 = input$db1
   db2 = input$db2
   # dbcl = dbCluster
-  if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
+  if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
     return(NULL)
   }
   if(!is.null(getDefaultReactiveDomain())){
@@ -55,7 +55,7 @@ dge <- reactive({
   if(DEBUGSAVE) save(file='~/scShinyHubDebug/dge.RData', list=ls())
   # load(file='~/scShinyHubDebug/dge.RData')
 
-  toReturn = dge_func(tsne.data, log2cpm, featureData, dbcl, cl1, db1, db2)
+  toReturn = dge_func(projections, log2cpm, featureData, dbcl, cl1, db1, db2)
   if(DEBUG)cat(file=stderr(), "dge14\n")
   if(nrow(toReturn)==0){
     if(DEBUG)cat(file=stderr(), "dge: nothing found\n")

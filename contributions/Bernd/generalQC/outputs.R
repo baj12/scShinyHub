@@ -1,29 +1,29 @@
 output$tsne_main <- renderPlotly({
   if(DEBUG)cat(file=stderr(), "output$tsne_main\n")
-  tsne.data = tsne.data()
-  if(is.null(tsne.data)){
+  projections = projections()
+  if(is.null(projections)){
     if(DEBUG)cat(file=stderr(), "output$tsne_main:NULL\n")
     return(NULL)
   }
-  tsne.data <- as.data.frame(tsne.data)
-  #cat(stderr(),colnames(tsne.data)[1:5])
-  tsne.data$dbCluster <- as.factor(tsne.data$dbCluster)
+  projections <- as.data.frame(projections)
+  #cat(stderr(),colnames(projections)[1:5])
+  projections$dbCluster <- as.factor(projections$dbCluster)
   
   p <-
     plot_ly(
-      tsne.data,
+      projections,
       x = ~ tsne1,
       y = ~ tsne2,
       z = ~ tsne3,
       type = "scatter3d",
       color =  ~ dbCluster,
       hoverinfo = "text",
-      text = paste('Cluster:', as.numeric(as.character(tsne.data$dbCluster))),
+      text = paste('Cluster:', as.numeric(as.character(projections$dbCluster))),
       mode = 'markers',
       marker =
         list(
           line = list(width = 0),
-          size = rep(10, nrow(tsne.data)),
+          size = rep(10, nrow(projections)),
           sizeref = 3
         )
     )

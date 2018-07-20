@@ -60,8 +60,8 @@ sampleHistFunc <- function(samples){
 
 inputTSNESample <- reactive({
   if(DEBUG)cat(file=stderr(), "inputTSNESample\n")
-  tsne.data = tsne.data()
-  if( is.null(tsne.data)){
+  projections = projections()
+   if( is.null(projections)){
     return(NULL)
   }
   if(!is.null(getDefaultReactiveDomain())){
@@ -74,7 +74,7 @@ inputTSNESample <- reactive({
    if(!is.null(getDefaultReactiveDomain())){
     removeNotification( id="heatmap")
   }
-  return(tsne.data)
+  return(projections)
   
   
 })
