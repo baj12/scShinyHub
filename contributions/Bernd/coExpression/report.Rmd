@@ -34,7 +34,6 @@ if(exists("params")){
   require(scater)
   
   source("../../../serverFunctions.R")
-  source("../../../privatePlotFunctions.R")
   source("../../../reactives.R", local = TRUE)
   # source("reactives.R", local = TRUE)
   

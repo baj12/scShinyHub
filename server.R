@@ -31,7 +31,6 @@ if(file.exists("defaultValues.R")){
 } 
 
 source("serverFunctions.R")
-source("privatePlotFunctions.R")
 
 
 # create large example files from split
@@ -229,9 +228,7 @@ shinyServer(function(input, output, session) {
       
       tempServerFunctions <- file.path(tDir, "serverFunctions.R")
       file.copy("serverFunctions.R", tempServerFunctions, overwrite = TRUE)
-      tempprivatePlotFunctions <- file.path(tDir, "privatePlotFunctions.R")
-      file.copy("privatePlotFunctions.R", tempprivatePlotFunctions, overwrite = TRUE)
-      
+
       # create a new list of all parameters that can be passed to the markdown doc.
       inputNames = names(input)
       params <- list(
