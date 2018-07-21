@@ -55,7 +55,6 @@ if(exists("params")){
 }else{
   # rm(list = ls())
   source("serverFunctions.R")
-  source("privatePlotFunctions.R")
   source("reactives.R", local = TRUE)
   uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
   for(fp in uiFiles){

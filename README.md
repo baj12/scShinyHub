@@ -332,9 +332,6 @@ The "Save for DEBUG" check box saves intermediate states within the app that can
 * geneLists.R
   script to create geneLists.RData from proteinatlas.tsv(.zip), used for gene-classes in gene selection tab.
   
-* privatePlotFunctions.R
-  externalized functions for plotting.
-
 * reactives.R
   Global reactive variables used in server.R
   
