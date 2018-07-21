@@ -30,13 +30,6 @@ inputDataFunc <- function(inFile) {
   
   cat(stderr(), 'Loaded')
   dataTables = list()
-  # dataTables$log2cpmOrg <- log2cpm
-  # dataTables$tsne.data <- tsne.data
-  # dataTables$tsne.dataOrg <- tsne.data
-  # featuredata <-
-  #   featuredata[which(featuredata$Chromosome.Name %in% c(unlist(lapply(
-  #     seq(1, 22, 1), toString
-  #   )), c("X", "Y", "MT", "N"))), ]
   featuredata$Associated.Gene.Name <-
     toupper(featuredata$Associated.Gene.Name)
   featuredata <- featuredata[rownames(gbm), ]
@@ -719,7 +712,6 @@ projections = reactive({
 dbCluster = reactive({
   if (DEBUG)
     cat(file = stderr(), "dbCluster\n")
-  # tsne.data = tsne.data()
   clustering = kmClustering()
   
   if (is.null(clustering)) {
@@ -729,7 +721,6 @@ dbCluster = reactive({
   }
   
   dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
-  # rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
   
   return(dbCluster)
 })
