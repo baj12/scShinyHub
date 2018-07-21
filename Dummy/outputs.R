@@ -1,14 +1,15 @@
 # The output type has to be in line with the tablist item. I.e. plotOutput in this case
 output$Dummy_plot <- renderPlot({
-  tsne.data = tsne.data()
+  projections = projections()
   dummyNRow = DummyReactive()
-  if( is.null(tsne.data) | is.null(dummyNRow) ){
+  if( is.null(projections) | is.null(dummyNRow) ){
     return(NULL)
   }
   
   if(DEBUG)cat(file=stderr(), paste("Dummy_plot:\n"))
-  if(DEBUGSAVE) save(file="~/scShinyHubDebug/Dummy_plot.RData", list=ls())
-  # load(file="~/scShinyHubDebug/dge_plot1.RData")
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/Dummy_plot.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/Dummy_plot.RData")
   
   plot(dummyNRow)
   

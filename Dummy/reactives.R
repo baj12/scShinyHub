@@ -20,8 +20,9 @@ DummyReactive = reactive({
   if(!is.null(getDefaultReactiveDomain())){
     showNotification("loading", id="DummyFunc", duration = NULL)
   }
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/DummyReactive.RData', list=ls())
-  # load(file='~/scShinyHubDebug/useCellsFunc.RData')
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/DummyReactive.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file='~/scShinyHubDebug/DummyReactive.RData')
   
   # actual calculation
   retVal = DummyFunc(gbm_log)

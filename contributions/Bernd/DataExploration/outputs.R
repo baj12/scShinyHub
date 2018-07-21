@@ -3,11 +3,11 @@ source("reactives.R")
 # myHeavyCalculations = list(c("scaterPNG", "scaterPNG"))
 
 # Expression ------------------------------------------------------------------
-expCluster <- callModule(clusterServer, "expclusters", tsne.data, reactive(input$gene_id))
+expCluster <- callModule(clusterServer, "expclusters", projections, reactive(input$gene_id))
 
-# these observes should be independant of tsne.data since this will be then executed by default for any changes
+# these observes should be independant of projections since this will be then executed by default for any changes
 updateInputx4 = reactive({
-  tsneData <- tsne.data()
+  tsneData <- projections()
   
   # Can use character(0) to remove all choices
   if (is.null(tsneData)) {
@@ -37,8 +37,8 @@ output$gene_vio_plot <- renderPlot({
   #   return()
   featureData = featureDataReact()
   log2cpm = log2cpm()
-  tsne.data = tsne.data()
-  if ( is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)) {
+  projections = projections()
+  if ( is.null(featureData) | is.null(log2cpm) | is.null(projections)) {
     if( DEBUG )cat(file=stderr(), "output$gene_vio_plot:NULL\n")
     return(NULL)
   }
@@ -50,11 +50,11 @@ output$gene_vio_plot <- renderPlot({
   
   validate(need(is.na(sum(expression)) != TRUE, ''))
   
-  tsne.data <- cbind(tsne.data, t(expression))
-  names(tsne.data)[names(tsne.data) == geneid] <- 'values'
+  projections <- cbind(projections, t(expression))
+  names(projections)[names(projections) == geneid] <- 'values'
   
   p1 <-
-    ggplot(tsne.data, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
+    ggplot(projections, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
     geom_violin(scale = "width") +
     stat_summary(
       fun.y = median,
@@ -97,8 +97,8 @@ output$downloadExpression <- downloadHandler(
   content = function(file) {
     featureData = featureDataReact()
     log2cpm = log2cpm()
-    tsne.data = tsne.data()
-    if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
+    projections = projections()
+    if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
       return(NULL)
     }
     geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
@@ -106,14 +106,14 @@ output$downloadExpression <- downloadHandler(
     
     expression <- log2cpm[geneid, ]
     #cat(stderr(),colnames(expression)[1:5])
-    tsne.data <- cbind(tsne.data, t(expression))
-    #if(DEBUG)cat(file=stderr(),grep('^T_',rownames(tsne.data)))
+    projections <- cbind(projections, t(expression))
+    #if(DEBUG)cat(file=stderr(),grep('^T_',rownames(projections)))
     
-    names(tsne.data)[names(tsne.data) == geneid] <- 'values'
+    names(projections)[names(projections) == geneid] <- 'values'
     
-    #if(DEBUG)cat(file=stderr(),grep('^T_',rownames(tsne.data)))
+    #if(DEBUG)cat(file=stderr(),grep('^T_',rownames(projections)))
     
-    subsetData <- subset(tsne.data, dbCluster == input$cluster)
+    subsetData <- subset(projections, dbCluster == input$cluster)
     #if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     cells.names <- brushedPoints(subsetData, input$b1, allRows = T)
     #if(DEBUG)cat(file=stderr(),colnames(cells.names))
@@ -148,12 +148,12 @@ output$downloadExpression <- downloadHandler(
 # data expression panel plot 
 output$clusters4 <- renderUI({
   if(DEBUG)cat(file=stderr(), "output$clusters4\n")
-  tsne.data = tsne.data()
+  projections = projections()
   upI = updateInputx4()
-  if(is.null(tsne.data)){
+  if(is.null(projections)){
     HTML("Please load data firts")
   }else{
-    noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+    noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
     selectInput(
       "clusters4",
       label = "Cluster",
@@ -168,8 +168,8 @@ output$panelPlot <- renderPlot({
   
   featureData = featureDataReact()
   log2cpm = log2cpm()
-  tsne.data = tsne.data()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
+  projections = projections()
+  if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
     return(NULL)
   }
   
@@ -181,7 +181,8 @@ output$panelPlot <- renderPlot({
   cl4 = input$clusters4
   dimx4 = input$dimension_x4
   dimy4 = input$dimension_y4
-  if(DEBUGSAVE) save(file="~/scShinyHubDebug/panelPlot.RData", list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/panelPlot.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/panelPlot.RData")
   
   if(DEBUG)cat(file=stderr(),length(genesin))
@@ -200,7 +201,7 @@ output$panelPlot <- renderPlot({
                 rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
                 ,]
             ),breaks = 10))]
-      plot(tsne.data[, dimx4],tsne.data[, dimy4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+      plot(projections[, dimx4],projections[, dimy4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
       if(DEBUG)cat(file=stderr(),genesin[i])
     }
@@ -208,7 +209,7 @@ output$panelPlot <- renderPlot({
   else{
     for (i in 1:length(genesin)){
       
-      subsetTSNE <- subset(tsne.data, dbCluster == cl4)
+      subsetTSNE <- subset(projections, dbCluster == cl4)
       
       Col <- rbPal(10)[
         as.numeric(
@@ -219,7 +220,7 @@ output$panelPlot <- renderPlot({
                 ,]
             ),breaks = 10))]
       
-      names(Col)<-rownames(tsne.data)
+      names(Col)<-rownames(projections)
       plotCol<-Col[rownames(subsetTSNE)]
       plot(subsetTSNE[, dimx4],subsetTSNE[, dimy4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
@@ -250,8 +251,8 @@ output$tsne_plt <- renderPlotly({
   #   return()
   featureData = featureDataReact()
   log2cpm = log2cpm()
-  tsne.data = tsne.data()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data)){
+  projections = projections()
+  if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
     return(NULL)
   }
   geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
@@ -265,18 +266,18 @@ output$tsne_plt <- renderPlotly({
     'Gene symbol incorrect or gene not expressed'
   ))
   
-  tsne.data <- cbind(tsne.data, t(expression))
-  names(tsne.data)[names(tsne.data) == geneid] <- 'values'
+  projections <- cbind(projections, t(expression))
+  names(projections)[names(projections) == geneid] <- 'values'
   
   p <-
     plot_ly(
-      tsne.data,
+      projections,
       x = ~ tsne1,
       y = ~ tsne2,
       z = ~ tsne3,
       type = "scatter3d",
       hoverinfo = "text",
-      text = paste('Cluster:', as.numeric(as.character(tsne.data$dbCluster))),
+      text = paste('Cluster:', as.numeric(as.character(projections$dbCluster))),
       mode = 'markers',
       marker = list(
         size = 2,

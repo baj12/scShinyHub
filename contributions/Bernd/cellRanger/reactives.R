@@ -2,7 +2,8 @@ require(ggplot2)
 crHeatImage <- reactive({
   if(DEBUG)cat(file=stderr(), "output$crHeat_plot1\n")
   gbm = gbm()
-  tsne.data = tsne.data()
+  # projections = projections()
+  projections = projections()
   prioritized_genes = prioritized_genes()
   if( is.null(gbm) | is.null(gbm) | is.null(prioritized_genes)){
     if(DEBUG)cat(file=stderr(), "output$crHeat_plot1:NULL\n")
@@ -15,7 +16,7 @@ crHeatImage <- reactive({
   example_K <- 10 
   example_Cols <- rev(brewer.pal(10,"Set3")) # customize plotting colors
   
-  cells_to_plot <- order_cell_by_clusters(gbm, as.numeric(as.character(tsne.data$dbCluster)))
+  cells_to_plot <- order_cell_by_clusters(gbm, as.numeric(as.character(projections$dbCluster)))
   
   example_col = example_Cols[1:example_K]
   
@@ -35,7 +36,8 @@ crHeatImage <- reactive({
   outfile <- paste0("~/scShinyHubDebug",'/crHeatImage.png')
   if(DEBUG)cat(file=stderr(), paste("output file: ", outfile, "\n"))
   if(DEBUG)cat(file=stderr(), paste("output file normalized: ", normalizePath(outfile), "\n"))
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/crHeatImage.RData', list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/crHeatImage.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/crHeatImage.RData')
   logGB = log_gene_bc_matrix(gbm)
   p = gbm_pheatmap(gbm=logGB, 
@@ -65,27 +67,28 @@ crHeatImage <- reactive({
 
 
 prioritized_genes = reactive({
-  tsne.data = tsne.data()
+  projections = projections()
   gbm = gbm()
-  if(is.null(tsne.data) | is.null(gbm)){
-    if(DEBUG)cat(file=stderr(), "tsne.data: NULL\n")
+  if(is.null(projections) | is.null(gbm)){
+    if(DEBUG)cat(file=stderr(), "projections: NULL\n")
     return(NULL)
   }
   if(!is.null(getDefaultReactiveDomain())){
     showNotification("prioritizing genes", id="crpriotGenes", duration = NULL)
   }
   
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/prioritized_genes.Rdata', list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/prioritized_genes.Rdata", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/prioritized_genes.Rdata')
   set.seed(seed = seed)
   retVal = tryCatch({
-  prioritize_top_genes(gbm, as.numeric(as.character(tsne.data$dbCluster)), "sseq",
+  prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
                        logscale = FALSE, 
                        min_mean=0.5, 
                        p_cutoff=0.05,
                        order_by='pvalue')},
   error=function(cond) {
-    cat(file=stderr(), "prioritized_genes.Rdata: problem\n")
+    cat(file=stderr(), "prioritized_genes.Rdata: problem, are id and sample column persent?\n")
     if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="crpriotGenes")
     }

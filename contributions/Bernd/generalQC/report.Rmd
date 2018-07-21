@@ -137,8 +137,9 @@ if(exists("pca$var_pcs")){
 ## Histogram of samples
 
 
-```{r}
-if(DEBUGSAVE) save(file = "~/scShinyHubDebug/sampleHistRMD.RData", list=ls())
+```{r histSamples}
+if(DEBUGSAVE) 
+  save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
 sampleInf <- sampleInfoFunc(gbm)
 sampleHistFunc(sampleInf)
 ```

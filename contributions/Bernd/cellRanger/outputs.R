@@ -12,7 +12,8 @@ output$crPrioGenes <- DT::renderDataTable({
     return(NULL)
 
   
-  if(DEBUGSAVE) save(file="~/scShinyHubDebug/crPrioGenes.RData", list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/crPrioGenes.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/crPrioGenes.RData")
   
   dt = prioritized_genes[[cl5]]
@@ -39,11 +40,11 @@ output$crSelectedGenes <- renderText({
 # cell ranger output table
 output$clusters5 <- renderUI({
   if(DEBUG)cat(file=stderr(), "output$clusters\n")
-  tsne.data = tsne.data()
-  if(is.null(tsne.data)){
+  projections = projections()
+  if(is.null(projections)){
     HTML("Please load data first")
   }else{
-    noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+    noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
     selectInput(
       "cluster5",
       label = "Cluster",

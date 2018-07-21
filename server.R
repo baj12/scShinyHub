@@ -78,6 +78,21 @@ shinyServer(function(input, output, session) {
                            c("tsne", "tsne")
   )
   
+  # base projections 
+  # display name, reactive to calculate projections
+  projectionFunctions <<- list(c("tsne1", "tsne1"),
+                             c("tsne2", "tsne2"),
+                             c("tsne3", "tsne3"),
+                             c("tsne4", "tsne4"),
+                             c("tsne5", "tsne5"),
+                             c("dbCluster", "dbCluster"),
+                             c("sample", "sample"),
+                             c("Gene count", "geneCount"),
+                             c("UMI count", "umiCount")
+  )
+  
+  
+  
   # ------------------------------------------------------------------------------------------------------------
   # load global reactives, modules, etc
   source("reactives.R", local = TRUE)
@@ -91,7 +106,7 @@ shinyServer(function(input, output, session) {
   observeEvent(input$bookmark1, {
     if(DEBUG)cat(file=stderr(), paste("bookmarking: \n"))
     if(DEBUG)cat(file=stderr(), paste(names(input), collapse = "\n"))
-
+    
     session$doBookmark()
     if(DEBUG)cat(file=stderr(), paste("bookmarking: DONE\n"))
   })
@@ -105,8 +120,10 @@ shinyServer(function(input, output, session) {
   for(fp in uiFiles){
     if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations = NULL
+    myProjections = NULL
     source(fp, local = TRUE)
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
+    projectionFunctions = appendHeavyCalculations(myProjections, projectionFunctions)
   }
   # load contribution outputs
   # parse all outputs.R files under contributions to include in application
@@ -114,8 +131,10 @@ shinyServer(function(input, output, session) {
   for(fp in uiFiles){
     if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations = NULL
+    myProjections = NULL
     source(fp, local = TRUE)
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
+    projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
   }
   
   # TODO move somewhere else
@@ -141,11 +160,12 @@ shinyServer(function(input, output, session) {
       })
     })
   })
-
+  
   
   output$countscsv <- downloadHandler(
     filename = paste0("counts.",Sys.Date(),".csv"),
     content = function(file){
+      if(DEBUG)cat(file=stderr(), paste("countcsv: \n"))
       gbm = gbm()
       if(is.null(gbm)){
         return(NULL)
@@ -153,7 +173,7 @@ shinyServer(function(input, output, session) {
       write.csv(as.matrix(exprs(gbm)), file)
     }
   )
-      
+  
   # Report creation ------------------------------------------------------------------
   output$report <- downloadHandler(
     filename = "report.html",

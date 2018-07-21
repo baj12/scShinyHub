@@ -3,10 +3,10 @@ source("reactives.R")
 #' clusterServer
 #' 
 #' server side shiny module function for printing a 2D represenation of cells
-#' it uses the global tsne.data object for plotting
+#' it uses the global projections object for plotting
 
 #' @param gene_id name of the gene to be plotted (comma separated list, will be set to upper case)
-#' @param tData tsne.data, dataframe with cluster numbers
+#' @param tData projections, dataframe with cluster numbers
 #' @param DEBUG whether or not to plot debugging messages on stderr
 #' @param selectedCells cells that should be marked as a triangle
 #' @param legend.position "none", ("none", "left", "right", "bottom", "top", or two-element numeric vector)
@@ -28,7 +28,7 @@ clusterServer <- function(input, output, session,
   subsetData = NULL
   
   updateInput <- reactive({
-    tsneData <- tsne.data()
+    tsneData <- projections()
     
     # Can use character(0) to remove all choices
     if (is.null(tsneData)){
@@ -60,13 +60,13 @@ clusterServer <- function(input, output, session,
   
   output$clusters <- renderUI({
     si=NULL
-    tsne.data = tData()
+    projections = tData()
     upI <- updateInput()
     ns = session$ns
-    if(is.null(tsne.data)){
+    if(is.null(projections)){
       HTML("Please load data first")
     }else{
-      noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+      noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
       si <- selectizeInput(
         ns("clusters"),
         label = "Cluster",
@@ -82,7 +82,7 @@ clusterServer <- function(input, output, session,
     if(DEBUG)cat(file=stderr(), paste("Module: output$clusterPlot",session$ns(input$clusters), "\n"))
     featureData = featureDataReact()
     log2cpm = log2cpm()
-    tsne.data = tData()
+    projections = tData()
     
     returnValues$cluster = input$clusters
     dimY = input$dimension_y
@@ -90,12 +90,14 @@ clusterServer <- function(input, output, session,
     clId = input$clusters
     g_id=gene_id()
     
-    if(is.null(featureData) | is.null(log2cpm) | is.null(tsne.data) | is.null(g_id) | nchar(g_id) == 0){
+    if(is.null(featureData) | is.null(log2cpm) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0){
       if(DEBUG)cat(file=stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
     
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
+           list = c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     
     g_id <- toupper(g_id)
@@ -121,14 +123,15 @@ clusterServer <- function(input, output, session,
     
     validate(need(is.na(sum(expression)) != TRUE, ''))
     
-    tsne.data <- cbind(tsne.data, t(expression))
-    names(tsne.data)[names(tsne.data) == geneid] <- 'exprs'
+    projections <- cbind(projections, t(expression))
+    names(projections)[names(projections) == geneid] <- 'exprs'
     
     if(DEBUG)cat(file=stderr(), paste("output$dge_plot1:---",ns(clId),"---\n"))
-    subsetData <- subset(tsne.data, dbCluster %in% clId)
+    subsetData <- subset(projections, dbCluster %in% clId)
     # subsetData$dbCluster = factor(subsetData$dbCluster)
     subsetData$shape = as.numeric(as.factor(subsetData$sample))
-    if(DEBUGSAVE) save(file="~/scShinyHubDebug/clusterPlot.RData", list=ls())
+    if(DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(),ls(envir = globalenv())))
     # load(file="~/scShinyHubDebug/clusterPlot.RData")
     p1 <-
       ggplot(subsetData,
@@ -169,19 +172,20 @@ clusterServer <- function(input, output, session,
     if(DEBUG)cat(file=stderr(), "cluster: cellSelection\n")
     ns = session$ns
     brushedPs = (input$b1)
-    tsne.data = tsne.data()
+    projections = projections()
     inpClusters = (input$clusters)
     myshowCells = (input$showCells)
     if(! myshowCells){return("")}
-    if(is.null(tsne.data) ){
+    if(is.null(projections) ){
       return("")
     }
     if(!is.null(getDefaultReactiveDomain())){
       showNotification("cluser cell Selection", id="clustercellSelection", duration = NULL)
     }
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/clustercellSelection", list = c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."))
-    subsetData <- subset(tsne.data, dbCluster %in% inpClusters)
+    subsetData <- subset(projections, dbCluster %in% inpClusters)
     #if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     cells.names <- brushedPoints(subsetData, brushedPs)
     retVal = paste(rownames(cells.names), collapse = ", ")
@@ -219,7 +223,9 @@ tableSelectionServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       showNotification("cellSelection", id="cellSelection", duration = NULL)
     }
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file = paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."),
+           list = c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."))
     
     if(length(selectedRows)>0){
@@ -242,7 +248,8 @@ tableSelectionServer <- function(input, output, session,
     prox = proxy
     allrows = input$cellNameTable_rows_all
     proxy %>% selectRows( NULL )
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."), 
+                       list= c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."))
     if(ipSelect){
       proxy %>% selectRows( allrows )
@@ -260,7 +267,9 @@ tableSelectionServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       showNotification("cellNameTable", id="cellNameTable", duration = NULL)
     }
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/cellNameTable", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file=paste0("~/scShinyHubDebug/cellNameTable", "ns", ".RData", collapse = "."), 
+           list= c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/cellNameTable", "", ".RData", collapse = "."))
     
     if(DEBUG)cat(file=stderr(), "cellNameTable: done\n")

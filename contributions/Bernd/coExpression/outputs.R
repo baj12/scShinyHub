@@ -1,5 +1,5 @@
 updateInputx3 = reactive({
-  tsneData <- tsne.data()
+  tsneData <- projections()
   
   # Can use character(0) to remove all choices
   if (is.null(tsneData)) {
@@ -37,7 +37,7 @@ updateInputx3 = reactive({
   )
 })
 
-heatmapFunc <- function(featureData, gbm_matrix, tsne.data, genesin, cells){
+heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
@@ -74,15 +74,15 @@ heatmapFunc <- function(featureData, gbm_matrix, tsne.data, genesin, cells){
     }
   }
 
-  tsne.data <- tsne.data[order(as.numeric(as.character(tsne.data$dbCluster))), ]
+  projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
   
-  # expression <- expression[, rownames(tsne.data)]
+  # expression <- expression[, rownames(projections)]
   expression <- expression[complete.cases(expression), ]
   
-  if(!("sample" %in% colnames(tsne.data))){
-    tsne.data$sample=1
+  if(!("sample" %in% colnames(projections))){
+    projections$sample=1
   }
-  annotation <- data.frame(tsne.data[cells, c("dbCluster", "sample")])
+  annotation <- data.frame(projections[cells, c("dbCluster", "sample")])
   rownames(annotation) <- colnames(expression)
   colnames(annotation) <- c('Cluster', 'sample')
   
@@ -93,7 +93,7 @@ heatmapFunc <- function(featureData, gbm_matrix, tsne.data, genesin, cells){
   height <- session$clientData$output_plot_height
   if (is.null(width)) {width = 96*7} # 7x7 inch output
   if (is.null(height)) {height = 96*7}
-  outfile <- paste0(tempdir(), '/heatmap', sample(1:10000, 1), '.png')
+  outfile <- paste0(tempdir(), '/heatmap', base::sample(1:10000, 1), '.png')
   
   pheatmap(
       as.matrix(expression)[,order(annotation[,1], annotation[,2])],
@@ -131,9 +131,9 @@ output$heatmap <- renderImage({
   if(DEBUG)cat(file=stderr(), "output$heatmap\n")
   featureData = featureDataReact()
   gbm_matrix = gbm_matrix()
-  tsne.data = tsne.data()
+  projections = projections()
   genesin <- input$heatmap_geneids
-  if(is.null(featureData) | is.null(gbm_matrix) | is.null(tsne.data)){
+  if(is.null(featureData) | is.null(gbm_matrix) | is.null(projections)){
     return(list(src = "empty.png",
                 contentType = 'image/png',
                 width = 96,
@@ -145,10 +145,11 @@ output$heatmap <- renderImage({
     showNotification("heatmap", id="heatmap", duration = NULL)
   }
   
-  if(DEBUGSAVE) save(file = "~/scShinyHubDebug/heatmap.RData", list=ls())
+  if(DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/heatmap.RData")
   
-   retval = heatmapFunc(featureData, gbm_matrix, tsne.data, genesin, cells = colnames(gbm_matrix))
+   retval = heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = colnames(gbm_matrix))
     
    if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="heatmap")
@@ -162,7 +163,7 @@ output$heatmap <- renderImage({
 selctedCluster <-
   callModule(clusterServer,
              "selected",
-             tsne.data,
+             projections,
              reactive(input$gene_id_sch))
 
 
@@ -173,7 +174,7 @@ output$selectedHeatmap <- renderImage({
     cat(file = stderr(), "output$selectedHeatmap\n")
   featureData = featureDataReact()
   gbm_matrix = gbm_matrix()
-  tsne.data = tsne.data()
+  projections = projections()
   genesin <- input$heatmap_geneids2
   sc = selctedCluster()
   scCL = sc$cluster
@@ -181,7 +182,7 @@ output$selectedHeatmap <- renderImage({
   
   if (is.null(featureData) |
       is.null(gbm_matrix) |
-      is.null(tsne.data) | is.null(sc$brushedPs())) {
+      is.null(projections) | is.null(sc$brushedPs())) {
     return(
       list(
         src = "empty.png",
@@ -197,14 +198,14 @@ output$selectedHeatmap <- renderImage({
   }
   
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = ls())
+    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   
   subsetData <-
-    subset(tsne.data, as.numeric(as.character(tsne.data$dbCluster)) %in% scCL)
+    subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   cells.1 <- rownames(brushedPoints(subsetData, scBP))
   
-  retval = heatmapFunc(featureData, gbm_matrix, tsne.data, genesin, cells = cells.1)
+  retval = heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
   
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "selectedHeatmap")
@@ -217,7 +218,7 @@ plotCoExpressionFunc <-
   function(featureData,
            gbm_log,
            upI,
-           tsne.data,
+           projections,
            genesin,
            cl3,
            dimx3,
@@ -227,7 +228,7 @@ plotCoExpressionFunc <-
     genesin <- strsplit(genesin, ',')
     
     subsetData <-
-      subset(tsne.data, dbCluster %in% cl3)
+      subset(projections, dbCluster %in% cl3)
     cells.1 <- rownames(subsetData)
     
     
@@ -304,10 +305,10 @@ output$plotCoExpression <- renderPlot({
   #   return()
   featureData = featureDataReact()
   gbm_log = log2cpm()
-  upI = updateInputx3() # no need to check because this is done in tsne.data
-  tsne.data = tsne.data()
+  upI = updateInputx3() # no need to check because this is done in projections
+  projections = projections()
   if (is.null(featureData) |
-      is.null(tsne.data) |
+      is.null(projections) |
       is.null(log2cpm) | is.null(input$clusters3)) {
     return(NULL)
   }
@@ -321,12 +322,12 @@ output$plotCoExpression <- renderPlot({
   
   
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = ls())
+    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/plotCoExpression.RData")
   p1 = plotCoExpressionFunc(featureData,
                             gbm_log,
                             upI,
-                            tsne.data,
+                            projections,
                             genesin,
                             cl3,
                             dimx3,
@@ -376,19 +377,19 @@ output$downloadExpressionOnOff <- downloadHandler(
 output$onOffTable <- DT::renderDataTable({
   if (DEBUG)
     cat(file = stderr(), "output$onOffTable\n")
-  tsne.data = tsne.data()
+  projections = projections()
   posCellsAll = positiveCells$positiveCellsAll # we use this variable to be able to save the global variable in this context
   
-  if (is.null(tsne.data)) {
+  if (is.null(projections)) {
     return(NULL)
   }
   
   
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/onOffTable.RData", list = ls())
+    save(file = "~/scShinyHubDebug/onOffTable.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/onOffTable.RData")
   
-  merge <- tsne.data
+  merge <- projections
   if (DEBUG)
     cat(file = stderr(),
         paste("positiveCells$positiveCellsAll:---", posCellsAll, "---\n"))
@@ -411,16 +412,16 @@ output$onOffTable <- DT::renderDataTable({
 output$clusters3 <- renderUI({
   if (DEBUG)
     cat(file = stderr(), "output$clusters3\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
+  projections = projections()
+  if (is.null(projections)) {
     HTML("Please load data first")
     return(NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/clusters3.RData", list = ls())
+    save(file = "~/scShinyHubDebug/clusters3.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/clusters3.RData")
   
-  noOfClusters <- max(as.numeric(as.character(tsne.data$dbCluster)))
+  noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
   selectizeInput(
     "clusters3",
     label = "Cluster",
@@ -431,7 +432,7 @@ output$clusters3 <- renderUI({
   
 })
 
-geneGrp_vioFunc <- function(genesin, tsne.data, gbm, featureData, minExpr=1, dbCluster) {
+geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr=1, dbCluster) {
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
@@ -462,10 +463,10 @@ geneGrp_vioFunc <- function(genesin, tsne.data, gbm, featureData, minExpr=1, dbC
   
   
  
-  tsne.data <- cbind(tsne.data, coExpVal = expression)
-  # if(class(tsne.data[,dbCluster])=="factor"){
+  projections <- cbind(projections, coExpVal = expression)
+  # if(class(projections[,dbCluster])=="factor"){
   p1 <-
-    ggplot(tsne.data, aes_string(factor(tsne.data[,dbCluster]), "coExpVal", fill = factor(tsne.data[,dbCluster]))) +
+    ggplot(projections, aes_string(factor(projections[,dbCluster]), "coExpVal", fill = factor(projections[,dbCluster]))) +
     geom_violin(scale = "width") +
     stat_summary(
       fun.y = median,
@@ -507,23 +508,23 @@ output$geneGrp_vio_plot <- renderPlot({
   # if (v$doPlot == FALSE)
   #   return()
   featureData = featureDataReact()
-  tsne.data = tsne.data()
+  projections = projections()
   gbm = gbm()
   geneListStr = input$geneGrpVioIds
   projectionVar = input$dimension_xVioiGrp
   minExpr = input$coEminExpr
-  upI = updateInputx3() # no need to check because this is done in tsne.data
-  if (is.null(tsne.data)) {
+  upI = updateInputx3() # no need to check because this is done in projections
+  if (is.null(projections)) {
     if (DEBUG)
       cat(file = stderr(), "output$geneGrp_vio_plot:NULL\n")
     return(NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/geneGrp_vio_plot.RData", list = ls())
+    save(file = "~/scShinyHubDebug/geneGrp_vio_plot.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/geneGrp_vio_plot.RData")
   
   retVal = geneGrp_vioFunc(genesin = geneListStr,
-                           tsne.data = tsne.data,
+                           projections = projections,
                            gbm = gbm,
                            featureData = featureData,
                            minExpr = minExpr,
