@@ -653,52 +653,6 @@ kmClustering = reactive({
   return(retVal)
 })
 
-# TODO separate  function from reactive : done? run_tsne is already the function. 
-# Maybe we need a normalized name like tsneFunc?
-tsne = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne\n")
-  pca = pca()
-  tsneDim = input$tsneDim
-  tsnePerplexity = input$tsnePerplexity
-  tsneTheta = input$tsneTheta
-  tsneSeed = input$tsneSeed
-  if (is.null(pca)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne: NULL\n")
-    return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne", id = "tsne", duration = NULL)
-  }
-  set.seed(seed = tsneSeed)
-  if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(),ls(envir = globalenv())))
-  # load(file='~/scShinyHubDebug/tsne.RData')
-  retval = tryCatch({
-    run_tsne(
-      pca,
-      dims = tsneDim,
-      perplexity = tsnePerplexity,
-      theta = tsneTheta,
-      check_duplicates = FALSE
-    )
-  },
-  error = function(e) {
-    if (!is.null(getDefaultReactiveDomain())) {
-      showNotification(paste("Problem with tsne:", e),
-                       type = "error",
-                       duration = NULL)
-    }
-    return(NULL)
-  })
-  if (DEBUG)
-    cat(file = stderr(), "tsne: done\n")
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "tsne")
-  }
-  return(retval)
-})
 
 # projections
 # each column is of length of number of cells
@@ -708,7 +662,6 @@ tsne = reactive({
 # projections is a reactive and cannot be used in reports. Reports have to organize 
 # themselves as it is done here with tsne.data.
 
-# TODO: currently this will not be updated since the reactive are not really reactive.
 projections = reactive({
   # gbm is the fundamental variable with the raw data, which is available after loading 
   # data. Here we ensure that everything is loaded and all varialbles are set by waiting
@@ -762,82 +715,44 @@ projections = reactive({
   return(projections)
 })
 
-tsne1 = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne1\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne1: NULL\n")
-    return(NULL)
-  }
-  return(tsne.data$tsne1)
-})
-tsne2 = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne1\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne2: NULL\n")
-    return(NULL)
-  }
-  return(tsne.data$tsne2)
-})
-tsne3 = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne1\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne3: NULL\n")
-    return(NULL)
-  }
-  return(tsne.data$tsne3)
-})
-tsne4 = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne1\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne4: NULL\n")
-    return(NULL)
-  }
-  return(tsne.data$tsne4)
-})
-tsne5 = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne1\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne5: NULL\n")
-    return(NULL)
-  }
-  return(tsne.data$tsne5)
-})
+
 dbCluster = reactive({
   if (DEBUG)
     cat(file = stderr(), "dbCluster\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
+  # tsne.data = tsne.data()
+  clustering = kmClustering()
+  
+  if (is.null(clustering)) {
     if (DEBUG)
       cat(file = stderr(), "dbCluster: NULL\n")
     return(NULL)
   }
-  return(tsne.data$dbCluster)
+  
+  dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
+  # rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
+  
+  return(dbCluster)
 })
+
+
+# TODO: should not depend on tsne
 sample = reactive({
   if (DEBUG)
     cat(file = stderr(), "sample\n")
-  tsne.data = tsne.data()
-  if (is.null(tsne.data)) {
+  gbm = gbm()
+  if (is.null(gbm)) {
     if (DEBUG)
       cat(file = stderr(), "sample: NULL\n")
     return(NULL)
   }
-  return(tsne.data$sample)
+  samp = gsub(".*-(.*)", "\\1", colnames(gbm))
+  if (length(levels(as.factor(samp))) > 1) {
+    sample = samp
+  } else{
+    sample = rep("1",ncol(gbm))
+  }
+  
+  return(sample)
 })
 geneCount = reactive({
   if (DEBUG)
@@ -867,39 +782,6 @@ umiCount = reactive({
   
 })
 
-tsne.data = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne.data\n")
-  tsne = tsne()
-  clustering = kmClustering()
-  if (is.null(tsne) | is.null(clustering)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne.data: NULL\n")
-    return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne.data", id = "tsne.data", duration = NULL)
-  }
-  if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/tsne.data.RData", list = c(ls(),ls(envir = globalenv())))
-  # load(file="~/scShinyHubDebug/tsne.data.RData")
-  tsne.data = data.frame(tsne$Y)
-  colnames(tsne.data) = paste0("tsne", c(1:ncol(tsne.data)))
-  tsne.data$dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
-  rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
-  samp = gsub(".*-(.*)", "\\1", rownames(tsne.data))
-  if (length(levels(as.factor(samp))) > 1) {
-    tsne.data$sample = samp
-  } else{
-    tsne.data$sample = "1"
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "tsne.data")
-  }
-  if (DEBUG)
-    cat(file = stderr(), "tsne.data: done\n")
-  return(tsne.data)
-})
 
 sampleInfoFunc = function(gbm) {
   gsub(".*-(.*)", "\\1", gbm$barcode)

@@ -75,17 +75,13 @@ shinyServer(function(input, output, session) {
   # display name, reactive name to be executed
   heavyCalculations = list(c("pca", "pca"),
                            c("kmClustering", "kmClustering"),
-                           c("tsne", "tsne")
+                           c("projections", "projections")
+                           
   )
   
   # base projections 
   # display name, reactive to calculate projections
-  projectionFunctions <<- list(c("tsne1", "tsne1"),
-                             c("tsne2", "tsne2"),
-                             c("tsne3", "tsne3"),
-                             c("tsne4", "tsne4"),
-                             c("tsne5", "tsne5"),
-                             c("dbCluster", "dbCluster"),
+  projectionFunctions <<- list(
                              c("sample", "sample"),
                              c("Gene count", "geneCount"),
                              c("UMI count", "umiCount")
