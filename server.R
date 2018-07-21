@@ -34,6 +34,7 @@ source("serverFunctions.R")
 
 
 # create large example files from split
+# this is needed to overcome the size limit in GitHub
 if(!file.exists("Examples/PBMC-Apheresis.new.Rds")){
   xaaName <- "Examples/PBMC.xaa"
   xabName <- "Examples/PBMC.xab"
@@ -90,6 +91,7 @@ shinyServer(function(input, output, session) {
   
   # ------------------------------------------------------------------------------------------------------------
   # load global reactives, modules, etc
+  # why not import them  earlier? I rember that there was an issue. could be documented
   source("reactives.R", local = TRUE)
   source("outputs.R", local = TRUE)
   source("modulesUI.R", local = TRUE)  
@@ -185,7 +187,6 @@ shinyServer(function(input, output, session) {
       
       #-----------
       # fixed files
-      "geneLists.RData"
       tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
       file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
       reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpFile,"\")\n", collapse = "\n")
