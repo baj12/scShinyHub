@@ -36,7 +36,8 @@ crHeatImage <- reactive({
   outfile <- paste0("~/scShinyHubDebug",'/crHeatImage.png')
   if(DEBUG)cat(file=stderr(), paste("output file: ", outfile, "\n"))
   if(DEBUG)cat(file=stderr(), paste("output file normalized: ", normalizePath(outfile), "\n"))
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/crHeatImage.RData', list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/crHeatImage.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/crHeatImage.RData')
   logGB = log_gene_bc_matrix(gbm)
   p = gbm_pheatmap(gbm=logGB, 
@@ -76,7 +77,8 @@ prioritized_genes = reactive({
     showNotification("prioritizing genes", id="crpriotGenes", duration = NULL)
   }
   
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/prioritized_genes.Rdata', list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/prioritized_genes.Rdata", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/prioritized_genes.Rdata')
   set.seed(seed = seed)
   retVal = tryCatch({

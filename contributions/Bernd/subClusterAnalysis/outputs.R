@@ -34,7 +34,8 @@ output$dge_plot1 <- renderPlot({
   if(DEBUG)cat(file=stderr(), paste("dge_plot1: x1: ", x1,"\n"))
   if(DEBUG)cat(file=stderr(), paste("dge_plot1: y1: ", y1,"\n"))
   if(DEBUG)cat(file=stderr(), paste("dge_plot1: c1: ", c1,"\n"))
-  if(DEBUGSAVE) save(file="~/scShinyHubDebug/dge_plot1.RData", list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/dge_plot1.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/dge_plot1.RData")
   
   subsetData <- subset(projections, dbCluster %in% c1)

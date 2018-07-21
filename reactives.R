@@ -130,7 +130,7 @@ medianUMI <- reactive({
     return(0)
   }
   if (DEBUGSAVE)
-    save(file = '~/scShinyHubDebug/medianUMI.RData', list = ls())
+    save(file = "~/scShinyHubDebug/medianUMI.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/medianUMI.RData')
   retVal = medianUMIfunc(gbm)
   if (DEBUG)
@@ -151,7 +151,7 @@ useCellsFunc <-
     if (DEBUG)
       cat(file = stderr(), "useCells2\n")
     if (DEBUGSAVE)
-      save(file = '~/scShinyHubDebug/useCellsFunc.RData', list = ls())
+      save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls(),ls(envir = globalenv())))
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
     goodCols = rep(TRUE, ncol(dataTables$gbm))
     gbm = as.matrix(exprs(dataTables$gbm))
@@ -280,7 +280,7 @@ useGenesFunc <-
            geneLists) {
     gList = geneLists # global variable, assigning it locally ensures that it will be saved
     if (DEBUGSAVE)
-      save(file = '~/scShinyHubDebug/useGenesFunc.Rmd', list = ls())
+      save(file = "~/scShinyHubDebug/useGenesFunc.Rmd", list = c(ls(),ls(envir = globalenv())))
     # load(file='~/scShinyHubDebug/useGenesFunc.Rmd')
     # regular expression with gene names to be removed
     if (nchar(ipIDs) > 0) {
@@ -459,7 +459,7 @@ gbm <- reactive({
     showNotification("gbm", id = "gbm", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbm.RData", list = ls())
+    save(file = "~/scShinyHubDebug/gbm.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbm.RData")
   
   retVal = gbmFunc(
@@ -518,7 +518,7 @@ gbm_log <- reactive({
     showNotification("Calculating log", id = "gbm_log", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbm_log.RData", list = ls())
+    save(file = "~/scShinyHubDebug/gbm_log.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbm_log.RData")
   use_genes <- get_nonzero_genes(gbm)
   gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
@@ -553,7 +553,7 @@ gbmLogMatrix <- reactive({
                      duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = ls())
+    save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
   
   retVal = as.data.frame(as.matrix(exprs(gbmLog)))
@@ -570,7 +570,7 @@ gbmLogMatrix <- reactive({
 
 pcaFunc <- function(gbm_log) {
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/pcaFunc.RData", list = ls())
+    save(file = "~/scShinyHubDebug/pcaFunc.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
   pca = tryCatch({
     run_pca(gbm_log)
@@ -673,7 +673,7 @@ tsne = reactive({
   }
   set.seed(seed = tsneSeed)
   if (DEBUGSAVE)
-    save(file = '~/scShinyHubDebug/tsne.RData', list = ls())
+    save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/tsne.RData')
   retval = tryCatch({
     run_tsne(
@@ -724,7 +724,7 @@ projections = reactive({
     cat(file = stderr(), "projections\n")
   
   if (DEBUGSAVE)
-  save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/projections.RData")
   withProgress(message = 'Performing projections', value = 0, {
     n=length(projectionFunctions)
@@ -881,7 +881,7 @@ tsne.data = reactive({
     showNotification("tsne.data", id = "tsne.data", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/tsne.data.RData", list = ls())
+    save(file = "~/scShinyHubDebug/tsne.data.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/tsne.data.RData")
   tsne.data = data.frame(tsne$Y)
   colnames(tsne.data) = paste0("tsne", c(1:ncol(tsne.data)))
@@ -935,7 +935,7 @@ inputSample <- reactive({
     showNotification("inputSample", id = "inputSample", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = '~/scShinyHubDebug/inputSample.RData', list = ls())
+    save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/inputSample.RData')
   sampInf = gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
   cellIds = data.frame(

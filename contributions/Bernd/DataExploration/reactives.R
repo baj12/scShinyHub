@@ -11,7 +11,8 @@ scaterPNG <- reactive({
   width  <- session$clientData$output_plot_width
   height <- session$clientData$output_plot_height
   
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/scater.Rmd', list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/scater.Rmd", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/scater.Rmd')
   
   

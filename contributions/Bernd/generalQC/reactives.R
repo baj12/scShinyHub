@@ -68,7 +68,8 @@ inputTSNESample <- reactive({
     showNotification("inputTSNESample", id="inputTSNESample", duration = NULL)
   }
   
-  if(DEBUGSAVE) save(file = "~/scShinyHubDebug/inputTSNESample.RData", list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/inputTSNESample.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
 
    if(!is.null(getDefaultReactiveDomain())){

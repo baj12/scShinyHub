@@ -95,7 +95,9 @@ clusterServer <- function(input, output, session,
       return(NULL)
     }
     
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
+           list = c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     
     g_id <- toupper(g_id)
@@ -128,7 +130,8 @@ clusterServer <- function(input, output, session,
     subsetData <- subset(projections, dbCluster %in% clId)
     # subsetData$dbCluster = factor(subsetData$dbCluster)
     subsetData$shape = as.numeric(as.factor(subsetData$sample))
-    if(DEBUGSAVE) save(file="~/scShinyHubDebug/clusterPlot.RData", list=ls())
+    if(DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(),ls(envir = globalenv())))
     # load(file="~/scShinyHubDebug/clusterPlot.RData")
     p1 <-
       ggplot(subsetData,
@@ -179,7 +182,8 @@ clusterServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       showNotification("cluser cell Selection", id="clustercellSelection", duration = NULL)
     }
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/clustercellSelection", list = c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."))
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     #if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
@@ -219,7 +223,9 @@ tableSelectionServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       showNotification("cellSelection", id="cellSelection", duration = NULL)
     }
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file = paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."),
+           list = c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."))
     
     if(length(selectedRows)>0){
@@ -242,7 +248,8 @@ tableSelectionServer <- function(input, output, session,
     prox = proxy
     allrows = input$cellNameTable_rows_all
     proxy %>% selectRows( NULL )
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."), 
+                       list= c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."))
     if(ipSelect){
       proxy %>% selectRows( allrows )
@@ -260,7 +267,9 @@ tableSelectionServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       showNotification("cellNameTable", id="cellNameTable", duration = NULL)
     }
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/cellNameTable", "ns", ".RData", collapse = "."), list=ls())
+    if(DEBUGSAVE) 
+      save(file=paste0("~/scShinyHubDebug/cellNameTable", "ns", ".RData", collapse = "."), 
+           list= c(ls(),ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/cellNameTable", "", ".RData", collapse = "."))
     
     if(DEBUG)cat(file=stderr(), "cellNameTable: done\n")

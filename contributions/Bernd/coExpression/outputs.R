@@ -145,7 +145,8 @@ output$heatmap <- renderImage({
     showNotification("heatmap", id="heatmap", duration = NULL)
   }
   
-  if(DEBUGSAVE) save(file = "~/scShinyHubDebug/heatmap.RData", list=ls())
+  if(DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/heatmap.RData")
   
    retval = heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = colnames(gbm_matrix))
@@ -197,7 +198,7 @@ output$selectedHeatmap <- renderImage({
   }
   
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = ls())
+    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   
   subsetData <-
@@ -321,7 +322,7 @@ output$plotCoExpression <- renderPlot({
   
   
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = ls())
+    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/plotCoExpression.RData")
   p1 = plotCoExpressionFunc(featureData,
                             gbm_log,
@@ -385,7 +386,7 @@ output$onOffTable <- DT::renderDataTable({
   
   
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/onOffTable.RData", list = ls())
+    save(file = "~/scShinyHubDebug/onOffTable.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/onOffTable.RData")
   
   merge <- projections
@@ -417,7 +418,7 @@ output$clusters3 <- renderUI({
     return(NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/clusters3.RData", list = ls())
+    save(file = "~/scShinyHubDebug/clusters3.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/clusters3.RData")
   
   noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
@@ -519,7 +520,7 @@ output$geneGrp_vio_plot <- renderPlot({
     return(NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/geneGrp_vio_plot.RData", list = ls())
+    save(file = "~/scShinyHubDebug/geneGrp_vio_plot.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/geneGrp_vio_plot.RData")
   
   retVal = geneGrp_vioFunc(genesin = geneListStr,

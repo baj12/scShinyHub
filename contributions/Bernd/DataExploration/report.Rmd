@@ -62,7 +62,7 @@ scater::plotQC(scaterReads, type = "highest-expression", col_by_variable="fixed"
 
 
 # Expression ------------------------------------------------------------------
-expCluster <- callModule(clusterServer, "expclusters", tsne.data, reactive(input$gene_id))
+expCluster <- callModule(clusterServer, "expclusters", projections, reactive(input$gene_id))
 
 
 
@@ -82,9 +82,9 @@ expression <- log2cpm[geneid, ]
 
 validate(need(is.na(sum(expression)) != TRUE, ''))
 
-tsneData <- cbind(tsne.data, t(expression))
+tsneData <- cbind(projections, t(expression))
 names(tsneData)[names(tsneData) == geneid] <- 'values'
-#tsne.data<-subset(tsne.data,dbCluster!=0)
+#projections<-subset(projections,dbCluster!=0)
 
 p1 <-
   ggplot(tsneData, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
@@ -145,13 +145,13 @@ if (input$clusters4 == 'All')
               rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
               ,]
           ),breaks = 10))]
-    plot(tsne.data[,input$dimension_x4],tsne.data[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+    plot(projections[,input$dimension_x4],projections[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
     title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
   }
 }else{
   for (i in 1:length(genesin)){
     
-    subsetTSNE <- subset(tsne.data, dbCluster == input$clusters4)
+    subsetTSNE <- subset(projections, dbCluster == input$clusters4)
     
     Col <- rbPal(10)[
       as.numeric(
@@ -162,7 +162,7 @@ if (input$clusters4 == 'All')
               ,]
           ),breaks = 10))]
     
-    names(Col)<-rownames(tsne.data)
+    names(Col)<-rownames(projections)
     plotCol<-Col[rownames(subsetTSNE)]
     plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
     title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
@@ -183,7 +183,7 @@ geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
 
 expression <- log2cpm[geneid, ]
 
-tsneData <- cbind(tsne.data, t(expression))
+tsneData <- cbind(projections, t(expression))
 names(tsneData)[names(tsneData) == geneid] <- 'values'
 
 p <-
@@ -194,7 +194,7 @@ p <-
     z = ~ tsne3,
     type = "scatter3d",
     hoverinfo = "text",
-    text = paste('Cluster:', as.numeric(as.character(tsne.data$dbCluster))),
+    text = paste('Cluster:', as.numeric(as.character(projections$dbCluster))),
     mode = 'markers',
     marker = list(
       size = 2,
@@ -231,13 +231,13 @@ if (input$clusters4 == 'All')
               rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
               ,]
           ),breaks = 10))]
-    plot(tsne.data[,input$dimension_x4],tsne.data[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+    plot(projections[,input$dimension_x4],projections[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
     title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
   }
 }else{
   for (i in 1:length(genesin)){
     
-    subsetTSNE <- subset(tsne.data, dbCluster == input$clusters4)
+    subsetTSNE <- subset(projections, dbCluster == input$clusters4)
     
     Col <- rbPal(10)[
       as.numeric(
@@ -248,7 +248,7 @@ if (input$clusters4 == 'All')
               ,]
           ),breaks = 10))]
     
-    names(Col)<-rownames(tsne.data)
+    names(Col)<-rownames(projections)
     plotCol<-Col[rownames(subsetTSNE)]
     plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
     title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)

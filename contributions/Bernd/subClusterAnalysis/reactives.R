@@ -52,7 +52,8 @@ dge <- reactive({
   if(!is.null(getDefaultReactiveDomain())){
     showNotification("running dge", id="dge", duration = NULL)
   }
-  if(DEBUGSAVE) save(file='~/scShinyHubDebug/dge.RData', list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/dge.RData')
 
   toReturn = dge_func(projections, log2cpm, featureData, dbcl, cl1, db1, db2)

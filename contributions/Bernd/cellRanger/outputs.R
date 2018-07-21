@@ -12,7 +12,8 @@ output$crPrioGenes <- DT::renderDataTable({
     return(NULL)
 
   
-  if(DEBUGSAVE) save(file="~/scShinyHubDebug/crPrioGenes.RData", list=ls())
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/crPrioGenes.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/crPrioGenes.RData")
   
   dt = prioritized_genes[[cl5]]
