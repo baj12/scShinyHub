@@ -708,6 +708,47 @@ projections = reactive({
   return(projections)
 })
 
+groupNames <- reactiveValues(
+  namesDF = data.frame()
+  #{
+  # if(DEBUG)
+  #   cat(file = stderr(), "groupNames\n")
+  # projections = projections()
+  # if(is.null(projections)){
+  #   return(NULL)
+  # }
+  # if (DEBUGSAVE)
+  #   save(file = "~/scShinyHubDebug/groupNames.RData", list = c(ls(),ls(envir = globalenv())))
+  # # load(file="~/scShinyHubDebug/groupNames.RData")
+  # retVal = c()
+  # for(cn in colnames(projections)){
+  #   if(class(projections[,cn])=="logical"){
+  #     retVal = c(retVal, cn)
+  #   }
+  # }
+  # return(retVal)
+  # }
+)
+
+initializeGroupNames <- reactive({
+  if(DEBUG)
+    cat(file = stderr(), "initializeGroupNames\n")
+  gbm = gbm()
+  if(is.null(gbm)){
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/initializeGroupNames.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/initializeGroupNames.RData")
+  isolate({
+    df = data.frame(all  = rep(TRUE,ncol(gbm)), none = rep(FALSE,ncol(gbm)))
+    rownames(df) = colnames(gbm)
+    cat(file = stderr(), "initializeGroupNames2\n")
+    groupNames[['namesDF']] = df
+    cat(file = stderr(), "initializeGroupNames3\n")
+  })
+})
+
 
 dbCluster = reactive({
   if (DEBUG)

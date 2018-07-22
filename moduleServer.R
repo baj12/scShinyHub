@@ -26,6 +26,7 @@ clusterServer <- function(input, output, session,
                           legend.position = "none"){
   ns = session$ns 
   subsetData = NULL
+  selectedGroupName = ""
   
   updateInput <- reactive({
     tsneData <- projections()
@@ -89,6 +90,7 @@ clusterServer <- function(input, output, session,
     dimX = input$dimension_x
     clId = input$clusters
     g_id=gene_id()
+    
     
     if(is.null(featureData) | is.null(log2cpm) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0){
       if(DEBUG)cat(file=stderr(), paste("output$clusterPlot:NULL\n"))
@@ -161,12 +163,70 @@ clusterServer <- function(input, output, session,
       shape = rep('a', nrow(subsetData))
       selRows = which(rownames(subsetData) %in% selectedCells)
       shape[selRows] = 'b'
-      p1 = p1 + geom_point(mapping=aes(shape=shape, size=4, colour = dbCluster))
+      p1 = p1 + geom_point(mapping=aes(shape=shape, coloir='red', size=4, colour = dbCluster))
     }
     p1
   })
   
-  # TODO return selected cells
+  observe({
+    ns = session$ns
+    input$changeGroups
+    
+    if(DEBUG)cat(file=stderr(), "cluster: changeGroups\n")
+    
+    isolate({
+      brushedPs = (input$b1)
+      projections = projections()
+      inpClusters = (input$clusters)
+      grpN = make.names(input$groupName)
+      grpNs = groupNames$namesDF
+      if(ncol(grpNs) == 0){
+        initializeGroupNames()
+        grpNs = groupNames$namesDF
+      }
+      if(is.null(projections) ){
+        return(NULL)
+      }     
+      subsetData <- subset(projections, dbCluster %in% inpClusters)
+      #if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
+      cells.names <- brushedPoints(subsetData, brushedPs)
+      
+      if(DEBUGSAVE) 
+        save(file = "~/scShinyHubDebug/changeGroups.RData", list = c(ls(),ls(envir = globalenv())))
+      # load(file="~/scShinyHubDebug/changeGroups.RData")
+      cat(file=stderr(), "cluster: changeGroups2\n")
+      grpNs[, grpN] = FALSE
+      grpNs[rownames(cells.names), grpN] = TRUE
+      cat(file=stderr(), "cluster: changeGroups3\n")
+      # projections[,grpN] = FALSE
+      # projections[brushedPs,grpN] = TRUE
+    })
+  })
+  
+  output$additionalOptions <- renderUI({
+    if(DEBUG)cat(file=stderr(), "cluster: additionalOptions\n")
+    ns = session$ns
+    moreOptions = (input$moreOptions)
+    groupNs = groupNames$namesDF
+    if(! moreOptions){return("")}
+    
+    if(DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/additionalOptions.RData", list = c(ls(),ls(envir = globalenv())))
+    # load(file="~/scShinyHubDebug/additionalOptions.RData")
+
+        tagList(
+      textInput(ns("groupName"), "name group"),
+      selectInput(
+        ns('groupNames'),
+        label = 'group names',
+        choice = colnames(groupNs),
+        selected = selectedGroupName
+      ),
+      actionButton(ns('changeGroups'), 'change current selection'),
+      checkboxInput(ns("showCells"), "show cell names", FALSE),
+      verbatimTextOutput(ns('cellSelection'))
+    )
+  })
   
   output$cellSelection <- renderText({
     if(DEBUG)cat(file=stderr(), "cluster: cellSelection\n")
