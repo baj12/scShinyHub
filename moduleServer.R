@@ -27,6 +27,7 @@ clusterServer <- function(input, output, session,
   ns = session$ns 
   subsetData = NULL
   selectedGroupName = ""
+  groupName = ""
   
   updateInput <- reactive({
     tsneData <- projections()
@@ -169,6 +170,13 @@ clusterServer <- function(input, output, session,
   })
   
   observe({
+    updateTextInput(session = session, inputId = "groupName",
+                    value = input$groupNames)
+  })
+  
+
+
+  observe({
     ns = session$ns
     input$changeGroups
     
@@ -194,12 +202,17 @@ clusterServer <- function(input, output, session,
       if(DEBUGSAVE) 
         save(file = "~/scShinyHubDebug/changeGroups.RData", list = c(ls(),ls(envir = globalenv())))
       # load(file="~/scShinyHubDebug/changeGroups.RData")
-      cat(file=stderr(), "cluster: changeGroups2\n")
       grpNs[, grpN] = FALSE
       grpNs[rownames(cells.names), grpN] = TRUE
-      cat(file=stderr(), "cluster: changeGroups3\n")
+      groupNames$namesDF = grpNs
       # projections[,grpN] = FALSE
       # projections[brushedPs,grpN] = TRUE
+      updateSelectInput(session, ns('groupNames'),
+                        choices = colnames(grpNs),
+                        selected = grpN
+      )
+      updateTextInput(session = session, inputId = "groupName",
+                      value = grpN)
     })
   })
   
@@ -215,7 +228,7 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/additionalOptions.RData")
 
         tagList(
-      textInput(ns("groupName"), "name group"),
+      textInput(ns(id = "groupName"), label = "name group", value = groupName),
       selectInput(
         ns('groupNames'),
         label = 'group names',
