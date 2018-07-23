@@ -53,7 +53,7 @@ enableBookmarking(store = "server")
 
 shinyServer(function(input, output, session) {
   
-  # TODO create a UI element for seed
+  # TODO-BJ create a UI element for seed
   set.seed(seed)
   # check that directory is availabl, otherwise create it
   if(DEBUG){

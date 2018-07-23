@@ -178,11 +178,11 @@ output$selectedHeatmap <- renderImage({
   genesin <- input$heatmap_geneids2
   sc = selctedCluster()
   scCL = sc$cluster
-  scBP = sc$brushedPs()
-  
+  # scBP = sc$brushedPs()
+  scCells = sc$selectedCells()
   if (is.null(featureData) |
       is.null(gbm_matrix) |
-      is.null(projections) | is.null(sc$brushedPs())) {
+      is.null(projections) | is.null(scCells) | length(scCells) == 0) {
     return(
       list(
         src = "empty.png",
@@ -201,10 +201,10 @@ output$selectedHeatmap <- renderImage({
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   
-  subsetData <-
-    subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
-  cells.1 <- rownames(brushedPoints(subsetData, scBP))
-  
+  # subsetData <-
+  #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
+  # cells.1 <- rownames(brushedPoints(subsetData, scBP))
+  cells.1 <- scCells
   retval = heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
   
   if (!is.null(getDefaultReactiveDomain())) {
@@ -273,6 +273,7 @@ plotCoExpressionFunc <-
     plotexprs <- allexprs
     plotexprs[] <- 0
     plotexprs[allexprs >= length(rownames(bin))] <- 1
+    # TODO positiveCells is changing too often. Maybe this can be controlled a bit more? check if changed? Use global variable not a reactive value?
     positiveCells$positiveCells <- allexprs >= length(rownames(bin))
     positiveCells$positiveCellsAll <- plotexprs
     
