@@ -1,5 +1,7 @@
 selectedDge <- reactiveValues()
 
+
+# TODO remove log2cpm change to gbm_log
 dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2){
   if(DEBUG)cat(file=stderr(), "dge1\n")
   subsetData <- subset(projections, dbCluster %in% cl1)
@@ -42,9 +44,12 @@ dge <- reactive({
   featureData = featureDataReact()
   log2cpm = log2cpm()
   projections = projections()
+  gn <- groupNames$namesDF
+  
   cl1 = input$clusters1
   db1 = input$db1
   db2 = input$db2
+  
   # dbcl = dbCluster
   if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
     return(NULL)
@@ -52,11 +57,15 @@ dge <- reactive({
   if(!is.null(getDefaultReactiveDomain())){
     showNotification("running dge", id="dge", duration = NULL)
   }
+  if (length(gn) > 0){
+    projections = cbind(projections, gn*1)
+  }
+  
   if(DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/dge.RData')
 
-  toReturn = dge_func(projections, log2cpm, featureData, dbcl, cl1, db1, db2)
+  toReturn = dge_func(projections = projections, log2cpm = log2cpm, featureData = featureData, dbCluster = projections$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
   if(DEBUG)cat(file=stderr(), "dge14\n")
   if(nrow(toReturn)==0){
     if(DEBUG)cat(file=stderr(), "dge: nothing found\n")

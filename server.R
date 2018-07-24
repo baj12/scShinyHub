@@ -23,9 +23,9 @@ library(kableExtra)
 library(shinyWidgets)
 library(scater)
 
-if(file.exists("defaultValues.R")){
+if (file.exists("defaultValues.R")) {
   source(file = "defaultValues.R")
-}else{
+} else {
   warning("no defaultsValues.R file")
   stop("stop")
 } 
@@ -35,7 +35,7 @@ source("serverFunctions.R")
 
 # create large example files from split
 # this is needed to overcome the size limit in GitHub
-if(!file.exists("Examples/PBMC-Apheresis.new.Rds")){
+if (!file.exists("Examples/PBMC-Apheresis.new.Rds")) {
   xaaName <- "Examples/PBMC.xaa"
   xabName <- "Examples/PBMC.xab"
   contents <- readBin(xaaName, "raw", file.info(xaaName)$size)
@@ -201,6 +201,7 @@ shinyServer(function(input, output, session) {
         reactiveFiles = paste0(reactiveFiles, "source(\"", tmpFile,"\")\n", collapse = "\n")
       }
       reactiveFiles = paste0("\n\n```{r load-reactives}\n", reactiveFiles, "\n```\n\n")
+      
       
       
       
