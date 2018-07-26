@@ -51,8 +51,9 @@ seed=2
 
 enableBookmarking(store = "server")
 
-shinyServer(function(input, output, session) {
-  
+# shinyServer(function(input, output, session) {
+  server <- function(input, output, session) {
+    
   # TODO create a UI element for seed
   set.seed(seed)
   # check that directory is availabl, otherwise create it
@@ -74,8 +75,7 @@ shinyServer(function(input, output, session) {
   # base calculations that are quite expensive to calculate
   # display name, reactive name to be executed
   heavyCalculations = list(c("pca", "pca"),
-                           c("kmClustering", "kmClustering"),
-                           c("tsne", "tsne")
+                           c("kmClustering", "kmClustering")
   )
   
   # ------------------------------------------------------------------------------------------------------------
@@ -96,6 +96,11 @@ shinyServer(function(input, output, session) {
     if(DEBUG)cat(file=stderr(), paste("bookmarking: DONE\n"))
   })
   # Need to exclude the buttons from themselves being bookmarked
+  
+  onRestore(function(state) {
+    if(DEBUG)cat(file=stderr(), paste("restoring: \n"))
+    if(DEBUG)cat(file=stderr(), paste("getwd:", getwd() ," \n"))
+  })
   
   # ------------------------------------------------------------------------------------------------------------
   # load contribution reactives
@@ -244,8 +249,13 @@ shinyServer(function(input, output, session) {
       )
     }
   )
-  
-})# END SERVER
+  # 
+  # })# END SERVER
+}# END SERVER
 
 
 # enableBookmarking(store = "server")
+
+source("ui.R")
+
+shinyApp(ui, server, enableBookmarking = "server")

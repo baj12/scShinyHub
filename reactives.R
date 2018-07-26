@@ -30,13 +30,6 @@ inputDataFunc <- function(inFile) {
   
   cat(stderr(), 'Loaded')
   dataTables = list()
-  # dataTables$log2cpmOrg <- log2cpm
-  # dataTables$tsne.data <- tsne.data
-  # dataTables$tsne.dataOrg <- tsne.data
-  # featuredata <-
-  #   featuredata[which(featuredata$Chromosome.Name %in% c(unlist(lapply(
-  #     seq(1, 22, 1), toString
-  #   )), c("X", "Y", "MT", "N"))), ]
   featuredata$Associated.Gene.Name <-
     toupper(featuredata$Associated.Gene.Name)
   featuredata <- featuredata[rownames(gbm), ]
@@ -68,6 +61,9 @@ inputDataFunc <- function(inFile) {
     showNotification("gbm contains infinite values")
     return(NULL)
   }
+  if (sum(c("id","symbol") %in% colnames(fData(gbm)))<2) {
+    showNotification("gbm - fData doesn't contain id and symbol columns", duration = NULL)
+  }
   if (DEBUG)
     cat(file = stderr(), "inputData: done\n")
   if (!is.null(getDefaultReactiveDomain())) {
@@ -80,12 +76,14 @@ inputDataFunc <- function(inFile) {
 
 # internal, should not be used by plug-ins
 inputData = reactive({
+  cat(file = stderr(), "inputData: start\n")
   inFile <- input$file1
   if (is.null(inFile)) {
     if (DEBUG)
       cat(file = stderr(), "inputData: NULL\n")
     return(NULL)
   }
+  cat(file = stderr(), paste("inputData: ", inFile, "\n"))
   return(inputDataFunc(inFile))
 })
 
@@ -127,7 +125,7 @@ medianUMI <- reactive({
     return(0)
   }
   if (DEBUGSAVE)
-    save(file = '~/scShinyHubDebug/medianUMI.RData', list = ls())
+    save(file = "~/scShinyHubDebug/medianUMI.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/medianUMI.RData')
   retVal = medianUMIfunc(gbm)
   if (DEBUG)
@@ -148,7 +146,7 @@ useCellsFunc <-
     if (DEBUG)
       cat(file = stderr(), "useCells2\n")
     if (DEBUGSAVE)
-      save(file = '~/scShinyHubDebug/useCellsFunc.RData', list = ls())
+      save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls(),ls(envir = globalenv())))
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
     goodCols = rep(TRUE, ncol(dataTables$gbm))
     gbm = as.matrix(exprs(dataTables$gbm))
@@ -277,7 +275,7 @@ useGenesFunc <-
            geneLists) {
     gList = geneLists # global variable, assigning it locally ensures that it will be saved
     if (DEBUGSAVE)
-      save(file = '~/scShinyHubDebug/useGenesFunc.Rmd', list = ls())
+      save(file = "~/scShinyHubDebug/useGenesFunc.Rmd", list = c(ls(),ls(envir = globalenv())))
     # load(file='~/scShinyHubDebug/useGenesFunc.Rmd')
     # regular expression with gene names to be removed
     if (nchar(ipIDs) > 0) {
@@ -456,7 +454,7 @@ gbm <- reactive({
     showNotification("gbm", id = "gbm", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbm.RData", list = ls())
+    save(file = "~/scShinyHubDebug/gbm.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbm.RData")
   
   retVal = gbmFunc(
@@ -515,7 +513,7 @@ gbm_log <- reactive({
     showNotification("Calculating log", id = "gbm_log", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbm_log.RData", list = ls())
+    save(file = "~/scShinyHubDebug/gbm_log.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbm_log.RData")
   use_genes <- get_nonzero_genes(gbm)
   gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
@@ -550,7 +548,7 @@ gbmLogMatrix <- reactive({
                      duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = ls())
+    save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
   
   retVal = as.data.frame(as.matrix(exprs(gbmLog)))
@@ -567,7 +565,7 @@ gbmLogMatrix <- reactive({
 
 pcaFunc <- function(gbm_log) {
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/pcaFunc.RData", list = ls())
+    save(file = "~/scShinyHubDebug/pcaFunc.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
   pca = tryCatch({
     run_pca(gbm_log)
@@ -650,88 +648,174 @@ kmClustering = reactive({
   return(retVal)
 })
 
-# TODO separate  function from reactive
-tsne = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne\n")
-  pca = pca()
-  tsneDim = input$tsneDim
-  tsnePerplexity = input$tsnePerplexity
-  tsneTheta = input$tsneTheta
-  tsneSeed = input$tsneSeed
-  if (is.null(pca)) {
+
+# projections
+# each column is of length of number of cells
+# if factor than it is categorical and can be cluster number of sample etc
+# if numeric can be projection
+
+# projections is a reactive and cannot be used in reports. Reports have to organize 
+# themselves as it is done here with tsne.data.
+
+projections = reactive({
+  # gbm is the fundamental variable with the raw data, which is available after loading 
+  # data. Here we ensure that everything is loaded and all varialbles are set by waiting
+  # input data being loaded
+  gbm = gbm()
+  if (!exists("gbm") | is.null(gbm)) {
     if (DEBUG)
-      cat(file = stderr(), "tsne: NULL\n")
+      cat(file = stderr(), "sampleInfo: NULL\n")
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne", id = "tsne", duration = NULL)
-  }
-  set.seed(seed = tsneSeed)
+  projections = data.frame()
+  if (DEBUG)
+    cat(file = stderr(), "projections\n")
+  
   if (DEBUGSAVE)
-    save(file = '~/scShinyHubDebug/tsne.RData', list = ls())
-  # load(file='~/scShinyHubDebug/tsne.RData')
-  retval = tryCatch({
-    run_tsne(
-      pca,
-      dims = tsneDim,
-      perplexity = tsnePerplexity,
-      theta = tsneTheta,
-      check_duplicates = FALSE
-    )
-  },
-  error = function(e) {
-    if (!is.null(getDefaultReactiveDomain())) {
-      showNotification(paste("Problem with tsne:", e),
-                       type = "error",
-                       duration = NULL)
+    save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/projections.RData")
+  withProgress(message = 'Performing projections', value = 0, {
+    n=length(projectionFunctions)
+    for(proj in projectionFunctions){
+      incProgress(1/n, detail = paste("Creating ", proj[1]))
+      if(DEBUG)cat(file=stderr(), paste("forceCalc ", proj[1],"\n"))
+      assign("tmp", eval(parse(text = paste0( proj[2], "()"))))
+      cn = make.names(c(colnames(projections), make.names(proj[1])))
+      if(length(tmp) == 0){
+        showNotification(
+          paste("warning: ", proj[1], "didn't produce a result"),
+          type = "warning",
+          duration = NULL
+        )
+        next()
+      }
+      if(ncol(projections)==0){
+        projections = data.frame(tmp = tmp)
+      }else{
+        if(nrow(projections) == length(tmp)){
+        projections = cbind(projections, tmp)
+        }else{
+          showNotification(
+            paste("warning: ", proj[1], "didn't produce a result"),
+            type = "warning",
+            duration = NULL
+          )
+        }
+      }
+      
+      colnames(projections) = cn
+      observe(proj[2],quoted = TRUE)
     }
-    return(NULL)
   })
-  if (DEBUG)
-    cat(file = stderr(), "tsne: done\n")
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "tsne")
-  }
-  return(retval)
+  return(projections)
 })
 
+groupNames <- reactiveValues(
+  namesDF = data.frame()
+  #{
+  # if(DEBUG)
+  #   cat(file = stderr(), "groupNames\n")
+  # projections = projections()
+  # if(is.null(projections)){
+  #   return(NULL)
+  # }
+  # if (DEBUGSAVE)
+  #   save(file = "~/scShinyHubDebug/groupNames.RData", list = c(ls(),ls(envir = globalenv())))
+  # # load(file="~/scShinyHubDebug/groupNames.RData")
+  # retVal = c()
+  # for(cn in colnames(projections)){
+  #   if(class(projections[,cn])=="logical"){
+  #     retVal = c(retVal, cn)
+  #   }
+  # }
+  # return(retVal)
+  # }
+)
 
-
-
-tsne.data = reactive({
-  if (DEBUG)
-    cat(file = stderr(), "tsne.data\n")
-  tsne = tsne()
-  clustering = kmClustering()
-  if (is.null(tsne) | is.null(clustering)) {
-    if (DEBUG)
-      cat(file = stderr(), "tsne.data: NULL\n")
+initializeGroupNames <- reactive({
+  if(DEBUG)
+    cat(file = stderr(), "initializeGroupNames\n")
+  gbm = gbm()
+  if(is.null(gbm)){
     return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne.data", id = "tsne.data", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/tsne.data.RData", list = ls())
-  # load(file="~/scShinyHubDebug/tsne.data.RData")
-  tsne.data = data.frame(tsne$Y)
-  colnames(tsne.data) = paste0("tsne", c(1:ncol(tsne.data)))
-  tsne.data$dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
-  rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
-  samp = gsub(".*-(.*)", "\\1", rownames(tsne.data))
-  if (length(levels(as.factor(samp))) > 1) {
-    tsne.data$sample = samp
-  } else{
-    tsne.data$sample = "1"
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "tsne.data")
-  }
-  if (DEBUG)
-    cat(file = stderr(), "tsne.data: done\n")
-  return(tsne.data)
+    save(file = "~/scShinyHubDebug/initializeGroupNames.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/initializeGroupNames.RData")
+  isolate({
+    df = data.frame(all  = rep(TRUE,ncol(gbm)), none = rep(FALSE,ncol(gbm)))
+    rownames(df) = colnames(gbm)
+    cat(file = stderr(), "initializeGroupNames2\n")
+    groupNames[['namesDF']] = df
+    cat(file = stderr(), "initializeGroupNames3\n")
+  })
 })
+
+
+dbCluster = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "dbCluster\n")
+  clustering = kmClustering()
+  
+  if (is.null(clustering)) {
+    if (DEBUG)
+      cat(file = stderr(), "dbCluster: NULL\n")
+    return(NULL)
+  }
+  
+  dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
+  
+  return(dbCluster)
+})
+
+
+# TODO: should not depend on tsne
+sample = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "sample\n")
+  gbm = gbm()
+  if (is.null(gbm)) {
+    if (DEBUG)
+      cat(file = stderr(), "sample: NULL\n")
+    return(NULL)
+  }
+  samp = gsub(".*-(.*)", "\\1", colnames(gbm))
+  if (length(levels(as.factor(samp))) > 1) {
+    sample = samp
+  } else{
+    sample = rep("1",ncol(gbm))
+  }
+  
+  return(sample)
+})
+geneCount = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "geneCount\n")
+  gbm = gbm()
+  if( is.null(gbm)){
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/geneCount.RData")
+  retVal = colSums(as.matrix(exprs(gbm))>0)
+  return(retVal)
+})
+umiCount = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "umiCount\n")
+  gbm = gbm()
+  if( is.null(gbm)){
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/umiCount.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/umiCount.RData")
+  retVal = colSums(as.matrix(exprs(gbm)))
+  return(retVal)
+  
+})
+
 
 sampleInfoFunc = function(gbm) {
   gsub(".*-(.*)", "\\1", gbm$barcode)
@@ -767,7 +851,7 @@ inputSample <- reactive({
     showNotification("inputSample", id = "inputSample", duration = NULL)
   }
   if (DEBUGSAVE)
-    save(file = '~/scShinyHubDebug/inputSample.RData', list = ls())
+    save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/inputSample.RData')
   sampInf = gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
   cellIds = data.frame(
