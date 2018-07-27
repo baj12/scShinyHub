@@ -43,7 +43,7 @@ dge <- reactive({
   if(DEBUG)cat(file=stderr(), "dge\n")
   featureData = featureDataReact()
   log2cpm = log2cpm()
-  projections = projections()
+  prj = projections()
   gn <- groupNames$namesDF
   
   cl1 = input$clusters1
@@ -51,21 +51,21 @@ dge <- reactive({
   db2 = input$db2
   
   # dbcl = dbCluster
-  if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
+  if(is.null(featureData) | is.null(log2cpm) | is.null(prj)){
     return(NULL)
   }
   if(!is.null(getDefaultReactiveDomain())){
     showNotification("running dge", id="dge", duration = NULL)
   }
   if (length(gn) > 0){
-    projections = cbind(projections, gn*1)
+    prj = cbind(prj, gn*1)
   }
   
   if(DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/dge.RData')
 
-  toReturn = dge_func(projections = projections, log2cpm = log2cpm, featureData = featureData, dbCluster = projections$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
+  toReturn = dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
   if(DEBUG)cat(file=stderr(), "dge14\n")
   if(nrow(toReturn)==0){
     if(DEBUG)cat(file=stderr(), "dge: nothing found\n")
@@ -78,7 +78,7 @@ dge <- reactive({
   cat(stderr(), rownames(toReturn)[1:5])
   if(DEBUG)cat(file=stderr(), "dge: done\n")
   if(!is.null(getDefaultReactiveDomain())){
-    removeNotification( id="dge")
+    removeNotification( id = "dge")
   }
   
   return(toReturn)
