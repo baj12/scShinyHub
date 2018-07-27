@@ -21,7 +21,7 @@
 # internal, should not be used by plug-ins
 inputDataFunc <- function(inFile) {
   if (DEBUG)
-    cat(file = stderr(), "DEBUG:inputData\n")
+    cat(file = stderr(), "DEBUG:inputData:", inFile$datapath, ":\n")
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
@@ -81,6 +81,10 @@ inputDataFunc <- function(inFile) {
 # internal, should not be used by plug-ins
 inputData = reactive({
   inFile <- input$file1
+  # cat(file = stderr(), "DEBUG:inputData1:", names(input), ":\n")
+  # cat(file = stderr(), "DEBUG:inputData2:", class(input$file1), ":\n")
+  # cat(file = stderr(), "DEBUG:inputData3:", input$file1, ":\n")
+  save(file = '~/scShinyHubDebug/medianUMI.RData', list = c(ls(), "input"))
   if (is.null(inFile)) {
     if (DEBUG)
       cat(file = stderr(), "inputData: NULL\n")
@@ -175,7 +179,7 @@ useCellsFunc <-
       cellsRM <- gsub(" ", "", cellsRM, fixed = TRUE)
       cellsRM <- strsplit(cellsRM, ',')
       cellsRM <- cellsRM[[1]]
-      goodCols[which(colnames(dataTables$gbm) %in% cellsRM)] = FALSE
+      goodCols[which(toupper(colnames(dataTables$gbm)) %in% cellsRM)] = FALSE
     }
     
     # remove cells by pattern

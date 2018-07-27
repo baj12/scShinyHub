@@ -1,5 +1,3 @@
-
-
 # LIBRARY -----------------------------------------------------------------
 
 library(shiny)
@@ -51,7 +49,9 @@ seed=2
 
 enableBookmarking(store = "server")
 
-shinyServer(function(input, output, session) {
+
+
+server <- function(input, output, session) {
   
   # TODO create a UI element for seed
   set.seed(seed)
@@ -245,7 +245,6 @@ shinyServer(function(input, output, session) {
     }
   )
   
-})# END SERVER
+}# END SERVER
 
 
-# enableBookmarking(store = "server")

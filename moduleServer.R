@@ -251,6 +251,9 @@ tableSelectionServer <- function(input, output, session,
   
   output$cellNameTable <- renderDT({
     if(DEBUG)cat(file=stderr(), "output$cellNameTable\n")
+    # cat(file = stderr(), "DEBUG:inputData1:", names(input), ":\n")
+    # cat(file = stderr(), "DEBUG:inputData1:", class(input$file1), ":\n")
+    # cat(file = stderr(), "DEBUG:inputData1:", input$file1, ":\n")
     dataTables = dataTab()
     ns = session$ns
     

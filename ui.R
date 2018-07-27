@@ -65,7 +65,7 @@ for(fp in uiFiles){
 
 
 
-shinyUI(
+ui <- function(request) {
   dashboardPage(
     dashboardHeader(title = "scShinyHub"),
     dashboardSidebar(
@@ -80,7 +80,7 @@ shinyUI(
             "<h3>Data summary</h3> <ul><li>medium UMI: shows how many genes are  expressed in log2 space of normalized data</li> </ul> ", "right"),
       downloadButton("report", "Generate report"),
       actionButton('goCalc', 'Force Calculations'),
-      # bookmarkButton(id = "bookmark1"),
+      bookmarkButton(id = "bookmark1"),
       checkboxInput("DEBUGSAVE", "Save for DEBUG", FALSE),
       verbatimTextOutput("DEBUGSAVEstring")
       
@@ -93,6 +93,6 @@ shinyUI(
       )
     ) # dashboard body
   ) # main dashboard
-)
+}
 
 
