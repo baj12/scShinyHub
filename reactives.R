@@ -669,6 +669,37 @@ projections = reactive({
   if (DEBUG)
     cat(file = stderr(), "projections\n")
   
+  # phenotypic data/ annotations of cells can already be included in the gbm object. We collect this information, but only for variable that hold information
+  # i.e. length(levels) > 1 & < number of rows
+  pd = pData(gbm)
+  if (ncol(pd) < 2) {
+    cat(file = stderr(), "phenoData for gbm has less than 2 columns\n")
+    return(NULL)
+  }
+  
+  # for (cn in colnames(pd)) {
+  #   if (class(pd[,cn]) == "factor") {
+  #     if (length(levels(pd[,cn])) > 1 & length(levels(pd[,cn])) < nrow(pd)) {
+  #       if (ncol(projections) == 0) {
+  #         projections = data.frame(tmp = pd[,cn])
+  #       }else{
+  #         if (nrow(projections) == length(pd[,cn])) {
+  #           projections = cbind(projections, pd[,cn])
+  #         } else {
+  #           showNotification(
+  #             paste("warning: ", proj[1], "didn't produce a result"),
+  #             type = "warning",
+  #             duration = NULL
+  #           )
+  #         }
+  #       }
+  #       
+  #       colnames(projections[,"tmp"]) = cn
+  #       
+  #     }
+  #   }
+  # }
+  
   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/projections.RData")
