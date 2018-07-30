@@ -42,7 +42,7 @@ output$geneListSelection <- renderTree({
 # this is part of the basic functionality from this tools and thus, can stay in this file.
 output$selectedGenesTable <- DT::renderDataTable({
   if(DEBUG)cat(file=stderr(), "output$selectedGenesTable\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   useGenes = useGenes()
   useCells = useCells()
   if(is.null(dataTables) | is.null(useGenes) | is.null(useCells))
@@ -60,7 +60,7 @@ output$selectedGenesTable <- DT::renderDataTable({
 # TODO move to were it belongs  
 output$removedGenesTable <- DT::renderDataTable({
   if(DEBUG)cat(file=stderr(), "output$removedGenesTable\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   useGenes = !useGenes()
   useCells = useCells()
   if(is.null(dataTables) | is.null(useGenes)  | is.null(useCells) )
@@ -79,7 +79,7 @@ output$removedGenesTable <- DT::renderDataTable({
 # Print names of selected genes for gene selection above table
 output$gsSelectedGenes <- renderText({
   if(DEBUG)cat(file=stderr(), "gsSelectedGenes\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   useGenes = useGenes()
   useCells = useCells()
   if(is.null(dataTables) | is.null(useGenes) | is.null(useCells))
@@ -95,7 +95,7 @@ output$gsSelectedGenes <- renderText({
 # Print names of removed genes for gene selection  
 output$gsrmGenes <- renderText({
   if(DEBUG)cat(file=stderr(), "gsrmGenes\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   useGenes = !useGenes()
   useCells = useCells()
   if(is.null(dataTables) | is.null(useGenes) | is.null(useCells))

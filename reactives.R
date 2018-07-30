@@ -15,7 +15,6 @@
 # })
 
 
-
 # reactive values  ------------------------------------------------------------------
 # should only hold original data
 # internal, should not be used by plug-ins
@@ -78,20 +77,9 @@ inputDataFunc <- function(inFile) {
   
 }
 
-# internal, should not be used by plug-ins
-inputData = reactive({
-  inFile <- input$file1
-  # cat(file = stderr(), "DEBUG:inputData1:", names(input), ":\n")
-  # cat(file = stderr(), "DEBUG:inputData2:", class(input$file1), ":\n")
-  # cat(file = stderr(), "DEBUG:inputData3:", input$file1, ":\n")
-  save(file = '~/scShinyHubDebug/medianUMI.RData', list = c(ls(), "input"))
-  if (is.null(inFile)) {
-    if (DEBUG)
-      cat(file = stderr(), "inputData: NULL\n")
-    return(NULL)
-  }
-  return(inputDataFunc(inFile))
-})
+
+
+  
 
 medianENSGfunc <- function(gbm) {
   geneC = colSums(gbm > 0, na.rm = TRUE)
@@ -229,7 +217,7 @@ useCellsFunc <-
 useCells <- reactive({
   if (DEBUG)
     cat(file = stderr(), "useCells\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   geneNames = input$minExpGenes
   rmCells = input$cellsFiltersOut
   rmPattern = input$cellPatternRM
@@ -260,7 +248,7 @@ useCells <- reactive({
 featureDataReact = reactive({
   if (DEBUG)
     cat(file = stderr(), "featureData\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   gbm = gbm()
   if (!exists("dataTables") | is.null(dataTables) | is.null(gbm)) {
     if (DEBUG)
@@ -327,7 +315,7 @@ useGenesFunc <-
 useGenes <- reactive({
   if (DEBUG)
     cat(file = stderr(), "useGenes\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   # useCells = useCells()
   # minGene <- input$minGenesGS
   ipIDs = input$selectIds
@@ -444,7 +432,7 @@ gbmFunc <-
 gbm <- reactive({
   if (DEBUG)
     cat(file = stderr(), "gbm\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   useCells = useCells()
   useGenes = useGenes()
   minGene <- input$minGenesGS # min number of reads per gene
@@ -506,7 +494,7 @@ gbm_matrix <- reactive({
 gbm_log <- reactive({
   if (DEBUG)
     cat(file = stderr(), "gbm_log\n")
-  # dataTables = inputData()
+  # dataTables = inputData$inputData
   # useCells = useCells()
   # useGenes = useGenes()
   gbm = gbm()
@@ -539,7 +527,7 @@ gbm_log <- reactive({
 gbmLogMatrix <- reactive({
   if (DEBUG)
     cat(file = stderr(), "gbmLogMatrix\n")
-  # dataTables = inputData()
+  # dataTables = inputData$inputData
   # useCells = useCells()
   # useGenes = useGenes()
   gbmLog = gbm_log()
@@ -762,7 +750,7 @@ sampleInfo = reactive({
 inputSample <- reactive({
   if (DEBUG)
     cat(file = stderr(), "inputSample\n")
-  dataTables = inputData()
+  dataTables = inputData$inputData
   # sampInf = sampleInfo() # not working as this is relative to the activated cells
   if (is.null(dataTables)) {
     return(NULL)

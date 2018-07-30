@@ -29,20 +29,7 @@ if(file.exists("defaultValues.R")){
 } 
 
 source("serverFunctions.R")
-source("privatePlotFunctions.R")
 
-
-# create large example files from split
-if(!file.exists("Examples/PBMC-Apheresis.new.Rds")){
-  xaaName <- "Examples/PBMC.xaa"
-  xabName <- "Examples/PBMC.xab"
-  contents <- readBin(xaaName, "raw", file.info(xaaName)$size)
-  contents2 <- readBin(xabName, "raw", file.info(xabName)$size)
-  outFile <- file("Examples/PBMC-Apheresis.new.Rds", 'ab')
-  writeBin(contents, outFile)
-  writeBin(contents2, outFile )
-  close(outFile)
-}
 
 #needs to be an option
 seed=2
@@ -52,6 +39,44 @@ enableBookmarking(store = "server")
 
 
 server <- function(input, output, session) {
+  
+  
+  inputData = reactiveValues()
+  inputData$inputData = NULL
+  
+  observeEvent(input$file1, {
+    cat(file = stderr(), "DEBUG:observeEvent-input$file1::\n")
+    # cat(file = stderr(), "DEBUG:inputData2:", class(input$file1), ":\n")
+    # cat(file = stderr(), "DEBUG:inputData3:", input$file1, ":\n")
+    save(file = "~/scShinyHubDebug/inputfile1.RData", list = c(ls(),ls(envir = globalenv())))
+    # load(file = '~/scShinyHubDebug/inputfile1.RData')
+    if (!is.null(input)) if (is.null(input$file1)) {
+      if (DEBUG)
+        cat(file = stderr(), "inputData: NULL\n")
+      return(NULL)
+    }else{
+      inFile <- input$file1
+      inputData$inputData = inputDataFunc(inFile)
+      # return(inputDataFunc(inFile))
+    }
+  })
+  
+  proxy = dataTableProxy('cellNameTable')
+  
+  observeEvent(input$selectAll, {
+    if(DEBUG)cat(file=stderr(), "input$selectAll\n")
+    if(!is.null(input))if(!is.null(input$selectAll)){
+      ipSelect = input$selectAll
+      proxy = proxy
+      allrows = input$cellNameTable_rows_all
+      proxy %>% selectRows( NULL )
+      if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."), list=ls())
+      # load(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."))
+      if(ipSelect){
+        proxy %>% selectRows( allrows )
+      }
+    }
+  })
   
   # TODO create a UI element for seed
   set.seed(seed)
@@ -125,7 +150,7 @@ server <- function(input, output, session) {
   
   # ------------------------------------------------------------------------------------------------------------
   # handling expensive calcualtions
-  forceCalc <-observe({
+  observe({
     input$goCalc
     isolate({
       if(DEBUG)cat(file=stderr(), "forceCalc\n")
@@ -149,7 +174,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      ip = inputData()
+      ip = inputData$inputData
       if( is.null(ip) ){
         if(DEBUG)cat(file=stderr(), "output$report:NULL\n")
         return(NULL)

@@ -234,20 +234,6 @@ tableSelectionServer <- function(input, output, session,
     return(retVal)
   })
   
-  proxy = dataTableProxy('cellNameTable')
-  
-  observeEvent(input$selectAll, {
-    if(DEBUG)cat(file=stderr(), "input$selectAll\n")
-    ipSelect = input$selectAll
-    prox = proxy
-    allrows = input$cellNameTable_rows_all
-    proxy %>% selectRows( NULL )
-    if(DEBUGSAVE) save(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."), list=ls())
-    # load(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."))
-    if(ipSelect){
-      proxy %>% selectRows( allrows )
-    }
-  })
   
   output$cellNameTable <- renderDT({
     if(DEBUG)cat(file=stderr(), "output$cellNameTable\n")
