@@ -143,6 +143,7 @@ shinyServer(function(input, output, session) {
   # handling expensive calcualtions
   forceCalc <-observe({
     input$goCalc
+    start.time <- Sys.time()
     isolate({
       if(DEBUG)cat(file=stderr(), "forceCalc\n")
       # list of output variable and function name
@@ -155,7 +156,13 @@ shinyServer(function(input, output, session) {
           assign(calc[1], eval(parse(text = paste0( calc[2], "()"))))
         }
       })
+      
     })
+    end.time <- Sys.time()
+    # tfmt <- "%Hh %Mm %Ss"
+    # t1 <- strptime(end.time - start.time, format=tfmt)
+    cat(file=stderr(), paste("this took: ", difftime(end.time, start.time, units="min") ," min\n"))
+    updateMemUse$update = isolate(updateMemUse$update) + 1
   })
   
   

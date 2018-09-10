@@ -119,8 +119,9 @@ prioritized_genes = reactive({
   if(!is.null(getDefaultReactiveDomain())){
     removeNotification( id="crpriotGenes")
   }
+  
   return(retVal)
 })
 
-myHeavyCalculations=list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
+myHeavyCalculations = list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
 

@@ -817,6 +817,7 @@ sample = reactive({
   
   return(sample)
 })
+
 geneCount = reactive({
   if (DEBUG)
     cat(file = stderr(), "geneCount\n")
@@ -830,6 +831,7 @@ geneCount = reactive({
   retVal = colSums(as.matrix(exprs(gbm))>0)
   return(retVal)
 })
+
 umiCount = reactive({
   if (DEBUG)
     cat(file = stderr(), "umiCount\n")
@@ -902,7 +904,18 @@ inputSample <- reactive({
   
 })
 
+updateMemUse <- reactiveValues(
+  update = 1
+)
 
+
+getMemoryUsed <- reactive({
+  require(pryr)
+  if (DEBUG)
+    cat(file = stderr(), "getMemoryUsed\n")
+  umu = updateMemUse$update
+  paste(utils:::format.object_size(mem_used(), "auto"),umu)
+})
 
 # used in coExpression, subclusterAnalysis, moduleServer, generalQC, DataExploration
 # TODO change to gbm_log everywhere and remove
