@@ -175,7 +175,7 @@ cellSelectionTab  = tabItem(tabName = "cellSelection",
                                             title = "comma separted list of cell names to be explicitly removed"))
                             ),br(),
                             fluidRow(column(
-                              10,offset = 1,
+                              11,offset = 1,
                               tableSelectionUi("cellSelectionMod")
                             )
                             ),br()

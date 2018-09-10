@@ -660,12 +660,13 @@ projections = reactive({
   # data. Here we ensure that everything is loaded and all varialbles are set by waiting
   # input data being loaded
   gbm = gbm()
-  if (!exists("gbm") | is.null(gbm)) {
+  pca = pca()
+  if (!exists("gbm") | is.null(gbm) | !exists("pca") | is.null(pca)) {
     if (DEBUG)
       cat(file = stderr(), "sampleInfo: NULL\n")
     return(NULL)
   }
-  projections = data.frame()
+  projections = data.frame(pca$x[,c(1,2,3)])
   if (DEBUG)
     cat(file = stderr(), "projections\n")
   
