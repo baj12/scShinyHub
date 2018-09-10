@@ -47,7 +47,8 @@ crHeatImage <- reactive({
                  cells_to_plot=cells_to_plot,
                  n_genes = 10, 
                  colour = example_col,
-                 limits = c(-3, 3))},
+                 limits = c(-3, 3))
+    },
     error = function(cond) {
       cat(file = stderr(), "crHeatImage: problem, in gbm_pheatmap?\n")
       if(!is.null(getDefaultReactiveDomain())){
@@ -55,7 +56,13 @@ crHeatImage <- reactive({
       }
       return(NULL)
     },
-    warning=function(cond){return("gbm_pheatmap warning")})
+    warning=function(cond){
+      cat(file = stderr(), "crHeatImage: problem, in gbm_pheatmap?\n")
+      if(!is.null(getDefaultReactiveDomain())){
+        removeNotification( id="crHeatMap")
+      }
+      return(NULL)
+      })
   if(!is.null(getDefaultReactiveDomain())){
     removeNotification( id="crHeatMap")
   }
