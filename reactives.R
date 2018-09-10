@@ -25,7 +25,7 @@ inputDataFunc <- function(inFile) {
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
-  
+  start.time <- Sys.time()
   load(inFile$datapath)
   
   cat(stderr(), 'Loaded')
@@ -69,6 +69,8 @@ inputDataFunc <- function(inFile) {
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "inputDataFunc")
   }
+  end.time <- Sys.time()
+  cat(file=stderr(), paste("load data took: ", difftime(end.time, start.time, units="min") ," min\n"))
   
   return(dataTables)
   
