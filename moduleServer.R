@@ -464,7 +464,7 @@ tableSelectionServer <- function(input, output, session,
       removeNotification( id="cellNameTable")
     }
     if (dim(dataTables)[1] > 1) {
-      return(DT::datatable(dataTables, filter = 'top',
+      return(DT::datatable(dataTables, rownames = F, filter = 'top',
                            options = list(
                              orderClasses = TRUE,
                              autoWidth=TRUE
