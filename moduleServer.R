@@ -138,7 +138,7 @@ clusterServer <- function(input, output, session,
     
     if (DEBUGSAVE) 
       save(file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
-           list = c(ls(),ls(envir = globalenv())))
+           list = c(ls(), "legend.position", ls(envir = globalenv())))
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     
     g_id <- toupper(g_id)
@@ -170,9 +170,15 @@ clusterServer <- function(input, output, session,
     if(DEBUG)cat(file=stderr(), paste("output$dge_plot1:---",ns(clId),"---\n"))
     subsetData <- subset(projections, dbCluster %in% clId)
     # subsetData$dbCluster = factor(subsetData$dbCluster)
-    subsetData$shape = as.numeric(as.factor(subsetData$sample))
+    # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the 
+    # sample information
+    if(length(as.numeric(as.factor(subsetData$sample))) > 18){
+      subsetData$shape = 1
+    }else{
+      subsetData$shape = as.numeric(as.factor(subsetData$sample))
+    }
     if(DEBUGSAVE) 
-      save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(),ls(envir = globalenv())))
+      save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(),"legend.position", ls(envir = globalenv())))
     # load(file="~/scShinyHubDebug/clusterPlot.RData")
     p1 <-
       ggplot(subsetData,
