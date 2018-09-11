@@ -58,7 +58,7 @@ dge <- reactive({
     showNotification("running dge", id="dge", duration = NULL)
   }
   if (length(gn) > 0){
-    prj = cbind(prj, gn*1)
+    prj = cbind(prj, gn[rownames(prj),]*1)
   }
   
   if(DEBUGSAVE) 

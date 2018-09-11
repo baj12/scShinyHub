@@ -26,7 +26,7 @@ crHeatImage <- reactive({
   width  <- session$clientData$output_plot_width
   height <- session$clientData$output_plot_height
   if(is.null(width)){width=96*7} # 7x7 inch output
-  if(is.null(height)){height=96*7}
+  if(is.null(height)){height=96*12}
   
   # px to inch conversion
   myPNGwidth <- width/96

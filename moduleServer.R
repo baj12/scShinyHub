@@ -376,10 +376,17 @@ clusterServer <- function(input, output, session,
       showNotification("cluser cell Selection", id="clustercellSelection", duration = NULL)
     }
     if(DEBUGSAVE) 
-      save(file = "~/scShinyHubDebug/clustercellSelection", list = c(ls(),ls(envir = globalenv())))
+      save(file = "~/scShinyHubDebug/clustercellSelection", list = c(ls(envir = globalenv()), ls()))
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."))
+    # load(file=paste0("~/scShinyHubDebug/clustercellSelection"))
     subsetData <- subset(projections, dbCluster %in% inpClusters)
-    #if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
+    cat(file=stderr(),paste(brushedPs$xmin,brushedPs$xmax,'\n'))
+    for(axis in c("x","y")){
+      if(class(subsetData[,brushedPs$mapping[axis][[1]]]) == 'factor'){
+        subsetData[,brushedPs$mapping[axis][[1]]] = as.numeric(droplevels(subsetData[,brushedPs$mapping[axis][[1]]]))
+      }
+    }
+    cat(file=stderr(), "cluster: cellSelection\n")
     cells.names <- brushedPoints(subsetData, brushedPs)
     retVal = paste(rownames(cells.names), collapse = ", ")
     if(DEBUG)cat(file=stderr(), "cluster: cellSelection: done\n")
