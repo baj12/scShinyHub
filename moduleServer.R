@@ -14,6 +14,10 @@ source("reactives.R")
 #' uses global reactives featueDataRact
 #'                       log2cpm # for defining the color of the cells
 
+
+
+
+
 # 
 # TODO parameter gene_id should be able to handle multiple gene_ids
 # TODO coloring based on number of genes selected (if NULL=color by cluster NR)
@@ -264,10 +268,23 @@ clusterServer <- function(input, output, session,
     return(cells.names)
   })
   
+  addToGroupValue = FALSE
+  
+  observe({
+    if (DEBUG)
+      cat(file = stderr(), "input$addToGroup changed\n")
+    if(!is.null(input$addToGroup)){
+      if(input$addToGroup)
+        addToGroupValue <<- TRUE
+      else
+        addToGroupValue <<- FALSE
+    }
+  })
+  
   observe({
     ns = session$ns
     input$changeGroups # action button
-    addToSelection = input$addToGroup
+    addToSelection =  addToGroupValue
     if (DEBUG)
       cat(file = stderr(), "cluster: changeGroups\n")
     
@@ -287,24 +304,24 @@ clusterServer <- function(input, output, session,
         return(NULL)
       }     
     })      
-      if(DEBUGSAVE) 
-        save(file = "~/scShinyHubDebug/changeGroups.RData", list = c(ls(),ls(envir = globalenv())))
-      # load(file="~/scShinyHubDebug/changeGroups.RData")
-      if (!grpN %in% colnames(grpNs))
-        grpNs[, grpN] = FALSE
-      if (!addToSelection)
-        grpNs[rownames(visibleCells), grpN] = FALSE
-      grpNs[rownames(cells.names), grpN] = TRUE
-      groupNames$namesDF = grpNs
-      updateSelectInput(session, ns('groupNames'),
-                        choices = colnames(grpNs),
-                        selected = grpN
-      )
-      updateTextInput(session = session, inputId = "groupName",
-                      value = grpN)
-      
-      selectedGroupName <<- grpN
-
+    if(DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/changeGroups.RData", list = c(ls(),ls(envir = globalenv())))
+    # load(file="~/scShinyHubDebug/changeGroups.RData")
+    if (!grpN %in% colnames(grpNs))
+      grpNs[, grpN] = FALSE
+    if (!addToSelection)
+      grpNs[rownames(visibleCells), grpN] = FALSE
+    grpNs[rownames(cells.names), grpN] = TRUE
+    groupNames$namesDF = grpNs
+    updateSelectInput(session, ns('groupNames'),
+                      choices = colnames(grpNs),
+                      selected = grpN
+    )
+    updateTextInput(session = session, inputId = "groupName",
+                    value = grpN)
+    
+    selectedGroupName <<- grpN
+    
   })
   
   # display the number of cells that belong to the group, but only from the visible ones
@@ -333,6 +350,7 @@ clusterServer <- function(input, output, session,
     return(retVal)
   })
   
+  
   output$additionalOptions <- renderUI({
     if(DEBUG)cat(file=stderr(), "cluster: additionalOptions\n")
     ns = session$ns
@@ -345,7 +363,7 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/additionalOptions.RData")
     
     tagList(
-      checkboxInput(ns("addToGroup"), "Add to group/otherwise overwrite", FALSE),
+      checkboxInput(ns("addToGroup"), "Add to group/otherwise overwrite", addToGroupValue),
       textInput(ns(id = "groupName"), label = "name group", value = groupName),
       selectInput(
         ns('groupNames'),
