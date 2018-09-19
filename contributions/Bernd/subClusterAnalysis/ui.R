@@ -9,7 +9,17 @@ tabList = list(
                    tags$ul(
                      tags$li(
                        strong('Subclustering'),
-                       ':Select a group of cells in plot1 and a different group of cells in plot2 for identifying differential features between these subclusters'
+                       paste(':Select a group of cells in plot1 and a different group of cells in plot2',
+                             'for identifying differential features between these subclusters')
+                     ),
+                     tags$li(strong('colors:'),
+                             paste('colored by cluster identity')
+                     ),
+                     tags$li(strong('selection hint:'),
+                             paste('you can also slect by groups you have defined in other plots.')
+                     ),
+                     tags$li(strong('selection hint:'),
+                              paste('also check out "Gene.count" to verify that number genes per cell.')
                      )
                      
                    ),
