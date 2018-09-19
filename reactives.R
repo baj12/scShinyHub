@@ -146,7 +146,7 @@ useCellsFunc <-
     if (DEBUG)
       cat(file = stderr(), "useCells2\n")
     if (DEBUGSAVE)
-      save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls(),ls(envir = globalenv())))
+      save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls()))
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
     goodCols = rep(TRUE, ncol(dataTables$gbm))
     gbm = as.matrix(exprs(dataTables$gbm))
@@ -173,7 +173,7 @@ useCellsFunc <-
       cellsRM <- gsub(" ", "", cellsRM, fixed = TRUE)
       cellsRM <- strsplit(cellsRM, ',')
       cellsRM <- cellsRM[[1]]
-      goodCols[which(colnames(dataTables$gbm) %in% cellsRM)] = FALSE
+      goodCols[which(toupper(colnames(dataTables$gbm)) %in% cellsRM)] = FALSE
     }
     
     # remove cells by pattern
@@ -182,14 +182,14 @@ useCellsFunc <-
     }
     
     if (!length(cellKeep) == 0) {
-      ids = which(colnames(dataTables$gbm) %in% cellKeep)
+      ids = which(toupper(colnames(dataTables$gbm)) %in% cellKeep)
       goodCols[ids] = TRUE
     }
     
     # genes that have to be expressed at least in one of them.
     selCols = rep(FALSE, length(goodCols))
     if (!length(genesin) == 0) {
-      ids = which(dataTables$featuredata$Associated.Gene.Name %in% genesin)
+      ids = which(toupper(dataTables$featuredata$Associated.Gene.Name) %in% genesin)
       if (length(ids) == 1) {
         selCols = gbm[ids,] > 0
       } else if (length(ids) == 0) {
@@ -207,7 +207,7 @@ useCellsFunc <-
     
     if (!length(cellKeepOnly) == 0) {
       goodCols[c(1:length(goodCols))] = FALSE
-      ids = which(colnames(dataTables$gbm) %in% cellKeepOnly)
+      ids = which(toupper(colnames(dataTables$gbm)) %in% cellKeepOnly)
       goodCols[ids] = TRUE
     }
     
