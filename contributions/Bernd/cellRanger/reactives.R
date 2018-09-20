@@ -26,7 +26,7 @@ crHeatImage <- reactive({
   width  <- session$clientData$output_plot_width
   height <- session$clientData$output_plot_height
   if(is.null(width)){width=96*7} # 7x7 inch output
-  if(is.null(height)){height=96*7}
+  if(is.null(height)){height=96*12}
   
   # px to inch conversion
   myPNGwidth <- width/96
@@ -40,6 +40,7 @@ crHeatImage <- reactive({
     save(file = "~/scShinyHubDebug/crHeatImage.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/crHeatImage.RData')
   logGB = log_gene_bc_matrix(gbm)
+<<<<<<< HEAD
   if(sum(genes_to_plot[[1]]$significant) == 0) {# no significant genes
     file.copy("images/cellSelection1.png", normalizePath(outfile))
   }else{
@@ -52,6 +53,43 @@ crHeatImage <- reactive({
     ggsave(file = normalizePath(outfile), plot = p$gtable, width = myPNGwidth, 
            height = myPNGheight, units = "in", dpi = 300*pixelratio)
   }
+=======
+
+  retVal = tryCatch({
+    gbm_pheatmap(gbm=logGB, 
+                 genes_to_plot=prioritized_genes, 
+                 cells_to_plot=cells_to_plot,
+                 n_genes = 10, 
+                 colour = example_col,
+                 limits = c(-3, 3))
+    },
+    error = function(cond) {
+      cat(file = stderr(), "crHeatImage: problem, in gbm_pheatmap?\n")
+      if(!is.null(getDefaultReactiveDomain())){
+        removeNotification( id="crHeatMap")
+      }
+      return(NULL)
+    },
+    warning=function(cond){
+      cat(file = stderr(), "crHeatImage: problem, in gbm_pheatmap?\n")
+      if(!is.null(getDefaultReactiveDomain())){
+        removeNotification( id="crHeatMap")
+      }
+      return(NULL)
+      })
+  if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="crHeatMap")
+  }
+  
+  p = retVal
+    # p = gbm_pheatmap(gbm=logGB, 
+    #                genes_to_plot=prioritized_genes, 
+    #                cells_to_plot=cells_to_plot,
+    #                n_genes = 10, 
+    #                colour = example_col,
+    #                limits = c(-3, 3))
+  ggsave(file = normalizePath(outfile), plot = p$gtable, width = myPNGwidth, height = myPNGheight, units = "in", dpi = 300*pixelratio)
+>>>>>>> 6aeb4f56da716f5e01bbea8e5fa681ff8c01ec70
   
   if(DEBUG)cat(file=stderr(), "done:crHeatImage\n")
   if(!is.null(getDefaultReactiveDomain())){
@@ -97,14 +135,15 @@ prioritized_genes = reactive({
     if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="crpriotGenes")
     }
-    
-    return(NULL)},
+    return(NULL)
+    },
   warning=function(cond){return("prioritize warning")})
   if(!is.null(getDefaultReactiveDomain())){
     removeNotification( id="crpriotGenes")
   }
+  
   return(retVal)
 })
 
-myHeavyCalculations=list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
+myHeavyCalculations = list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
 

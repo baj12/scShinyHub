@@ -20,10 +20,15 @@ clusterUI <- function(id){
              choice = c('tsne1', 'tsne2', 'tsne3'),
              selected = 'tsne2'
            ))),
-    plotOutput(ns('clusterPlot'), brush = brushOpts(id = ns('b1'))) %>% withSpinner(),
+    fluidRow(column(12,
+             plotOutput(ns('clusterPlot'), brush = brushOpts(id = ns('b1'))) %>% withSpinner()
+    )),
     fluidRow(
-      checkboxInput(ns("showCells"), "show cell names", FALSE),
-      verbatimTextOutput(ns('cellSelection'))
+      checkboxInput(ns("moreOptions"), "show more options", FALSE),
+      uiOutput(ns("additionalOptions"))
+      # checkboxInput(ns("showCells"), "show cell names", FALSE),
+      # 
+      # verbatimTextOutput(ns('cellSelection'))
     )
   )
 }

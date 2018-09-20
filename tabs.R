@@ -84,7 +84,7 @@ geneSelectionTab  = tabItem(tabName = "geneSelection",
                             )),
                             fluidRow(
                               column(3, offset = 1,
-                                     textInput('selectIds', 'regular expression for selection of genes to be removed', value = '^MT-|^RP')),
+                                     textInput('selectIds', 'regular expression for selection of genes to be removed', value = '^MT-|^RP|^MRP')),
                               column(5,
                                      h4('GeneList Selection'),
                                      shinyTree("geneListSelection", checkbox = TRUE)
@@ -175,7 +175,7 @@ cellSelectionTab  = tabItem(tabName = "cellSelection",
                                             title = "comma separted list of cell names to be explicitly removed"))
                             ),br(),
                             fluidRow(column(
-                              10,offset = 1,
+                              11,offset = 1,
                               tableSelectionUi("cellSelectionMod")
                             )
                             ),br()

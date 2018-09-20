@@ -25,7 +25,7 @@ inputDataFunc <- function(inFile) {
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
-  
+  start.time <- Sys.time()
   load(inFile$datapath)
   
   cat(stderr(), 'Loaded')
@@ -69,6 +69,8 @@ inputDataFunc <- function(inFile) {
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "inputDataFunc")
   }
+  end.time <- Sys.time()
+  cat(file=stderr(), paste("load data took: ", difftime(end.time, start.time, units="min") ," min\n"))
   
   return(dataTables)
   
@@ -144,7 +146,7 @@ useCellsFunc <-
     if (DEBUG)
       cat(file = stderr(), "useCells2\n")
     if (DEBUGSAVE)
-      save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls(),ls(envir = globalenv())))
+      save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls()))
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
     goodCols = rep(TRUE, ncol(dataTables$gbm))
     gbm = as.matrix(exprs(dataTables$gbm))
@@ -171,7 +173,7 @@ useCellsFunc <-
       cellsRM <- gsub(" ", "", cellsRM, fixed = TRUE)
       cellsRM <- strsplit(cellsRM, ',')
       cellsRM <- cellsRM[[1]]
-      goodCols[which(colnames(dataTables$gbm) %in% cellsRM)] = FALSE
+      goodCols[which(toupper(colnames(dataTables$gbm)) %in% cellsRM)] = FALSE
     }
     
     # remove cells by pattern
@@ -180,14 +182,14 @@ useCellsFunc <-
     }
     
     if (!length(cellKeep) == 0) {
-      ids = which(colnames(dataTables$gbm) %in% cellKeep)
+      ids = which(toupper(colnames(dataTables$gbm)) %in% cellKeep)
       goodCols[ids] = TRUE
     }
     
     # genes that have to be expressed at least in one of them.
     selCols = rep(FALSE, length(goodCols))
     if (!length(genesin) == 0) {
-      ids = which(dataTables$featuredata$Associated.Gene.Name %in% genesin)
+      ids = which(toupper(dataTables$featuredata$Associated.Gene.Name) %in% genesin)
       if (length(ids) == 1) {
         selCols = gbm[ids,] > 0
       } else if (length(ids) == 0) {
@@ -205,7 +207,7 @@ useCellsFunc <-
     
     if (!length(cellKeepOnly) == 0) {
       goodCols[c(1:length(goodCols))] = FALSE
-      ids = which(colnames(dataTables$gbm) %in% cellKeepOnly)
+      ids = which(toupper(colnames(dataTables$gbm)) %in% cellKeepOnly)
       goodCols[ids] = TRUE
     }
     
@@ -660,14 +662,46 @@ projections = reactive({
   # data. Here we ensure that everything is loaded and all varialbles are set by waiting
   # input data being loaded
   gbm = gbm()
-  if (!exists("gbm") | is.null(gbm)) {
+  pca = pca()
+  if (!exists("gbm") | is.null(gbm) | !exists("pca") | is.null(pca)) {
     if (DEBUG)
       cat(file = stderr(), "sampleInfo: NULL\n")
     return(NULL)
   }
-  projections = data.frame()
+  projections = data.frame(pca$x[,c(1,2,3)])
   if (DEBUG)
     cat(file = stderr(), "projections\n")
+  
+  # phenotypic data/ annotations of cells can already be included in the gbm object. We collect this information, but only for variable that hold information
+  # i.e. length(levels) > 1 & < number of rows
+  pd = pData(gbm)
+  if (ncol(pd) < 2) {
+    cat(file = stderr(), "phenoData for gbm has less than 2 columns\n")
+    return(NULL)
+  }
+  
+  # for (cn in colnames(pd)) {
+  #   if (class(pd[,cn]) == "factor") {
+  #     if (length(levels(pd[,cn])) > 1 & length(levels(pd[,cn])) < nrow(pd)) {
+  #       if (ncol(projections) == 0) {
+  #         projections = data.frame(tmp = pd[,cn])
+  #       }else{
+  #         if (nrow(projections) == length(pd[,cn])) {
+  #           projections = cbind(projections, pd[,cn])
+  #         } else {
+  #           showNotification(
+  #             paste("warning: ", proj[1], "didn't produce a result"),
+  #             type = "warning",
+  #             duration = NULL
+  #           )
+  #         }
+  #       }
+  #       
+  #       colnames(projections[,"tmp"]) = cn
+  #       
+  #     }
+  #   }
+  # }
   
   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
@@ -708,6 +742,47 @@ projections = reactive({
   return(projections)
 })
 
+groupNames <- reactiveValues(
+  namesDF = data.frame()
+  #{
+  # if(DEBUG)
+  #   cat(file = stderr(), "groupNames\n")
+  # projections = projections()
+  # if(is.null(projections)){
+  #   return(NULL)
+  # }
+  # if (DEBUGSAVE)
+  #   save(file = "~/scShinyHubDebug/groupNames.RData", list = c(ls(),ls(envir = globalenv())))
+  # # load(file="~/scShinyHubDebug/groupNames.RData")
+  # retVal = c()
+  # for(cn in colnames(projections)){
+  #   if(class(projections[,cn])=="logical"){
+  #     retVal = c(retVal, cn)
+  #   }
+  # }
+  # return(retVal)
+  # }
+)
+
+initializeGroupNames <- reactive({
+  if(DEBUG)
+    cat(file = stderr(), "initializeGroupNames\n")
+  gbm = gbm()
+  if(is.null(gbm)){
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/initializeGroupNames.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/initializeGroupNames.RData")
+  isolate({
+    df = data.frame(all  = rep(TRUE,ncol(gbm)), none = rep(FALSE,ncol(gbm)))
+    rownames(df) = colnames(gbm)
+    cat(file = stderr(), "initializeGroupNames2\n")
+    groupNames[['namesDF']] = df
+    cat(file = stderr(), "initializeGroupNames3\n")
+  })
+})
+
 
 dbCluster = reactive({
   if (DEBUG)
@@ -745,6 +820,7 @@ sample = reactive({
   
   return(sample)
 })
+
 geneCount = reactive({
   if (DEBUG)
     cat(file = stderr(), "geneCount\n")
@@ -758,6 +834,7 @@ geneCount = reactive({
   retVal = colSums(as.matrix(exprs(gbm))>0)
   return(retVal)
 })
+
 umiCount = reactive({
   if (DEBUG)
     cat(file = stderr(), "umiCount\n")
@@ -830,7 +907,18 @@ inputSample <- reactive({
   
 })
 
+updateMemUse <- reactiveValues(
+  update = 1
+)
 
+
+getMemoryUsed <- reactive({
+  require(pryr)
+  if (DEBUG)
+    cat(file = stderr(), "getMemoryUsed\n")
+  umu = updateMemUse$update
+  paste(utils:::format.object_size(mem_used(), "auto"),umu)
+})
 
 # used in coExpression, subclusterAnalysis, moduleServer, generalQC, DataExploration
 # TODO change to gbm_log everywhere and remove

@@ -1,17 +1,22 @@
 # here we define reactive values/variables
 
 scaterReadsFunc <- function(gbm, gbm_log, fd){
-  counts = as.matrix(exprs( gbm))
+
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
+  # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
+
+    counts = as.matrix(exprs( gbm))
   
   anno = pData(gbm)
-  anno$sample_id = anno$barcode
+  anno$sample_id = anno$sampleNames
   anno$fixed = "red"
   # anno$individual= "NA1"
   # anno$replicate = "r1"
   # anno$well = "A01"
   # anno$batch = "b1"
   pheno_data <- new("AnnotatedDataFrame", anno)
-  rownames(pheno_data) <- pheno_data$sample_id
+  # rownames(pheno_data) <- pheno_dat
   
   reads = as.matrix(counts)
   rownames(reads) = make.unique(fd[rownames(reads),"Associated.Gene.Name"])
@@ -27,7 +32,7 @@ scaterReadsFunc <- function(gbm, gbm_log, fd){
   reads <- scater::calculateQCMetrics(
     reads
   )
-  filter_by_expr_features <- (reads$total_features > 200)
+  filter_by_expr_features <- (reads$total_features_by_counts > 200)
   reads$use <- (
     # sufficient features (genes)
     filter_by_expr_features 

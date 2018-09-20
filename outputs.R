@@ -13,18 +13,21 @@ output$summaryStatsSideBar<-renderUI({
     if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar:off\n")
     return(NULL)
   }
+  
   line1<-paste('No. of cells: ', dim(gbm)[2],sep='\t')
   line2<-paste('No. of genes: ' ,  dim(gbm)[1],sep='\t')
   line3<-paste('Median UMIs per cell: ', medianUMI(),sep='\t')
   line4<-paste('Median Genes with min 1 UMI: ', medianENSG(),sep='\t')
   line5<-paste('Total number of reads: ' , sum(gbm))
+  line6<-paste("Memory used:", getMemoryUsed())
   HTML(
     paste0("Summary statistics of this dataset:", '<br/>','<br/>',
            line1, '<br/>',
            line2, '<br/>',
            line3, '<br/>',
            line4, '<br/>',
-           line5
+           line5, '<br/>',
+           line6
     )
   )
 })
