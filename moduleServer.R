@@ -124,6 +124,8 @@ clusterServer <- function(input, output, session,
       cat(file = stderr(), paste("Module: output$clusterPlot",session$ns(input$clusters), "\n"))
     featureData = featureDataReact()
     log2cpm = log2cpm()
+    gbm = gbm()
+    gbm_log = gbm_log()
     projections = tData()
     grpNs = groupNames$namesDF
     grpN = make.names(input$groupName)
@@ -133,22 +135,24 @@ clusterServer <- function(input, output, session,
     dimX = input$dimension_x
     clId = input$clusters
     g_id = gene_id()
+    geneNames = input$geneIds
     
-    
-    if (is.null(featureData) | is.null(log2cpm) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0) {
+    if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
     
     if (DEBUGSAVE) 
       save(file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
-           list = c(ls(), "legend.position", ls(envir = globalenv())))
+           list = c(ls(envir = globalenv()), ls(), "legend.position"))
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     
     g_id <- toupper(g_id)
     g_id <- gsub(" ", "", g_id, fixed = TRUE)
     g_id <- strsplit(g_id, ',')
     g_id <- g_id[[1]]
+    
+    
     
     notFound = featureData[!toupper(g_id) %in% featureData$Associated.Gene.Name, "Associated.Gene.Name"]
     if (length(featureData$Associated.Gene.Name) == length(notFound)) { # in case there is only one gene that is not available. 
@@ -168,20 +172,58 @@ clusterServer <- function(input, output, session,
     
     validate(need(is.na(sum(expression)) != TRUE, ''))
     
+    # UmiCountPerGenes is selected
+    if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes"){
+      
+      geneNames <- toupper(geneNames)
+      geneNames <- gsub(" ", "", geneNames, fixed = TRUE)
+      geneNames <- strsplit(geneNames, ',')
+      if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
+        geneNames <- geneNames[[1]]
+        
+        notFound = featureData[!toupper(geneNames) %in% featureData$Associated.Gene.Name, "Associated.Gene.Name"]
+        if (length(featureData$Associated.Gene.Name) == length(notFound)) { # in case there is only one gene that is not available. 
+          notFound = geneNames
+        }
+        if(length(notFound)>0){
+          if(DEBUG)cat(file=stderr(), paste("gene names not found: ",notFound, "\n"))
+          if(!is.null(getDefaultReactiveDomain())){
+            showNotification(paste("following genes were not found", notFound,collapse = " "), id="moduleNotFound", type = "warning", duration = 20)
+          }
+          
+        }
+        countIds  <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+                                                  toupper(geneNames)), ])
+        if (length(countIds) == 0 | length(countIds[[1]]) == 0) {
+          projections$UmiCountPerGenes = 0
+        }else{
+          if(length(countIds) == 1) {
+            projections$UmiCountPerGenes = exprs(gbm)[countIds, ]
+          }else{
+            projections$UmiCountPerGenes = Matrix::colSums(exprs(gbm)[countIds, ])
+          }
+        }
+      }else{
+        projections$UmiCountPerGenes = 0
+      }
+    }
+    
+    
     projections <- cbind(projections, t(expression))
     names(projections)[names(projections) == geneid] <- 'exprs'
     
-    if(DEBUG)cat(file=stderr(), paste("output$dge_plot1:---",ns(clId),"---\n"))
+    if (DEBUG)
+       cat(file = stderr(), paste("output$dge_plot1:---",ns(clId),"---\n"))
     subsetData <- subset(projections, dbCluster %in% clId)
     # subsetData$dbCluster = factor(subsetData$dbCluster)
     # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the 
     # sample information
-    if(length(as.numeric(as.factor(subsetData$sample))) > 18){
+    if (length(as.numeric(as.factor(subsetData$sample))) > 18){
       subsetData$shape = 1
     }else{
       subsetData$shape = as.numeric(as.factor(subsetData$sample))
     }
-    if(DEBUGSAVE) 
+    if (DEBUGSAVE) 
       save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(),"legend.position", ls(envir = globalenv())))
     # load(file="~/scShinyHubDebug/clusterPlot.RData")
     p1 <-

@@ -680,29 +680,7 @@ projections = reactive({
     return(NULL)
   }
   
-  # for (cn in colnames(pd)) {
-  #   if (class(pd[,cn]) == "factor") {
-  #     if (length(levels(pd[,cn])) > 1 & length(levels(pd[,cn])) < nrow(pd)) {
-  #       if (ncol(projections) == 0) {
-  #         projections = data.frame(tmp = pd[,cn])
-  #       }else{
-  #         if (nrow(projections) == length(pd[,cn])) {
-  #           projections = cbind(projections, pd[,cn])
-  #         } else {
-  #           showNotification(
-  #             paste("warning: ", proj[1], "didn't produce a result"),
-  #             type = "warning",
-  #             duration = NULL
-  #           )
-  #         }
-  #       }
-  #       
-  #       colnames(projections[,"tmp"]) = cn
-  #       
-  #     }
-  #   }
-  # }
-  
+ 
   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/projections.RData")
@@ -739,6 +717,8 @@ projections = reactive({
       observe(proj[2],quoted = TRUE)
     }
   })
+  # add a column for gene specific information that will be filled/updated on demand
+  projections$UmiCountPerGenes = 0
   return(projections)
 })
 

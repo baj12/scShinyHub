@@ -4,32 +4,36 @@ clusterUI <- function(id){
   if(DEBUG)cat(file=stderr(), paste("clusterUI: ", NS(id)("clusters"), "\n"))
   ns <- NS(id)
   tagList(fluidRow(
+    column(12, offset = 1,
+           textInput(ns('geneIds'), 'comma separated list of genes for UmiCountPerGenes', value = ''))
+  ),
+  fluidRow(
     column(4,
            uiOutput(ns("clusters"))),
     column(4,
            selectInput(
              ns('dimension_x'),
              label = 'X',
-             choice = c('tsne1', 'tsne2', 'tsne3'),
+             choices = c('tsne1', 'tsne2', 'tsne3'),
              selected = 'tsne1'
            )),
     column(4,
            selectInput(
              ns('dimension_y'),
              label = 'Y',
-             choice = c('tsne1', 'tsne2', 'tsne3'),
+             choices = c('tsne1', 'tsne2', 'tsne3'),
              selected = 'tsne2'
            ))),
-    fluidRow(column(12,
-             plotOutput(ns('clusterPlot'), brush = brushOpts(id = ns('b1'))) %>% withSpinner()
-    )),
-    fluidRow(
-      checkboxInput(ns("moreOptions"), "show more options", FALSE),
-      uiOutput(ns("additionalOptions"))
-      # checkboxInput(ns("showCells"), "show cell names", FALSE),
-      # 
-      # verbatimTextOutput(ns('cellSelection'))
-    )
+  fluidRow(column(12,
+                  plotOutput(ns('clusterPlot'), brush = brushOpts(id = ns('b1'))) %>% withSpinner()
+  )),
+  fluidRow(
+    checkboxInput(ns("moreOptions"), "show more options", FALSE),
+    uiOutput(ns("additionalOptions"))
+    # checkboxInput(ns("showCells"), "show cell names", FALSE),
+    # 
+    # verbatimTextOutput(ns('cellSelection'))
+  )
   )
 }
 
