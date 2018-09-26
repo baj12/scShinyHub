@@ -8,12 +8,12 @@ menuList =  list(
 )
 
 tabList = list(
-  tabItem("umiHist",
+  tabItem("umiHist",c(
                         tags$h3("Histogram of UMI counts"),
                         fluidRow(column(
                           10, offset = 1,
                           plotOutput('plotUmiHist') %>% withSpinner()
-                        ))
+                        )))
   ),
   
   tabItem("sampleHist",
