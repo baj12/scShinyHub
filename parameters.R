@@ -9,16 +9,20 @@
 if(DEBUG)cat(file=stderr(), paste("parameters:", length(allTabs)," ", "\n"))
 
 normaliztionChoices = list(raw = "rawNormalization")
-parameterContributions = list()
+# parameterContributions = list()
 parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
 for(fp in parFiles){
   myNormalizationChoices = c()
   source(fp, local = TRUE)
-  
-  for (li in myNormalizationChoices){
-    if(length(li)>0){
-      if(DEBUG)cat(file=stderr(), paste("normalization Choice: ", li, "\n"))
-      normaliztionChoices[[length(normaliztionChoices) + 1]] = li
+  save(file = "normalizationCH.RData", list=ls())
+  # load(file = "normalizationCH.RData")
+  for (li in 1:length(myNormalizationChoices)){
+    liVal = myNormalizationChoices[[li]]
+    if(length(liVal)>0){
+      if(DEBUG)cat(file=stderr(), paste("normalization Choice: ", liVal, "\n"))
+      oldNames = names(normaliztionChoices)
+      normaliztionChoices[[length(normaliztionChoices) + 1]] = liVal
+      names(normaliztionChoices) = c(oldNames, names(myNormalizationChoices)[li])
     }
   }
 }

@@ -12,11 +12,24 @@ parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TR
 for(fp in parFiles){
   myNormalizationParameters = list()
   source(fp, local = TRUE)
+    save(file = "~/scShinyHubDebug/normalizationsParameters.RData", 
+         list = c("normaliztionParameters",ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/normalizationsParameters.RData")
   
-  for (li in myNormalizationParameters){
-    if(length(li)>0){
-      if(DEBUG)cat(file=stderr(), paste("normalization Choice: ", li, "\n"))
-      normaliztionParameters[[length(normaliztionParameters) + 1]] = li
+  for (li in 1:length(myNormalizationParameters)){
+    lVal = myNormalizationParameters[[li]]
+    if(length(lVal)>0){
+      if(DEBUG){
+        cat(file=stderr(), paste("normalization Choice: ", 
+                                        names(myNormalizationParameters)[li], " ",
+                   lVal, "\n"))
+        cat(file=stderr(), paste("class: ", 
+                                 class(myNormalizationParameters[[li]]), " ",
+                                 lVal, "\n"))
+      }
+      oldNames = names(normaliztionParameters)
+      normaliztionParameters[[length(normaliztionParameters) + 1]] = lVal
+      names(normaliztionParameters ) = c(oldNames, names(myNormalizationParameters)[li])
     }
   }
 }
@@ -32,9 +45,14 @@ output$normalizationsParametersDynamic <- renderUI({
     for (li in normaliztionParameters){
       if(length(li)>0){
         if(DEBUG)cat(file=stderr(), paste("normaliztionParameters: ", li, "\n"))
+        if(DEBUG)cat(file=stderr(), paste("normaliztionParameters: ", names(li), "\n"))
       }
     }
   }
+  # if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData", 
+         list = c("normaliztionParameters",ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData")
   do.call("switch", args = c(selectedChoice,
          normaliztionParameters,
           h3('no parameters provided')

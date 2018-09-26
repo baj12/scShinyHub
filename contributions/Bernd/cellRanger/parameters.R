@@ -21,10 +21,43 @@ tabList = list(
 # normalization parameters
 
 # choice for the radio buttion
-myNormalizationChoices = list(gbm_log = "gbm_logNormalization")
+myNormalizationChoices = list(gbm_log = "gbm_logNormalization",
+                              equalize_gbms = "equalize_gbms")
 
+# value should be of class shiny.tag
+myNormalizationParameters = list(gbm_log = h3("xno Parameters implemented"),
+                                 equalize_gbms = h3("xno Parameters implemented")
+)
+                                 
 
-myNormalizationParameters = list(gbm_log = "no Parameters implemented")
+equalize_gbms <- reactive({
+  if (DEBUG)
+    cat(file = stderr(), "equalize_gbms\n")
+  gbm = gbm()
+  
+  if (is.null(gbm)) {
+    if (DEBUG)
+      cat(file = stderr(), "equalize_gbms:NULL\n")
+    return(NULL)
+  }
+  if (DEBUGSAVE){
+    cat(file = stderr(), "equalize_gbms:saving\n")
+    save(file = "~/scShinyHubDebug/equalize_gbms", list = c(ls(),ls(envir = globalenv())))
+    cat(file = stderr(), "equalize_gbms:saving done\n")
+  }
+    # load(file="~/scShinyHubDebug/equalize_gbms")
+  
+  # set.seed(0)
+  # gbm_list <- list(gbm1, gbm2)
+  # gbm_list <- lapply(gbm_list,load_molecule_info) # load sample molecule information
+  # gbm_list_equalized <- equalize_gbms(gbm_list) # equalize the gene-barcode matrices
+  # merged_gbm <- concatenate_gene_bc_matrices(gbm_list_equalized)
+  
+  if (DEBUG)
+    cat(file = stderr(), "gbm_logNormalization:Done\n")
+  return(gbm)
+  
+})
 
 gbm_logNormalization <- reactive({
   if (DEBUG)
@@ -53,11 +86,6 @@ gbm_logNormalization <- reactive({
 
 
 
-# set.seed(0)
-# gbm_list <- list(gbm1, gbm2)
-# gbm_list <- lapply(gbm_list,load_molecule_info) # load sample molecule information
-# gbm_list_equalized <- equalize_gbms(gbm_list) # equalize the gene-barcode matrices
-# merged_gbm <- concatenate_gene_bc_matrices(gbm_list_equalized)
 
 
 
