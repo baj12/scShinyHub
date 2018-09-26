@@ -2,6 +2,48 @@
 source("moduleServer.R", local=TRUE)
 source("reactives.R", local=TRUE)
 
+
+#################################
+# Parameters / normalization 
+output$normalizationRadioButtonValue <- renderPrint({ input$normalizationRadioButton })
+
+normaliztionParameters = list(raw = "no Parameters needed")
+parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
+for(fp in parFiles){
+  myNormalizationParameters = list()
+  source(fp, local = TRUE)
+  
+  for (li in myNormalizationParameters){
+    if(length(li)>0){
+      if(DEBUG)cat(file=stderr(), paste("normalization Choice: ", li, "\n"))
+      normaliztionParameters[[length(normaliztionParameters) + 1]] = li
+    }
+  }
+}
+
+output$normalizationsParametersDynamic <- renderUI({
+  if(is.null(input$normalizationRadioButton))
+    return(NULL)
+  selectedChoice = input$normalizationRadioButton
+  
+  if (DEBUG) {
+    cat(file=stderr(), paste(class(normaliztionParameters)),"\n")
+    cat(file=stderr(), paste(length(normaliztionParameters)),"\n")
+    for (li in normaliztionParameters){
+      if(length(li)>0){
+        if(DEBUG)cat(file=stderr(), paste("normaliztionParameters: ", li, "\n"))
+      }
+    }
+  }
+  do.call("switch", args = c(selectedChoice,
+         normaliztionParameters,
+          h3('no parameters provided')
+  ))
+})
+
+# End of Parameters / normalization
+#################################
+
 output$summaryStatsSideBar<-renderUI({
   if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar\n")
   gbm = gbm_matrix()

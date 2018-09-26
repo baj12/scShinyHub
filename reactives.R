@@ -494,7 +494,12 @@ gbm_matrix <- reactive({
 })
 
 
-
+rawNormalization <- reactive({
+  gbm = gbm()
+  if (DEBUG)
+    cat(file = stderr(), "rawNormalization\n")
+  return(gbm)
+})
 
 # individual values
 gbm_log <- reactive({
@@ -504,20 +509,21 @@ gbm_log <- reactive({
   # useCells = useCells()
   # useGenes = useGenes()
   gbm = gbm()
+  normMethod = input$normalizationRadioButton
+  
   if (is.null(gbm)) {
     if (DEBUG)
       cat(file = stderr(), "gbm_log:NULL\n")
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Calculating log", id = "gbm_log", duration = NULL)
+    showNotification("Normalizing data", id = "gbm_log", duration = NULL)
   }
   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/gbm_log.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbm_log.RData")
-  use_genes <- get_nonzero_genes(gbm)
-  gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-  gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
+
+  gbm_log <- do.call(normMethod, args = list())
   
   # gbm rownames are ENSG numbers
   # dataTables$gbm_log[useGenes, useCells]

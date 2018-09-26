@@ -5,6 +5,7 @@
 # http://shiny.rstudio.com
 #
 
+
 library(shiny)
 library(shinydashboard)
 library(shinyBS)
@@ -22,8 +23,9 @@ library(shinycssloaders)
 if(file.exists('defaultValues.R')){
   source('defaultValues.R')
 }
-source('tabs.R')
-
+# input, cell/gene selection tabs
+# source('tabs.R',  local = TRUE)
+source('tabs.R',  local = FALSE)
 
 # general tabs
 allTabs = list(       
@@ -31,10 +33,13 @@ allTabs = list(
   geneSelectionTab,
   cellSelectionTab
 )
+# parameters tab, includes basic normalization
+source('parameters.R',  local = TRUE)
 
 # Basic menu Items
 allMenus = list(
   menuItem("input", tabName = "input", icon = icon("dashboard")),
+  menuItem("Parametes", tabName = "parameters", icon = icon("dashboard"), parameterItems),
   menuItem("Cell selection", tabName = "cellSelection", icon = icon("dashboard")),
   menuItem("Gene selection", tabName = "geneSelection", icon = icon("dashboard"))
 )
@@ -60,8 +65,26 @@ for(fp in uiFiles){
       allTabs[[length(allTabs) + 1]] = li
     }
   }
-  
 }
+
+#todo
+# parse all parameters.R files under contributions to include in application
+# allTabs holds all tabs regardsless of their location in the GUI
+parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
+for(fp in parFiles){
+  tabList = list()
+  source(fp, local = TRUE)
+  
+  for (li in tabList){
+    if(length(li)>0){
+      # if(DEBUG)cat(file=stderr(), paste(li$children[[1]], "\n"))
+      allTabs[[length(allTabs) + 1]] = li
+    }
+  }
+}
+
+# search for parameter contribution submenu items (menuSubItem)
+# parameterContributions = ""
 
 
 
