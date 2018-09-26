@@ -50,3 +50,16 @@ gbm_logNormalization <- reactive({
   
   
 })
+
+
+
+# set.seed(0)
+# gbm_list <- list(gbm1, gbm2)
+# gbm_list <- lapply(gbm_list,load_molecule_info) # load sample molecule information
+# gbm_list_equalized <- equalize_gbms(gbm_list) # equalize the gene-barcode matrices
+# merged_gbm <- concatenate_gene_bc_matrices(gbm_list_equalized)
+
+
+
+
+
