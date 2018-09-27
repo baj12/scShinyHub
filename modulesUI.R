@@ -1,7 +1,8 @@
 # to select clusters from the list of available knn clusters
 
 clusterUI <- function(id){
-  if(DEBUG)cat(file=stderr(), paste("clusterUI: ", NS(id)("clusters"), "\n"))
+  if (DEBUG)
+    cat(file=stderr(), paste("clusterUI: ", NS(id)("clusters"), "\n"))
   ns <- NS(id)
   tagList(fluidRow(
     column(12, offset = 1,
