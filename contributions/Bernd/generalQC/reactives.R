@@ -1,7 +1,8 @@
 # here we define reactive values/variables
 
-scaterReadsFunc <- function(gbm, gbm_log, fd){
-
+# scaterReadsFunc <- function(gbm, gbm_log, fd){
+  scaterReadsFunc <- function(gbm, fd){
+    
   if(DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
@@ -50,12 +51,13 @@ scaterReadsFunc <- function(gbm, gbm_log, fd){
 scaterReads <- reactive({
   if(DEBUG)cat(file=stderr(), "scaterReads\n")
   gbm = gbm()
-  gbm_log = gbm_log()
+  # gbm_log = gbm_log()
   fd = featureDataReact()
   if( is.null(gbm) | is.null(gbm_log))
     return(NULL)
-  return(scaterReadsFunc(gbm, gbm_log, fd))
-
+  # return(scaterReadsFunc(gbm, gbm_log, fd))
+  return(scaterReadsFunc(gbm, fd))
+  
 })
 
 

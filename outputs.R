@@ -12,6 +12,7 @@ parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TR
 for(fp in parFiles){
   myNormalizationParameters = list()
   source(fp, local = TRUE)
+  if(DEBUGSAVE)
     save(file = "~/scShinyHubDebug/normalizationsParameters.RData", 
          list = c("normaliztionParameters",ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/normalizationsParameters.RData")
@@ -49,7 +50,7 @@ output$normalizationsParametersDynamic <- renderUI({
       }
     }
   }
-  # if (DEBUGSAVE)
+   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData", 
          list = c("normaliztionParameters",ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData")
