@@ -88,7 +88,7 @@ scater_norm <- reactive({
   retVal = SummarizedExperiment::assays(scaterReads)$logcounts
   rownames(retVal) = rownames(gbm)
   retVal = newGeneBCMatrix(retVal, pd=pData(gbm), fd=fData(gbm))
-  return()
+  return(retVal)
   
 })
 
