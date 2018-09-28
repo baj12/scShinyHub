@@ -62,7 +62,8 @@ scater_norm <- reactive({
     filter_by_expr_features 
     )
   
-  scaterReads <- scran::computeSumFactors(scaterReads, clusters = sampleInfo$sample, subset.row =scaterReads$use)
+  scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample)), 5), 
+                                          clusters = sampleInfo$sample, subset.row =scaterReads$use)
   # summary(sizeFactors(scaterReads))
   # plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
   #      ylab="Library size (millions)", xlab="Size factor")
