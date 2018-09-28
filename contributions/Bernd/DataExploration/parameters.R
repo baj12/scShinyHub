@@ -65,11 +65,11 @@ scater_norm <- reactive({
   scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample)), 5), 
                                           clusters = sampleInfo$sample, subset.row =scaterReads$use)
   # summary(sizeFactors(scaterReads))
-  # plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
-  #      ylab="Library size (millions)", xlab="Size factor")
+  plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
+       ylab="Library size (millions)", xlab="Size factor")
   scaterReads <- normalize(scaterReads)
-  # plotExplanatoryVariables(scaterReads, variables=c("total_features_by_counts",
-  #                                           "log10_total_features_by_counts", "pct_counts_in_top_100_features"))
+  plotExplanatoryVariables(scaterReads, variables=c("total_features_by_counts",
+                                            "log10_total_features_by_counts", "pct_counts_in_top_100_features"))
   # # if (length(levels(sampleInfo$sample))>1){
   #   gbm_list = list()
   #   for (smpLvl in levels(sampleInfo$sample)){
@@ -86,7 +86,8 @@ scater_norm <- reactive({
   if (DEBUG)
     cat(file = stderr(), "gbm_logNormalization:Done\n")
   retVal = SummarizedExperiment::assays(scaterReads)$logcounts
-  retVal = newGeneBCMatrix(SummarizedExperiment::assays(scaterReads)$logcounts, pd=pData(gbm), fd=fData(gbm))
+  rownames(retVal) = rownames(gbm)
+  retVal = newGeneBCMatrix(retVal, pd=pData(gbm), fd=fData(gbm))
   return()
   
 })
