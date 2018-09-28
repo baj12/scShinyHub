@@ -460,7 +460,7 @@ clusterServer <- function(input, output, session,
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection"))
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     geneid = geneName2Index(geneNames, featureData) 
-    projections = updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+    projections = updateProjectionsWithUmiCount(dimY, dimX, geneid, featureData, gbm, projections)
     
     cat(file=stderr(),paste(brushedPs$xmin,brushedPs$xmax,'\n'))
     for(axis in c("x","y")){
