@@ -45,5 +45,8 @@ allTabs[[length(allTabs) + 1]] = list(
       uiOutput("normalizationsParametersDynamic")
     )
     )
+    # ,
+    # tableSelectionUi("normalizationResult")
+    
   )
 )

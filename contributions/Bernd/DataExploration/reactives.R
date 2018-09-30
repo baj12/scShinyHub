@@ -1,5 +1,15 @@
 require(ggplot2)
 
+output$NumberOfGenesInclude = renderText({
+  idx = scGeneIdxInclude()
+  paste("Number of genes to be included: ", length(idx))
+})
+
+output$NumberOfGenesExclude = renderText({
+  idx = scGeneIdxExclude()
+  paste("Number of genes to be included: ", length(idx))
+})
+
 scaterPNG <- reactive({
   if(DEBUG)cat(file=stderr(), "scaterPNG\n")
   scaterReads = scaterReads()

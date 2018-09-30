@@ -22,13 +22,69 @@
 
 # choice for the radio buttion
 myNormalizationChoices = list(
-                              scater_norm = "scater_norm")
+  scater_norm = "scater_norm"
+  )
 
 # value should be of class shiny.tag
+# will be displayed via renderUI
 myNormalizationParameters = list(
-  scater_norm = h4("no Parameters implemented")
+  scater_norm = list(textInput("scaterGeneList", "List of genes to use for normalization"),
+                     textOutput("NumberOfGenesInclude", inline = TRUE),
+                     textInput("scaterGeneListRM", "List of genes to exclude for normalization"),
+                     textOutput("NumberOfGenesExclude", inline = TRUE)
+  )
 )
 
+
+scGeneIdxInclude = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "scGeneIdxInclude\n")
+  scGeneList = input$scaterGeneList
+  scaterReads = scaterReads()
+  if (is.null(scaterReads)) {
+    if (DEBUG)
+      cat(file = stderr(), "scGeneIdxInclude:NULL\n")
+    return(NULL)
+  }
+  if (DEBUGSAVE){
+    cat(file = stderr(), "scGeneIdxInclude:saving\n")
+    save(file = "~/scShinyHubDebug/scGeneIdxInclude.RData", list = c(ls(),ls(envir = globalenv())))
+    cat(file = stderr(), "scGeneIdxInclude:saving done\n")
+    # load(file = "~/scShinyHubDebug/scGeneIdxInclude.RData")
+  }
+  genesin <- toupper(scGeneList)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ',')
+  genesin <- genesin[[1]]
+  
+  retVal = which(rownames(scaterReads) %in% genesin)
+  return(retVal)
+})
+
+scGeneIdxExclude = reactive({
+  if (DEBUG)
+    cat(file = stderr(), "scGeneIdxExclude\n")
+  scGeneList = input$scaterGeneListRM
+  scaterReads = scaterReads()
+  if (is.null(scaterReads)) {
+    if (DEBUG)
+      cat(file = stderr(), "scGeneIdxExclude:NULL\n")
+    return(NULL)
+  }
+  if (DEBUGSAVE){
+    cat(file = stderr(), "scGeneIdxExclude:saving\n")
+    save(file = "~/scShinyHubDebug/scGeneIdxExclude.RData", list = c(ls(),ls(envir = globalenv())))
+    cat(file = stderr(), "scGeneIdxExclude:saving done\n")
+    # load(file = "~/scShinyHubDebug/scGeneIdxExclude.RData")
+  }
+  genesin <- toupper(scGeneList)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ',')
+  genesin <- genesin[[1]]
+  
+  retVal = which(rownames(scaterReads) %in% genesin)
+  return(retVal)
+})
 
 scater_norm <- reactive({
   if (DEBUG)
@@ -36,7 +92,10 @@ scater_norm <- reactive({
   gbm = gbm()
   sampleInfo = inputSample()
   scaterReads = scaterReads()
+  scGeneIdxInclude = scGeneIdxInclude()
+  scGeneIdxExclude = scGeneIdxExclude()
   minExpression = ncol(scaterReads)/10
+  
   
   require(scater)
   require(scran)
@@ -57,19 +116,27 @@ scater_norm <- reactive({
   cdata = colData(scaterReads)
   cdata$Treatment = sampleInfo$sample
   colData(scaterReads) = cdata
-  filter_by_expr_features <- (scaterReads$total_features_by_counts > minExpression)
+  if(length(scGeneIdxInclude)==0){
+    filter_by_expr_features <- (scaterReads$total_features_by_counts > minExpression)
+  }else{
+    filter_by_expr_features = rep(FALSE, nrow(scaterReads))
+    filter_by_expr_features[scGeneIdxInclude] = TRUE
+  }
+  if(length(scGeneIdxExclude)==0){
+    filter_by_expr_features[scGeneIdxExclude] = FALSE
+  }
   scaterReads$use <- (
-    filter_by_expr_features 
-    )
+    filter_by_expr_features
+  )
   
   scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample)), 5), 
-                                          clusters = sampleInfo$sample, subset.row =scaterReads$use)
+                                          clusters = sampleInfo$sample, subset.row = scaterReads$use)
   # summary(sizeFactors(scaterReads))
   plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
        ylab="Library size (millions)", xlab="Size factor")
   scaterReads <- normalize(scaterReads)
   plotExplanatoryVariables(scaterReads, variables=c("total_features_by_counts",
-                                            "log10_total_features_by_counts", "pct_counts_in_top_100_features"))
+                                                    "log10_total_features_by_counts", "pct_counts_in_top_100_features"))
   # # if (length(levels(sampleInfo$sample))>1){
   #   gbm_list = list()
   #   for (smpLvl in levels(sampleInfo$sample)){
