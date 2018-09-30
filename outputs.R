@@ -176,5 +176,6 @@ output$DEBUGSAVEstring <-  renderText({ DEBUGSAVE <<- input$DEBUGSAVE })
 
 r<-callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 
+r<-callModule(tableSelectionServer, "normalizationResult", gbmLogMatrix)
 
 

@@ -149,7 +149,6 @@ cellSelectionTab  = tabItem(tabName = "cellSelection",
 )
 
 
-#todo
 # parse all parameters.R files under contributions to include in application
 # allTabs holds all tabs regardsless of their location in the GUI
 parameterContributions = list()
@@ -170,9 +169,11 @@ for(fp in parFiles){
 parameterItems  = list(
   menuSubItem("Normalization", tabName = "normalizations"),
   parameterContributions
-
 )
 
+
+  
+  
 # # link to the content of the 
 # parametersTab  = tabItem(tabName = "normalizations",
 #                             fluidRow(div(h3('Cell selection'), align = 'center')),
