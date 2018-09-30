@@ -50,7 +50,11 @@ tableSelectionUi <- function(id){
     fluidRow(
       h4('Cells', offset = 1),
       checkboxInput(ns("selectAll"), "Select all rows", FALSE),br(),
-      DTOutput(ns('cellNameTable')) %>% withSpinner()
-    )
+      column(width = 12,
+             DTOutput(ns('cellNameTable')) %>% withSpinner(),
+             style = "height:500px; overflow-y: scroll;overflow-x: scroll;"
+      )
+    ),
+    fluidRow()
   )
 }

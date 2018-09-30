@@ -538,6 +538,10 @@ tableSelectionServer <- function(input, output, session,
     }
   })
   
+  output$columnSelection <- renderUI({
+    
+  })
+  
   output$cellNameTable <- renderDT({
     if(DEBUG)cat(file=stderr(), "output$cellNameTable\n")
     dataTables = dataTab()
