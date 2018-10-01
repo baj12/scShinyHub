@@ -24,7 +24,7 @@ geneName2Index <- function(g_id, featureData){
 
 updateProjectionsWithUmiCount <- function(dimY, dimX, geneNames, featureData, gbm, projections){
   if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes"){
-    geneNames = geneName2Index(g_id = geneNames, featureData)
+    geneNames = geneName2Index(geneNames, featureData)
     if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
       
       if(length(geneNames) == 1) {
