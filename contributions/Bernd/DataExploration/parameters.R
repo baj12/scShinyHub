@@ -116,21 +116,25 @@ scater_norm <- reactive({
   cdata = colData(scaterReads)
   cdata$Treatment = sampleInfo$sample
   colData(scaterReads) = cdata
-  if(length(scGeneIdxInclude)==0){
+  genes2use = rep(TRUE, nrow(scaterReads))
+  if (length(scGeneIdxInclude) == 0) {
     filter_by_expr_features <- (scaterReads$total_features_by_counts > minExpression)
-  }else{
-    filter_by_expr_features = rep(FALSE, nrow(scaterReads))
-    filter_by_expr_features[scGeneIdxInclude] = TRUE
+    scaterReads$use <- (
+      filter_by_expr_features
+    )
+  } else {
+    genes2use = rep(FALSE, nrow(scaterReads))
+    genes2use[scGeneIdxInclude] = TRUE
   }
-  if(length(scGeneIdxExclude)==0){
-    filter_by_expr_features[scGeneIdxExclude] = FALSE
+  if (length(scGeneIdxExclude) == 0) {
+    genes2use[scGeneIdxExclude] = FALSE
   }
-  scaterReads$use <- (
-    filter_by_expr_features
-  )
   
+  # TODO 
+  # check if success, there might be too little genes selected
+  # print the necessary error message
   scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample)), 5), 
-                                          clusters = sampleInfo$sample, subset.row = scaterReads$use)
+                                          clusters = sampleInfo$sample, subset.row = genes2use)
   # summary(sizeFactors(scaterReads))
   plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
        ylab="Library size (millions)", xlab="Size factor")

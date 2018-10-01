@@ -568,6 +568,42 @@ gbmLogMatrix <- reactive({
   
 })
 
+# gbmLog matrix with symbol as first column
+# TODO
+# we should probably just rename the rows and then have an option to tableSelectionServer that shows (or not) rownames
+gbmLogMatrixDisplay <- reactive({
+  if (DEBUG)
+    cat(file = stderr(), "gbmLogMatrixDisplay\n")
+  # dataTables = inputData()
+  # useCells = useCells()
+  # useGenes = useGenes()
+  gbmLog = gbm_log()
+  if (is.null(gbmLog)) {
+    if (DEBUG)
+      cat(file = stderr(), "gbmLogMatrixDisplay:NULL\n")
+    return(NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("Calculating gbmLogmatrix",
+                     id = "gbmLogMatrixDisplay",
+                     duration = NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/gbmLogMatrixDisplay.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/gbmLogMatrixDisplay.RData")
+  
+  retVal = as.data.frame(as.matrix(exprs(gbmLog)))
+  rownames(retVal) = make.names(fData(gbmLog)$symbol, unique = TRUE)
+  
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "gbmLogMatrixDisplay")
+  }
+  if (DEBUG)
+    cat(file = stderr(), "gbmLogMatrixDisplay:Done\n")
+  return(retVal)
+  
+  
+})
 
 pcaFunc <- function(gbm_log) {
   if (DEBUGSAVE)

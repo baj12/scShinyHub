@@ -562,8 +562,9 @@ tableSelectionServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="cellNameTable")
     }
+    maxCol = min(20, ncol(dataTables))
     if (dim(dataTables)[1] > 1) {
-      return(DT::datatable(dataTables, rownames = F, filter = 'top',
+      return(DT::datatable(dataTables[,1:maxCol], rownames = F, filter = 'top',
                            options = list(
                              orderClasses = TRUE,
                              autoWidth=TRUE
