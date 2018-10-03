@@ -133,7 +133,7 @@ scater_norm <- reactive({
   # TODO 
   # check if success, there might be too little genes selected
   # print the necessary error message
-  scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample)), 5), 
+  scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample),100), 5), 
                                           clusters = sampleInfo$sample, subset.row = genes2use)
   # summary(sizeFactors(scaterReads))
   plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
