@@ -160,7 +160,7 @@ output$gsSelectedGenes <- renderText({
 output$gsrmGenes <- renderText({
   if(DEBUG)cat(file=stderr(), "gsrmGenes\n")
   dataTables = inputData()
-  useGenes = !useGenes()
+  useGenes = useGenes()
   useCells = useCells()
   if(is.null(dataTables) | is.null(useGenes) | is.null(useCells))
     return(NULL)
