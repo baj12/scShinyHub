@@ -88,7 +88,7 @@ scGeneIdxExclude = reactive({
 
 scater_norm <- reactive({
   if (DEBUG)
-    cat(file = stderr(), "scaterProtocol\n")
+    cat(file = stderr(), "scater normalization\n")
   gbm = gbm()
   sampleInfo = inputSample()
   scaterReads = scaterReads()
