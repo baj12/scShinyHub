@@ -55,6 +55,9 @@ scGeneIdxInclude = reactive({
   genesin <- toupper(scGeneList)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
+  if(length(genesin) == 0){
+    return(NULL)
+  }
   genesin <- genesin[[1]]
   
   retVal = which(rownames(scaterReads) %in% genesin)
@@ -80,6 +83,9 @@ scGeneIdxExclude = reactive({
   genesin <- toupper(scGeneList)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
+  if(length(genesin) == 0){
+    return(NULL)
+  }
   genesin <- genesin[[1]]
   
   retVal = which(rownames(scaterReads) %in% genesin)
