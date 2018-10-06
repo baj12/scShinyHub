@@ -96,7 +96,8 @@ scater_norm <- reactive({
   if (DEBUG)
     cat(file = stderr(), "scater normalization\n")
   gbm = gbm()
-  sampleInfo = inputSample()
+  # sampleInfo = inputSample()
+  sampinfo = sampleInfo()
   scaterReads = scaterReads()
   scGeneIdxInclude = scGeneIdxInclude()
   scGeneIdxExclude = scGeneIdxExclude()
@@ -106,7 +107,7 @@ scater_norm <- reactive({
   require(scater)
   require(scran)
   
-  if (is.null(gbm) | is.null(sampleInfo)) {
+  if (is.null(gbm) | is.null(sampinfo)) {
     if (DEBUG)
       cat(file = stderr(), "scater_norm:NULL\n")
     return(NULL)
@@ -118,9 +119,9 @@ scater_norm <- reactive({
     # exit()
   }
   # load(file="~/scShinyHubDebug/scater_norm.RData")
-  t(as.matrix(table(sampleInfo$sample)))[1,]
+  # t(as.matrix(table(sampleInfo$sample)))[1,]
   cdata = colData(scaterReads)
-  cdata$Treatment = sampleInfo$sample
+  cdata$Treatment = sampinfo
   colData(scaterReads) = cdata
   genes2use = rep(TRUE, nrow(scaterReads))
   if (length(scGeneIdxInclude) == 0) {
@@ -139,27 +140,14 @@ scater_norm <- reactive({
   # TODO 
   # check if success, there might be too little genes selected
   # print the necessary error message
-  scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampleInfo$sample),100), 5), 
-                                          clusters = sampleInfo$sample, subset.row = genes2use)
+  scaterReads <- scran::computeSumFactors(scaterReads, sizes = seq(21, min(table(sampinfo),100), 5), 
+                                          clusters = sampinfo, subset.row = genes2use)
   # summary(sizeFactors(scaterReads))
   plot(sizeFactors(scaterReads), scaterReads$total_counts/1e6, log="xy",
        ylab="Library size (millions)", xlab="Size factor")
   scaterReads <- normalize(scaterReads)
   plotExplanatoryVariables(scaterReads, variables=c("total_features_by_counts",
                                                     "log10_total_features_by_counts", "pct_counts_in_top_100_features"))
-  # # if (length(levels(sampleInfo$sample))>1){
-  #   gbm_list = list()
-  #   for (smpLvl in levels(sampleInfo$sample)){
-  #     gbm_list[[length(gbm_list)+1]] = gbm[sampleInfo$sample == smpLvl]
-  #   }
-  #   gbm_list <- lapply(gbm_list,load_molecule_info)
-  # }
-  # set.seed(0)
-  # gbm_list <- list(gbm1, gbm2)
-  # gbm_list <- lapply(gbm_list,load_molecule_info) # load sample molecule information
-  # gbm_list_equalized <- equalize_gbms(gbm_list) # equalize the gene-barcode matrices
-  # merged_gbm <- concatenate_gene_bc_matrices(gbm_list_equalized)
-  
   if (DEBUG)
     cat(file = stderr(), "gbm_logNormalization:Done\n")
   retVal = SummarizedExperiment::assays(scaterReads)$logcounts
