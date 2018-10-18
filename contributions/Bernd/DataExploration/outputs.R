@@ -28,6 +28,16 @@ updateInputx4 = reactive({
   return(TRUE)
 })
 
+output$NumberOfGenesInclude = renderText({
+  idx = scGeneIdxInclude()
+  paste("Number of genes to be included: ", length(idx))
+})
+
+output$NumberOfGenesExclude = renderText({
+  idx = scGeneIdxExclude()
+  paste("Number of genes to be included: ", length(idx))
+})
+
 
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
 # TODO module for violin plot  ??

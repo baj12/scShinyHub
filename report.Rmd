@@ -48,20 +48,21 @@ require(kableExtra)
 require(shinyWidgets)
 require(scater)
 
-if(exists("params")){
-  cat(file=stderr(), paste("params:", params$calledFromShiny,"\n"))
-  cat(file=stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
+# params only exsits if called from somewhere with parameters
+if (exists("params")) {
+  cat(file = stderr(), paste("params:", params$calledFromShiny,"\n"))
+  cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
   LOCALEXECUTION = FALSE
 }else{
   # rm(list = ls())
   source("serverFunctions.R")
   source("reactives.R", local = TRUE)
   uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
-  for(fp in uiFiles){
-    if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
+  for (fp in uiFiles) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
     source(fp, local = TRUE)
   }
-  load("~/scShinyHubDebug/report.RData")
+  load("~/scShinyHubDebug/tempReport.RData")
   LOCALEXECUTION = TRUE # to know that we are debugging.
 }
 
@@ -128,7 +129,12 @@ geneNames = input$minExpGenes
 rmCells = input$cellsFiltersOut
 rmPattern = input$cellPatternRM
 keepCells = input$cellKeep
-useCells = useCellsFunc(dataTables, geneNames, rmCells, rmPattern, keepCells)
+useCells = useCellsFunc(dataTables, 
+                        geneNames = input$minExpGenes,
+                        rmCells = input$cellsFiltersOut,
+                        rmPattern = input$cellPatternRM,
+                        keepCells = input$cellKeep,
+                        cellKeepOnly = input$cellKeepOnly)
 ```
 
 ```{r useGenes}

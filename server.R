@@ -186,7 +186,7 @@ shinyServer(function(input, output, session) {
       
       ip = inputData()
       if( is.null(ip) ){
-        if(DEBUG)cat(file=stderr(), "output$report:NULL\n")
+        if(DEBUG) cat(file=stderr(), "output$report:NULL\n")
         return(NULL)
       }
       tDir = tempdir()
@@ -198,11 +198,11 @@ shinyServer(function(input, output, session) {
       file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
       reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpFile,"\")\n", collapse = "\n")
       # ------------------------------------------------------------------------------------------------------------
-      # the reactive.R cam hold functions that can be used in the report to reduce the possibility of code replication
+      # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
       # we copy them to the temp directory and load them in the markdown
       uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
-      for(fp in c("reactives.R", uiFiles)){
-        if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
+      for (fp in c("reactives.R", uiFiles)) {
+        if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
         tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".R")
         file.copy(fp, tmpFile, overwrite = TRUE)
         reactiveFiles = paste0(reactiveFiles, "source(\"", tmpFile,"\")\n", collapse = "\n")
@@ -242,10 +242,10 @@ shinyServer(function(input, output, session) {
       inputNames = names(input)
       params <- list(
         tempServerFunctions = tempServerFunctions,
-        tempprivatePlotFunctions = tempprivatePlotFunctions,
+        # tempprivatePlotFunctions = tempprivatePlotFunctions,
         calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
       )
-      for (idx in 1:length(names(input))){
+      for (idx in 1:length(names(input))) {
         params[[inputNames[idx]]] = input[[inputNames[idx]]]
       }
       
@@ -260,17 +260,17 @@ shinyServer(function(input, output, session) {
       y <- gsub( "__CHILDREPORTS__", pluginReportsString, y )
       y <- gsub( "__LOAD_REACTIVES__", reactiveFiles, y )
       # cat(y, file="tempReport.Rmd", sep="\n")
-      cat(y, file=tempReport, sep="\n")
+      cat(y, file = tempReport, sep = "\n")
       
-      if(DEBUG)cat(file=stderr(), "output$report:gbm:\n")
-      if(DEBUG)cat(file=stderr(), paste("\n", tempReport,"\n"))
+      if (DEBUG) cat(file = stderr(), "output$report:gbm:\n")
+      if (DEBUG) cat(file = stderr(), paste("\n", tempReport,"\n"))
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app)
       renderEnv = new.env(parent = globalenv())
-      if(DEBUG)file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
+      if (DEBUG) file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
       myparams = params
-      if(DEBUG)save(file= '~/scShinyHubDebug/tempReport.RData', list=c("myparams","renderEnv"))
+      if (DEBUG) save(file = '~/scShinyHubDebug/tempReport.RData', list = c("myparams","renderEnv"))
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = renderEnv
