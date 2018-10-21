@@ -138,7 +138,7 @@ useCells = useCellsFunc(dataTables,
 ```
 
 ```{r useGenes}
-# save("/Users/bernd/Desktop/report.RData", list =ls())
+base::save(file = "/Users/bernd/Desktop/report.useGenes.RData", list =ls())
 ipIDs = input$selectIds
 genesKeep = input$genesKeep
 geneListSelection = input$geneListSelection
@@ -177,13 +177,24 @@ medianENSG = medianENSGfunc(as.matrix(exprs(gbm)))
 medianUMI = medianUMIfunc(as.matrix(exprs(gbm)))
 ```
 
+```{r groupNames}
+groupNames = list()
+groupNames$namesDF = gNames
+
+```
 
 
-```{r gbm_log}
+```{r gbm_log, eval=FALSE}
+# gbm_log is the normalized version of the data. This stored in a separate RData 
+# and thus doen't need to be recomputed.
 if(DEBUG)cat(file=stderr(), "gbm_log\n")
-use_genes <- get_nonzero_genes(gbm)
-gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
+# use_genes <- get_nonzero_genes(gbm)
+# gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
+# gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
+
+
+normMethod = input$normalizationRadioButton
+gbm_log <- do.call(normMethod, args = list())
 if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
 
 ```
@@ -197,6 +208,19 @@ gbm_matrix=as.matrix(exprs(gbm))
 ```{r gbmLogMatrix}
 as.data.frame(as.matrix(exprs(gbm_log)))
 ```
+
+```{r rawNormalization}
+rawNormalization = gbm
+```
+
+```{r gbmLogMatrixDisplay}
+  retVal = as.data.frame(as.matrix(exprs(gbm_log)))
+  rownames(retVal) = make.names(fData(gbm_log)$symbol, unique = TRUE)
+
+gbmLogMatrixDisplay = retVal
+
+```
+
 
 ```{r pca, eval=TRUE}
 if(DEBUG)cat(file=stderr(), "pca\n")
@@ -228,12 +252,15 @@ if(DEBUG)cat(file=stderr(), "tsne: done\n")
 ```
 
 
-```{r projections, eval=TRUE}
+```{r projections, eval=FALSE}
 if(DEBUG)cat(file=stderr(), "projections\n")
 clustering = kmClustering
 projections = data.frame(tsne$Y)
 colnames(projections) = paste0("tsne",c(1:ncol(projections)))
 projections$dbCluster = factor(clustering$kmeans_10_clusters$Cluster-1)
+
+projections = cbind(projections, data.frame(pca$x[,c(1,2,3)]))
+  
 rownames(projections) = clustering$kmeans_10_clusters$Barcode
 samp = gsub(".*-(.*)","\\1", rownames(projections))
 if(length(levels(as.factor(samp)))>1){
@@ -241,6 +268,25 @@ if(length(levels(as.factor(samp)))>1){
 }else{
   projections$sample = "1"
 }
+
+n=length(projectionFunctions)
+for (proj in projectionFunctions) {
+  if(DEBUG)cat(file=stderr(), paste("forceCalc ", proj[1],"\n"))
+  assign("tmp", eval(parse(text = paste0( proj[2], "()"))))
+  cn = make.names(c(colnames(projections), make.names(proj[1])))
+  if(length(tmp) == 0){
+    next()
+  }
+  if(ncol(projections)==0){
+    projections = data.frame(tmp = tmp)
+  }else{
+    if(nrow(projections) == length(tmp)){
+      projections = cbind(projections, tmp)
+    }
+  }
+  colnames(projections) = cn
+}
+projections$UmiCountPerGenes = 0
 
 if(DEBUG)cat(file=stderr(), "projections: done\n")
 ```

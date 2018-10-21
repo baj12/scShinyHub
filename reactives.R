@@ -250,7 +250,7 @@ useCells <- reactive({
   return(retVal)
 })
 
-
+# TODO: check that it is ok that we use dataTables directly and not useGenes()
 featureDataReact = reactive({
   if (DEBUG)
     cat(file = stderr(), "featureData\n")
@@ -648,7 +648,6 @@ pca = reactive({
   return(retVal)
 })
 
-# TODO separate  function from reactive
 
 kmClusteringFunc <- function(pca, seed) {
   clustering = list()
@@ -691,6 +690,7 @@ kmClustering = reactive({
 })
 
 
+# TODO separate  function from reactive
 # projections
 # each column is of length of number of cells
 # if factor than it is categorical and can be cluster number of sample etc
