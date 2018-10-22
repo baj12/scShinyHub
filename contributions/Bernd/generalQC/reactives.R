@@ -80,7 +80,7 @@ inputTSNESample <- reactive({
   # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
 
    if(!is.null(getDefaultReactiveDomain())){
-    removeNotification( id="heatmap")
+    removeNotification( id="inputTSNESample")
   }
   return(projections)
   
