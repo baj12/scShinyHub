@@ -130,5 +130,5 @@ prioritized_genes = reactive({
   return(retVal)
 })
 
-myHeavyCalculations = list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
+# myHeavyCalculations = list(c("prioritized_genes", "prioritized_genes"), c("crHeatImage", "crHeatImage"))
 
