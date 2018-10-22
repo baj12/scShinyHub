@@ -115,8 +115,8 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
       show_colnames = FALSE,
       annotation_legend = TRUE,
       # breaks = seq(minBreak, maxBreak, by = stepBreak),
-      filename = 'test.png',
-      # filename = normalizePath(outfile),
+      # filename = 'test.png',
+      filename = normalizePath(outfile),
       colorRampPalette(rev(brewer.pal(
         n = 6, name =
           "RdBu"
