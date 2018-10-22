@@ -103,10 +103,10 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
   pheatmap(
-      as.matrix(expression*10)[,order(annotation[,1], annotation[,2])],
+      as.matrix(expression)[,order(annotation[,1], annotation[,2])],
       cluster_rows = TRUE,
       cluster_cols = FALSE,
-      scale = 'none',
+      scale = 'row',
       fontsize_row = 10,
       labels_col = colnames(expression),
       labels_row = featureData[rownames(expression), 'Associated.Gene.Name'],
@@ -138,10 +138,10 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
 output$heatmap <- renderImage({
   if(DEBUG)cat(file=stderr(), "output$heatmap\n")
   featureData = featureDataReact()
-  gbm_matrix = gbm_matrix()
+  gbm_log = gbm_log()
   projections = projections()
   genesin <- input$heatmap_geneids
-  if(is.null(featureData) | is.null(gbm_matrix) | is.null(projections)){
+  if(is.null(featureData) | is.null(gbm_log) | is.null(projections)){
     return(list(src = "empty.png",
                 contentType = 'image/png',
                 width = 96,
@@ -156,7 +156,7 @@ output$heatmap <- renderImage({
   if(DEBUGSAVE)
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/heatmap.RData")
-  
+  gbm_matrix = as.matrix(exprs(gbm_log))
    retval = heatmapFunc(featureData = featureData, gbm_matrix = gbm_matrix, 
                         projections = projections, genesin = genesin, cells = colnames(gbm_matrix))
     
