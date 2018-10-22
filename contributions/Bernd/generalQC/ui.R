@@ -42,10 +42,35 @@ tabList = list(
                                         numericInput("tsneTheta","Tsne tsneTheta", 0.5, min=0.1,max=10))),
                         fluidRow(column(12,
                                         numericInput("tsneSeed","Tsne tsneSeed", 1, min=1,max=10000))),
+                        fluidRow(column(12,selectInput(
+                          'dim3D_x',
+                          label = 'X',
+                          choices = c('tsne1', 'tsne2', 'tsne3'),
+                          selected = 'tsne1'
+                        ))),
+                        fluidRow(column(12,selectInput(
+                          'dim3D_y',
+                          label = 'Y',
+                          choices = c('tsne1', 'tsne2', 'tsne3'),
+                          selected = 'tsne2'
+                        ))),
+                        fluidRow(column(12,selectInput(
+                          'dim3D_z',
+                          label = 'Z',
+                          choices = c('tsne1', 'tsne2', 'tsne3'),
+                          selected = 'tsne3'
+                        ))),
+                        fluidRow(column(12,selectInput(
+                          'col3D',
+                          label = 'colored by',
+                          choices = c('clusterDB'),
+                          selected = 'clusterDB'
+                        ))),
                         fluidRow(column(12,
                                         plotlyOutput('tsne_main') %>% withSpinner()
                                         )
                         ),
+                        
                         fluidRow(column(
                           10,offset = 1,
                           tableSelectionUi("cellSelectionTSNEMod")
