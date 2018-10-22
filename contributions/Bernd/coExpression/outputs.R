@@ -97,6 +97,11 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   outfile <- paste0(tempdir(), '/heatmap', base::sample(1:10000, 1), '.png')
   cat(file = stderr(), paste("saving to: ", outfile, '\n'))
   # this can fail with na/inf in hclust error message if there is a row with all the same values
+  # med = median(as.vector(as.matrix(expression)))
+  # stDev = sd(as.vector(as.matrix(expression)))
+  # minBreak = max(0, med - 3* stDev)
+  # maxBreak = med + 3* stDev
+  # stepBreak = (maxBreak - minBreak) / 6
   pheatmap(
       as.matrix(expression)[,order(annotation[,1], annotation[,2])],
       cluster_rows = TRUE,
@@ -109,13 +114,13 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
       annotation_col = annotation,
       show_colnames = FALSE,
       annotation_legend = TRUE,
-      breaks = seq(-6, 6, by = .12),
-      # filename = 'test.png',
-      filename = normalizePath(outfile),
+      # breaks = seq(minBreak, maxBreak, by = stepBreak),
+      filename = 'test.png',
+      # filename = normalizePath(outfile),
       colorRampPalette(rev(brewer.pal(
         n = 6, name =
           "RdBu"
-      )))(100)
+      )))(6)
       
     )
   if (!is.null(getDefaultReactiveDomain())) {
@@ -152,7 +157,8 @@ output$heatmap <- renderImage({
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/heatmap.RData")
   
-   retval = heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = colnames(gbm_matrix))
+   retval = heatmapFunc(featureData = featureData, gbm_matrix = gbm_matrix, 
+                        projections = projections, genesin = genesin, cells = colnames(gbm_matrix))
     
    if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="heatmap")
