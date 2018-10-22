@@ -734,11 +734,11 @@ projections = reactive({
       assign("tmp", eval(parse(text = paste0( proj[2], "()"))))
       cn = make.names(c(colnames(projections), make.names(proj[1])))
       if(length(tmp) == 0){
-        showNotification(
-          paste("warning: ", proj[1], "didn't produce a result"),
-          type = "warning",
-          duration = NULL
-        )
+      #   showNotification(
+      #     paste("warning: ", proj[1], "didn't produce a result"),
+      #     type = "warning",
+      #     duration = NULL
+      #   )
         next()
       }
       if(ncol(projections)==0){
