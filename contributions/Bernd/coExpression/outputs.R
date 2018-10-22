@@ -103,10 +103,10 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
   pheatmap(
-      as.matrix(expression)[,order(annotation[,1], annotation[,2])],
+      as.matrix(expression*10)[,order(annotation[,1], annotation[,2])],
       cluster_rows = TRUE,
       cluster_cols = FALSE,
-      scale = 'row',
+      scale = 'none',
       fontsize_row = 10,
       labels_col = colnames(expression),
       labels_row = featureData[rownames(expression), 'Associated.Gene.Name'],
