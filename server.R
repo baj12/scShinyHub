@@ -197,6 +197,16 @@ shinyServer(function(input, output, session) {
       tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
       file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
       reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpFile,"\")\n", collapse = "\n")
+      
+      #----- Projections
+      # projections can contain mannually annotated groups of cells and different normalizations.
+      # to reduce complexity we are going to save those in a separate RData file
+      tmpPrjFile = tempfile(pattern = 'file', tmpdir = tDir, fileext = ".RData")
+      projections = projections()
+      gbm_log = gbm_log()
+      gNames = groupNames$namesDF
+      base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
+      
       # ------------------------------------------------------------------------------------------------------------
       # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
       # we copy them to the temp directory and load them in the markdown
@@ -207,6 +217,9 @@ shinyServer(function(input, output, session) {
         file.copy(fp, tmpFile, overwrite = TRUE)
         reactiveFiles = paste0(reactiveFiles, "source(\"", tmpFile,"\")\n", collapse = "\n")
       }
+      # otherwise reactie might overwrite projections...
+      reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpPrjFile,"\")\n", collapse = "\n")
+      # encapsulte the load files in an R block
       reactiveFiles = paste0("\n\n```{r load-reactives}\n", reactiveFiles, "\n```\n\n")
       
       

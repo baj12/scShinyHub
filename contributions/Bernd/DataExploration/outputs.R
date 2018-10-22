@@ -307,7 +307,7 @@ output$tsne_plt <- renderPlotly({
     'Gene symbol incorrect or gene not expressed'
   ))
   
-  projections <- cbind(projections, t(expression))
+  projections <- cbind(projections, expression)
   names(projections)[ncol(projections)] <- 'values'
   
   p <-
