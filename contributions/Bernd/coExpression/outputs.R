@@ -102,8 +102,9 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   # minBreak = max(0, med - 3* stDev)
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
+  nonZeroRows = which(rowSums(expression)>0)
   pheatmap(
-      as.matrix(expression)[,order(annotation[,1], annotation[,2])],
+      as.matrix(expression)[nonZeroRows,order(annotation[,1], annotation[,2])],
       cluster_rows = TRUE,
       cluster_cols = FALSE,
       scale = 'row',
