@@ -91,6 +91,20 @@ geneSelectionTab  = tabItem(tabName = "geneSelection",
                             )
 )
 
+generalParametersTab = tabItem("generalParameters",
+                               fluidRow(div(h3('General parameters'), align = 'center')),
+                               br(),
+                               fluidRow(div(
+                                 h4(
+                                   'How many clusters should be calculated?'
+                                 ),
+                                 align = 'center'
+                               )),
+                               fluidRow(
+                                 column(5, offset=1,
+                                        numericInput('kNr', 'Number of clusters', 10, min=2, max = 30)
+                                 ))
+)
 
 cellSelectionTab  = tabItem(tabName = "cellSelection",
                             fluidRow(div(h3('Cell selection'), align = 'center')),
@@ -168,7 +182,8 @@ for(fp in parFiles){
 # submenu items for the paramters main tab
 parameterItems  = list(
   menuSubItem("Normalization", tabName = "normalizations"),
-  parameterContributions
+  parameterContributions,
+  menuSubItem("General Parameters", tabName = "generalParameters")
 )
 
 

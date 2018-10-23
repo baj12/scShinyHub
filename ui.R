@@ -31,7 +31,8 @@ source('tabs.R',  local = FALSE)
 allTabs = list(       
   inputTab,
   geneSelectionTab,
-  cellSelectionTab
+  cellSelectionTab,
+  generalParametersTab
 )
 # parameters tab, includes basic normalization
 source('parameters.R',  local = TRUE)

@@ -649,16 +649,16 @@ pca = reactive({
 })
 
 
-kmClusteringFunc <- function(pca, seed) {
+kmClusteringFunc <- function(pca, seed, kNr = 10) {
   clustering = list()
   
-  kNr = 10
-  for (kNr in 2:10) {
+  # kNr = 10
+  # for (kNr in 2:kNr) {
     set.seed(seed = seed)
     km = run_kmeans_clustering(pca, k = kNr)
     clustering[[paste0("kmeans_", kNr, "_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)),
                                                                    "Cluster" = km$cluster)
-  }
+  # }
   return(clustering)
 }
 
@@ -667,11 +667,16 @@ kmClustering = reactive({
     cat(file = stderr(), "kmClustering\n")
   pca = pca()
   seed = input$seed
+  kNr = input$kNr
+  # kNr = 10
   if (is.null(pca)) {
     if (DEBUG)
       cat(file = stderr(), "kmClustering:NULL\n")
     return(NULL)
   }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/kmClustering.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/kmClustering.RData")
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("kmClustering", id = "kmClustering", duration = NULL)
   }
@@ -679,7 +684,7 @@ kmClustering = reactive({
   if (is.null(seed)) {
     seed = 1
   }
-  retVal = kmClusteringFunc(pca, seed = seed)
+  retVal = kmClusteringFunc(pca, seed = seed, kNr = kNr)
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "kmClustering")
   }
@@ -807,9 +812,14 @@ initializeGroupNames <- reactive({
 
 
 dbCluster = reactive({
+  kNr = input$kNr
+  # kNr = 10
   if (DEBUG)
     cat(file = stderr(), "dbCluster\n")
   clustering = kmClustering()
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/dbCluster.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/dbCluster.RData")
   
   if (is.null(clustering)) {
     if (DEBUG)
@@ -817,7 +827,7 @@ dbCluster = reactive({
     return(NULL)
   }
   
-  dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
+  dbCluster = factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
   
   return(dbCluster)
 })
