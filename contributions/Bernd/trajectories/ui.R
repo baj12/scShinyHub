@@ -11,9 +11,10 @@ menuList =  list(
 tabList = list(
   crHeatMapTab = tabItem("scorpiusTab",
                          tags$h3("trajectory in 2D space"),
-                         fluidRow(12,checkboxInput("scorpiusCalc", "calculate", FALSE))
+                         fluidRow(column(12,offset = 1,
+                                         checkboxInput("scorpiusCalc", "calculate", FALSE)))
                          ,
-                         fluidRow(12,
+                         fluidRow(
                                   column(4,
                                 selectInput(
                                   'dimScorpiusX',
@@ -36,13 +37,18 @@ tabList = list(
                                   selected = 'sample'
                                 ))),
   
-                         fluidRow(
-                           plotOutput('scropius_trajectory_plot') #%>% withSpinner()
-                         )  ,
+                         fluidRow(column(12,
+                           plotOutput('scropius_trajectory_plot', height = '672px') #%>% withSpinner()
+                         )  ),
                          tags$h3("Heatmap "),
-                         fluidRow(
-                           imageOutput('scorpiusHeatmapPlot') #%>% withSpinner() 
-                         )
+                         fluidRow(column(12,
+                           imageOutput('scorpiusHeatmapPlot', height = '672px') #%>% withSpinner() 
+                         )),
+                         tags$h3("table"),
+                         fluidRow(column(
+                           10,offset = 1,
+                           tableSelectionUi("scorpiusTableMod")
+                         ))
   )
 )
 

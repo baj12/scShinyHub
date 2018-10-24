@@ -56,7 +56,7 @@ scorpiusModules <- reactive({
   traj <- scorpiusTrajectory()
   expr_sel <- scorpiusExpSel()
   
-  scorpiusModules = scorpiusModules()
+  # scorpiusModules = scorpiusModules()
   upI <- updateScorpiusInput() # needed to update input 
   dimX = input$dimScorpiusX
   dimY = input$dimScorpiusY
@@ -78,6 +78,10 @@ scorpiusModules <- reactive({
   # expr_sel <- t(expression)[,gene_sel$gene]
   
   modules <- extract_modules(scale_quantile(expr_sel), traj$time, verbose = T)
+  modules = as.data.frame(modules)
+  fd = fData(gbm_log)
+  modules$symbol = fd[modules$feature,"symbol"]
+  rownames(modules) = modules$symbol
   return(modules)
 })
 
