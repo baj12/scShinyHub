@@ -107,6 +107,8 @@ shinyUI(
       # bookmarkButton(id = "bookmark1"),
       tipify(downloadButton("countscsv", "Download counts.csv"),
              '<h3>download current count data as CSV file</h3>'),
+      tipify(downloadButton("RDSsave", "Download Rds"),
+             '<h3>download current cell/gene configuration for reimport to this app</h3>'),
       checkboxInput("DEBUGSAVE", "Save for DEBUG", FALSE),
       verbatimTextOutput("DEBUGSAVEstring")
       

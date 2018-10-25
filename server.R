@@ -178,6 +178,25 @@ shinyServer(function(input, output, session) {
     }
   )
   
+  output$RDSsave<- downloadHandler(
+    filename = paste0("project.",Sys.Date(),".Rds"),
+    content = function(file){
+      if(DEBUG)cat(file=stderr(), paste("RDSsave: \n"))
+      gbm = gbm()
+      featuredata <- featureDataReact()
+      
+      if(is.null(gbm) | is.null(featuredata)){
+        return(NULL)
+      }
+      if (DEBUGSAVE)
+        save(file = "~/scShinyHubDebug/RDSsave.RData", list = c(ls(),ls(envir = globalenv())))
+      # load(file='~/scShinyHubDebug/RDSsave.RData')
+      
+      save(file = file, list = c("featuredata",  "gbm"))
+      # write.csv(as.matrix(exprs(gbm)), file)
+    }
+  )
+  
   # Report creation ------------------------------------------------------------------
   output$report <- downloadHandler(
     filename = "report.html",
