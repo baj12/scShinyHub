@@ -4,6 +4,7 @@ menuList =  list(
   menuItem("Data Exploration", tabName = "expore", startExpanded = FALSE,
            menuSubItem("Expression", tabName = "expression"),
            menuSubItem("Panel plot", tabName = "panelPlot"),
+           menuSubItem("Coeff. Variance", tabName = "coefVar"),
            menuSubItem("Scater QC", tabName = "scaterQC")
   )
   
@@ -62,7 +63,7 @@ tabList = list(
                           br(),
                           fluidRow(column(12, 
                                           plotOutput('gene_vio_plot') %>% withSpinner()
-                                          ))
+                          ))
                           
   ),
   
@@ -110,6 +111,22 @@ tabList = list(
                            plotOutput('panelPlot') %>% withSpinner()
                          ))
                          
+  ),
+  coefVarTab = tabItem("coefVar",
+                       tags$h3("Coefficient of Variance"),
+                       tags$h4("Histogram of coefficients"),
+                       fluidRow(column(12,
+                                       plotOutput('cvHist') %>% withSpinner()
+                       )),
+                       tags$h4("Heatmap of sorted coeficients"),
+                       fluidRow(column(
+                         6, offset = 1,
+                         textInput('cvHeatmap_geneids', 'Comma seperated gene names(none = first 100)', 
+                                   value = '')
+                       )),
+                       fluidRow(column(12,
+                                       plotOutput('cvHeatMap') %>% withSpinner()
+                       ))
   ),
   
   scaterQCTab = tabItem("scaterQC",

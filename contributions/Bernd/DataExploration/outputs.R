@@ -19,7 +19,7 @@ updateInputx4 = reactive({
                     choices = colnames(tsneData),
                     selected = colnames(tsneData)[1]
   )
-
+  
   # Can also set the label and select items
   updateSelectInput(session, "dimension_y4",
                     choices = colnames(tsneData),
@@ -190,6 +190,133 @@ output$clusters4 <- renderUI({
   }
 })  
 
+output$cvHist <- renderPlot({
+  if(DEBUG)cat(file=stderr(), "output$cvHist\n")
+  
+  gbm_log = gbm_log()
+  if(is.null(gbm_log)){
+    return(NULL)
+  }
+  
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/cvHist.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/cvHist.RData")
+  
+  retVal = apply(exprs(gbm_log),1,FUN = function(x){mean(x)/sd(x)})
+  return(hist(retVal, breaks = 100))
+  
+})
+
+
+cvHeatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
+  genesin = geneName2Index(genesin, featureData)
+  expression <- gbm_matrix[genesin, cells]
+  
+  validate(need(
+    is.na(sum(expression)) != TRUE,
+    'Gene symbol incorrect or genes not expressed'
+  ))
+  
+  projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
+   expression <- expression[complete.cases(expression), ]
+  
+  if(!("sample" %in% colnames(projections))){
+    projections$sample=1
+  }
+  annotation <- data.frame(projections[cells, c("dbCluster", "sample")])
+  rownames(annotation) <- colnames(expression)
+  colnames(annotation) <- c('Cluster', 'sample')
+  
+  # For high-res displays, this will be greater than 1
+  pixelratio <- session$clientData$pixelratio
+  if(is.null(pixelratio)) pixelratio = 1
+  width  <- session$clientData$output_plot_width
+  height <- session$clientData$output_plot_height
+  if (is.null(width)) {width = 96*7} # 7x7 inch output
+  if (is.null(height)) {height = 96*7}
+  outfile <- paste0(tempdir(), '/heatmap', base::sample(1:10000, 1), '.png')
+  cat(file = stderr(), paste("saving to: ", outfile, '\n'))
+  nonZeroRows = which(rowSums(expression)>0)
+  pheatmap(
+    as.matrix(expression)[nonZeroRows,order(annotation[,1], annotation[,2])],
+    cluster_rows = FALSE,
+    cluster_cols = TRUE,
+    scale = 'row',
+    fontsize_row = 10,
+    labels_col = colnames(expression),
+    labels_row = featureData[rownames(expression), 'Associated.Gene.Name'],
+    show_rownames = TRUE,
+    annotation_col = annotation,
+    show_colnames = FALSE,
+    annotation_legend = TRUE,
+    # breaks = seq(minBreak, maxBreak, by = stepBreak),
+    # filename = 'test.png',
+    filename = normalizePath(outfile),
+    colorRampPalette(rev(brewer.pal(
+      n = 6, name =
+        "RdBu"
+    )))(6)
+    
+  )
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification( id = "heatmap")
+  }
+  return(list(src = normalizePath(outfile),
+              contentType = 'image/png',
+              width = width,
+              height = height,
+              alt = "heatmap should be here"))
+  
+}
+
+# TODO mnodule for heatmap?  
+output$cvHeatMap <- renderImage({
+  if(DEBUG)cat(file=stderr(), "output$heatmap\n")
+  featureData = featureDataReact()
+  gbm_log = gbm_log()
+  projections = projections()
+  genesin <- input$cvHeatmap_geneids
+  
+  if(is.null(featureData) | is.null(gbm_log) | is.null(projections)){
+    return(list(src = "empty.png",
+                contentType = 'image/png',
+                width = 96,
+                height = 96,
+                alt = "heatmap should be here")
+    )
+  }
+  if(!is.null(getDefaultReactiveDomain())){
+    showNotification("heatmap", id="heatmap", duration = NULL)
+  }
+  
+  if(DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/cvHeatMap.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/cvHeatMap.RData")
+  gbm_matrix = as.matrix(exprs(gbm_log))
+  
+  if (nchar(genesin)<1) {
+    ensNames = geneName2Index(genesin, featureData)
+    gbm_matrix = gbm_matrix[ensNames,]
+  }
+  retVal = apply(gbm_matrix,1,FUN = function(x){mean(x)/sd(x)})
+  retValOrder = order(retVal, decreasing = FALSE)
+  if( (nchar(genesin)<1) & (length(retValOrder)>100)){
+    retValOrder = retValOrder[1:100]
+  }
+  retval = cvHeatmapFunc(featureData = featureData[retValOrder, ], 
+                         gbm_matrix = gbm_matrix[retValOrder,], 
+                         projections = projections[retValOrder,], 
+                         genesin = genesin, 
+                         cells = colnames(gbm_matrix))
+  
+  if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="heatmap")
+  }
+  return(retval)
+})
+
+
+
 output$panelPlot <- renderPlot({
   if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
   
@@ -289,7 +416,7 @@ output$tsne_plt <- renderPlotly({
   if (DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/tsne_plt.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/tsne_plt.RData")
-
+  
   
   geneid = geneName2Index(g_id, featureData)  
   
