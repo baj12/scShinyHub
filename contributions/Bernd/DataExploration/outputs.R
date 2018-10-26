@@ -210,6 +210,7 @@ output$cvHist <- renderPlot({
 
 cvHeatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   genesin = geneName2Index(genesin, featureData)
+  
   expression <- gbm_matrix[genesin, cells]
   
   validate(need(
@@ -294,7 +295,7 @@ output$cvHeatMap <- renderImage({
   # load(file = "~/scShinyHubDebug/cvHeatMap.RData")
   gbm_matrix = as.matrix(exprs(gbm_log))
   
-  if (nchar(genesin)<1) {
+  if (nchar(genesin)>0) {
     ensNames = geneName2Index(genesin, featureData)
     gbm_matrix = gbm_matrix[ensNames,]
   }
@@ -302,6 +303,7 @@ output$cvHeatMap <- renderImage({
   retValOrder = order(retVal, decreasing = FALSE)
   if( (nchar(genesin)<1) & (length(retValOrder)>100)){
     retValOrder = retValOrder[1:100]
+    genesin = 
   }
   retval = cvHeatmapFunc(featureData = featureData[retValOrder, ], 
                          gbm_matrix = gbm_matrix[retValOrder,], 
