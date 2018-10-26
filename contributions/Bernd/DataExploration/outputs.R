@@ -272,6 +272,7 @@ cvHeatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
 
 # TODO mnodule for heatmap?  
 output$cvHeatMap <- renderImage({
+  require(Rfast)
   if(DEBUG)cat(file=stderr(), "output$heatmap\n")
   featureData = featureDataReact()
   gbm_log = gbm_log()
@@ -295,19 +296,31 @@ output$cvHeatMap <- renderImage({
   # load(file = "~/scShinyHubDebug/cvHeatMap.RData")
   gbm_matrix = as.matrix(exprs(gbm_log))
   
-  if (nchar(genesin)>0) {
-    ensNames = geneName2Index(genesin, featureData)
-    gbm_matrix = gbm_matrix[ensNames,]
+  # calculate coefficient of variance and get order of genes
+  coefvar = apply(gbm_matrix,1,FUN = function(x){mean(x)/sd(x)})
+  coefvarOrder = order(coefvar, decreasing = FALSE)
+  
+  # get the genes that are valid
+  ensNames = geneName2Index(genesin, featureData)
+  
+  # no gene names given: take the first 50 (or all if less genes available)
+  if ( (length(ensNames) == 0) & (length(coefvarOrder) > 50)) {
+    coefvarOrder = coefvarOrder[1:50]
+    genesin = paste(featureData[coefvarOrder, 'Associated.Gene.Name'], collapse = ",")
+  } # at least one gene is given
+  else{
+    if (length(ensNames) == 1) { # calcuate the closest genes
+      x = t(as.matrix(gbm_matrix[ensNames,]))
+      da = dista( gbm_matrix, x,type = 'euclidean', k = 0)
+      coefvarOrder = order(da, decreasing = FALSE) [1:50]
+      genesin = paste(featureData[coefvarOrder, 'Associated.Gene.Name'], collapse = ",")
+    } else { # only use genes that are given
+      # nothing to be done.
+    }
   }
-  retVal = apply(gbm_matrix,1,FUN = function(x){mean(x)/sd(x)})
-  retValOrder = order(retVal, decreasing = FALSE)
-  if( (nchar(genesin)<1) & (length(retValOrder)>100)){
-    retValOrder = retValOrder[1:100]
-    genesin = 
-  }
-  retval = cvHeatmapFunc(featureData = featureData[retValOrder, ], 
-                         gbm_matrix = gbm_matrix[retValOrder,], 
-                         projections = projections[retValOrder,], 
+  retval = cvHeatmapFunc(featureData = featureData, 
+                         gbm_matrix = gbm_matrix[coefvarOrder,], 
+                         projections = projections, 
                          genesin = genesin, 
                          cells = colnames(gbm_matrix))
   

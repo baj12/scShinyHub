@@ -114,6 +114,10 @@ tabList = list(
   ),
   coefVarTab = tabItem("coefVar",
                        tags$h3("Coefficient of Variance"),
+                       tags$p("plot genes based coefficient of variance. If no gene is given, plot the the first 50 genes ordered by increasing CV."),
+                       tags$p("One gene given, plot heatmap with most similar genes."),
+                       tags$p("More than one gene given, plot heatmap of these genes."),
+                       tags$p("All of the abobe are only clustered by cells, based on the here visible genes."),
                        tags$h4("Histogram of coefficients"),
                        fluidRow(column(12,
                                        plotOutput('cvHist') %>% withSpinner()
