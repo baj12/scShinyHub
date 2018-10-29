@@ -2,12 +2,14 @@
 scorpiusSpace <- reactive({
   projections = projections()
   doCalc = input$scorpiusCalc
+  dimX = input$dimScorpiusX
+  dimY = input$dimScorpiusY
   
-  if (!doCalc | is.null(projections)){
-    if(DEBUG)cat(file=stderr(), paste("scorpiusSpace:NULL\n"))
+  if (!doCalc | is.null(projections)) {
+    if (DEBUG) cat(file = stderr(), paste("scorpiusSpace:NULL\n"))
     return(NULL)
   }
-  if(DEBUGSAVE) 
+  if (DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/scorpiusSpace.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/scorpiusSpace.RData")
   
@@ -18,11 +20,11 @@ scorpiusSpace <- reactive({
 scorpiusTrajectory <- reactive({
   space = scorpiusSpace()
   doCalc = input$scorpiusCalc
-  if (!doCalc | is.null(space) ){
-    if(DEBUG)cat(file=stderr(), paste("scorpiusTrajectory:NULL\n"))
+  if (!doCalc | is.null(space) ) {
+    if (DEBUG) cat(file = stderr(), paste("scorpiusTrajectory:NULL\n"))
     return(NULL)
   }
-  if(DEBUGSAVE) 
+  if (DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/scorpiusTrajectory.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/scorpiusTrajectory.RData")
   traj <- infer_trajectory(space)
