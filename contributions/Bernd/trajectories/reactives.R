@@ -2,6 +2,8 @@
 scorpiusSpace <- reactive({
   projections = projections()
   doCalc = input$scorpiusCalc
+  dimX = input$dimScorpiusX
+  dimY = input$dimScorpiusY
   
   if (!doCalc | is.null(projections)){
     if(DEBUG)cat(file=stderr(), paste("scorpiusSpace:NULL\n"))

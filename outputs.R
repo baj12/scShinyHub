@@ -168,7 +168,7 @@ output$gsrmGenes <- renderText({
   gbm = as.matrix(exprs(dataTables$gbm))
   fd = dataTables$featuredata
   dt = fd[useGenes,c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  
+  if (DEBUG) cat(file = stderr(), "gsrmGenes: done\n")
   paste0(dt$Associated.Gene.Name[input$removedGenesTable_rows_selected],",")
 })
 
