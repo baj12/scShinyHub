@@ -53,6 +53,7 @@ clusterServer <- function(input, output, session,
     )
   })
   
+
   
   returnValues <- reactiveValues(
     cluster = reactive(input$clusters),
@@ -65,6 +66,7 @@ clusterServer <- function(input, output, session,
         cat(file = stderr(), paste("clusterServers selectedCells\n"))
       retVal = rownames(selectedCellNames())
       if (length(retVal) == 0){
+        cat(file = stderr(), paste("selectedCellNames is null\n"))
         retVal = NULL
       }
       grpN = make.names(input$groupName)
@@ -72,14 +74,23 @@ clusterServer <- function(input, output, session,
       if (length(grpN) == 0 | length(grpNs) == 0) {
         return(retVal)
       }
-      grpNs = groupNames$namesDF
       inpClusters = input$clusters
       projections = projections()
+      dimY = input$dimension_y
+      dimX = input$dimension_x
+      geneNames = input$geneIds
+      featureData = featureDataReact()
+      gbm = gbm()
+      
+      if (DEBUGSAVE) {
+        cat(file = stderr(), paste("selectedCell: saving\n"))
+        save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(), ls(envir = globalenv())))
+      }
+      # load(file="~/scShinyHubDebug/clusterServerreturnValues.RData")
       if (!is.null(projections)) {
-        if (DEBUGSAVE) 
-          save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(),ls(envir = globalenv())))
-        # load(file="~/scShinyHubDebug/clusterServerreturnValues2.RData")
-        
+          
+        projections = updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+          
         subsetData <- subset(projections, dbCluster %in% inpClusters)
         grpSubset = grpNs[rownames(subsetData),]
         grpVal = rownames(grpSubset[grpSubset[, grpN],])
@@ -147,70 +158,57 @@ clusterServer <- function(input, output, session,
            list = c(ls(envir = globalenv()), ls(), "legend.position"))
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     
-    g_id <- toupper(g_id)
-    g_id <- gsub(" ", "", g_id, fixed = TRUE)
-    g_id <- strsplit(g_id, ',')
-    g_id <- g_id[[1]]
+    geneid = geneName2Index(g_id, featureData)  
     
-    
-    
-    notFound = featureData[!toupper(g_id) %in% featureData$Associated.Gene.Name, "Associated.Gene.Name"]
-    if (length(featureData$Associated.Gene.Name) == length(notFound)) { # in case there is only one gene that is not available. 
-      notFound = g_id
+    if(length(geneid) == 1) {
+      expression = exprs(gbm_log)[geneid, ]
+    }else{
+      expression = Matrix::colSums(exprs(gbm_log)[geneid, ])
     }
-    if(length(notFound)>0){
-      if(DEBUG)cat(file=stderr(), paste("gene names not found: ",notFound, "\n"))
-      if(!is.null(getDefaultReactiveDomain())){
-        showNotification(paste("following genes were not found", notFound,collapse = " "), id="moduleNotFound", type = "warning", duration = 20)
-      }
-      
-    }
-    geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
-                                           toupper(g_id)), ])[1]
-    
-    expression <- log2cpm[geneid, ]
-    
     validate(need(is.na(sum(expression)) != TRUE, ''))
     
-    # UmiCountPerGenes is selected
-    if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes"){
-      
-      geneNames <- toupper(geneNames)
-      geneNames <- gsub(" ", "", geneNames, fixed = TRUE)
-      geneNames <- strsplit(geneNames, ',')
-      if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
-        geneNames <- geneNames[[1]]
-        
-        notFound = featureData[!toupper(geneNames) %in% featureData$Associated.Gene.Name, "Associated.Gene.Name"]
-        if (length(featureData$Associated.Gene.Name) == length(notFound)) { # in case there is only one gene that is not available. 
-          notFound = geneNames
-        }
-        if(length(notFound)>0){
-          if(DEBUG)cat(file=stderr(), paste("gene names not found: ",notFound, "\n"))
-          if(!is.null(getDefaultReactiveDomain())){
-            showNotification(paste("following genes were not found", notFound,collapse = " "), id="moduleNotFound", type = "warning", duration = 20)
-          }
-          
-        }
-        countIds  <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
-                                                  toupper(geneNames)), ])
-        if (length(countIds) == 0 | length(countIds[[1]]) == 0) {
-          projections$UmiCountPerGenes = 0
-        }else{
-          if(length(countIds) == 1) {
-            projections$UmiCountPerGenes = exprs(gbm)[countIds, ]
-          }else{
-            projections$UmiCountPerGenes = Matrix::colSums(exprs(gbm)[countIds, ])
-          }
-        }
-      }else{
-        projections$UmiCountPerGenes = 0
-      }
-    }
+    geneid = geneName2Index(geneNames, featureData)
+    projections = updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+    
+    # # UmiCountPerGenes is selected
+    # if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes"){
+    #   
+    #   geneNames <- toupper(geneNames)
+    #   geneNames <- gsub(" ", "", geneNames, fixed = TRUE)
+    #   geneNames <- strsplit(geneNames, ',')
+    #   if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
+    #     geneNames <- geneNames[[1]]
+    #     
+    #     notFound = geneNames[!toupper(geneNames) %in% featureData$Associated.Gene.Name]
+    #     if (length(featureData$Associated.Gene.Name) == length(notFound)) { # in case there is only one gene that is not available. 
+    #       notFound = geneNames
+    #     }
+    #     if(length(notFound)>0){
+    #       if(DEBUG)cat(file=stderr(), paste("these gene names not found: ",notFound, "\n"))
+    #       if(!is.null(getDefaultReactiveDomain())){
+    #         showNotification(paste("the following genes were not found", notFound,collapse = " "), id="moduleNotFound", type = "warning", duration = 20)
+    #       }
+    #       
+    #     }
+    #     countIds  <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+    #                                               toupper(geneNames)), ])
+    #     if (length(countIds) == 0 | length(countIds[[1]]) == 0) {
+    #       projections$UmiCountPerGenes = 0
+    #     }else{
+    #       if(length(countIds) == 1) {
+    #         projections$UmiCountPerGenes = exprs(gbm)[countIds, ]
+    #       }else{
+    #         projections$UmiCountPerGenes = Matrix::colSums(exprs(gbm)[countIds, ])
+    #       }
+    #     }
+    #   }else{
+    #     projections$UmiCountPerGenes = 0
+    #   }
+    # }
     
     
     projections <- cbind(projections, t(expression))
-    names(projections)[names(projections) == geneid] <- 'exprs'
+    names(projections)[ncol(projections)] <- 'exprs'
     
     if (DEBUG)
        cat(file = stderr(), paste("output$dge_plot1:---",ns(clId),"---\n"))
@@ -300,10 +298,25 @@ clusterServer <- function(input, output, session,
       cat(file = stderr(), "cluster: selectedCellNames\n")
     brushedPs = input$b1
     projections = projections()
+    dimY = input$dimension_y
+    dimX = input$dimension_x
+    geneNames = input$geneIds
+    featureData = featureDataReact()
+    gbm = gbm()
     if (is.null(projections)) {
       return(NULL)
     }     
     inpClusters = input$clusters
+    
+    if (DEBUGSAVE) {
+      cat(file = stderr(), "cluster: selectedCellNames: saving\n")
+      save(file = "~/scShinyHubDebug/selectedCellNames.RData", list = c(ls(),"legend.position", ls(envir = globalenv())))
+    }
+    # load(file="~/scShinyHubDebug/selectedCellNames.RData")
+    
+    geneid = geneName2Index(geneNames, featureData)  
+    projections = updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+    
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     #if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     cells.names <- brushedPoints(subsetData, brushedPs)
@@ -428,6 +441,12 @@ clusterServer <- function(input, output, session,
     projections = projections()
     inpClusters = (input$clusters)
     myshowCells = (input$showCells)
+    geneNames = input$geneIds
+    dimY = input$dimension_y
+    dimX = input$dimension_x
+    featureData = featureDataReact()
+    gbm = gbm()
+    
     if(! myshowCells){return("")}
     if(is.null(projections) ){
       return("")
@@ -440,6 +459,9 @@ clusterServer <- function(input, output, session,
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."))
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection"))
     subsetData <- subset(projections, dbCluster %in% inpClusters)
+    geneid = geneName2Index(geneNames, featureData) 
+    subsetData = updateProjectionsWithUmiCount(dimY, dimX, geneNames = geneNames, featureData, gbm, subsetData)
+    
     cat(file=stderr(),paste(brushedPs$xmin,brushedPs$xmax,'\n'))
     for(axis in c("x","y")){
       if(class(subsetData[,brushedPs$mapping[axis][[1]]]) == 'factor'){
@@ -516,6 +538,10 @@ tableSelectionServer <- function(input, output, session,
     }
   })
   
+  output$columnSelection <- renderUI({
+    
+  })
+  
   output$cellNameTable <- renderDT({
     if(DEBUG)cat(file=stderr(), "output$cellNameTable\n")
     dataTables = dataTab()
@@ -536,8 +562,9 @@ tableSelectionServer <- function(input, output, session,
     if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="cellNameTable")
     }
+    maxCol = min(20, ncol(dataTables))
     if (dim(dataTables)[1] > 1) {
-      return(DT::datatable(dataTables, rownames = F, filter = 'top',
+      return(DT::datatable(dataTables[,1:maxCol], rownames = F, filter = 'top',
                            options = list(
                              orderClasses = TRUE,
                              autoWidth=TRUE

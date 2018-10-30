@@ -178,6 +178,25 @@ shinyServer(function(input, output, session) {
     }
   )
   
+  output$RDSsave<- downloadHandler(
+    filename = paste0("project.",Sys.Date(),".Rds"),
+    content = function(file){
+      if(DEBUG)cat(file=stderr(), paste("RDSsave: \n"))
+      gbm = gbm()
+      featuredata <- featureDataReact()
+      
+      if(is.null(gbm) | is.null(featuredata)){
+        return(NULL)
+      }
+      if (DEBUGSAVE)
+        save(file = "~/scShinyHubDebug/RDSsave.RData", list = c(ls(),ls(envir = globalenv())))
+      # load(file='~/scShinyHubDebug/RDSsave.RData')
+      
+      save(file = file, list = c("featuredata",  "gbm"))
+      # write.csv(as.matrix(exprs(gbm)), file)
+    }
+  )
+  
   # Report creation ------------------------------------------------------------------
   output$report <- downloadHandler(
     filename = "report.html",
@@ -186,7 +205,7 @@ shinyServer(function(input, output, session) {
       
       ip = inputData()
       if( is.null(ip) ){
-        if(DEBUG)cat(file=stderr(), "output$report:NULL\n")
+        if(DEBUG) cat(file=stderr(), "output$report:NULL\n")
         return(NULL)
       }
       tDir = tempdir()
@@ -197,16 +216,29 @@ shinyServer(function(input, output, session) {
       tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
       file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
       reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpFile,"\")\n", collapse = "\n")
+      
+      #----- Projections
+      # projections can contain mannually annotated groups of cells and different normalizations.
+      # to reduce complexity we are going to save those in a separate RData file
+      tmpPrjFile = tempfile(pattern = 'file', tmpdir = tDir, fileext = ".RData")
+      projections = projections()
+      gbm_log = gbm_log()
+      gNames = groupNames$namesDF
+      base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
+      
       # ------------------------------------------------------------------------------------------------------------
-      # the reactive.R cam hold functions that can be used in the report to reduce the possibility of code replication
+      # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
       # we copy them to the temp directory and load them in the markdown
       uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
-      for(fp in c("reactives.R", uiFiles)){
-        if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
+      for (fp in c("reactives.R", uiFiles)) {
+        if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
         tmpFile = tempfile(pattern = "file", tmpdir = tDir, fileext = ".R")
         file.copy(fp, tmpFile, overwrite = TRUE)
         reactiveFiles = paste0(reactiveFiles, "source(\"", tmpFile,"\")\n", collapse = "\n")
       }
+      # otherwise reactie might overwrite projections...
+      reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpPrjFile,"\")\n", collapse = "\n")
+      # encapsulte the load files in an R block
       reactiveFiles = paste0("\n\n```{r load-reactives}\n", reactiveFiles, "\n```\n\n")
       
       
@@ -242,10 +274,10 @@ shinyServer(function(input, output, session) {
       inputNames = names(input)
       params <- list(
         tempServerFunctions = tempServerFunctions,
-        tempprivatePlotFunctions = tempprivatePlotFunctions,
+        # tempprivatePlotFunctions = tempprivatePlotFunctions,
         calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
       )
-      for (idx in 1:length(names(input))){
+      for (idx in 1:length(names(input))) {
         params[[inputNames[idx]]] = input[[inputNames[idx]]]
       }
       
@@ -260,17 +292,17 @@ shinyServer(function(input, output, session) {
       y <- gsub( "__CHILDREPORTS__", pluginReportsString, y )
       y <- gsub( "__LOAD_REACTIVES__", reactiveFiles, y )
       # cat(y, file="tempReport.Rmd", sep="\n")
-      cat(y, file=tempReport, sep="\n")
+      cat(y, file = tempReport, sep = "\n")
       
-      if(DEBUG)cat(file=stderr(), "output$report:gbm:\n")
-      if(DEBUG)cat(file=stderr(), paste("\n", tempReport,"\n"))
+      if (DEBUG) cat(file = stderr(), "output$report:gbm:\n")
+      if (DEBUG) cat(file = stderr(), paste("\n", tempReport,"\n"))
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app)
       renderEnv = new.env(parent = globalenv())
-      if(DEBUG)file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
+      if (DEBUG) file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
       myparams = params
-      if(DEBUG)save(file= '~/scShinyHubDebug/tempReport.RData', list=c("myparams","renderEnv"))
+      if (DEBUG) save(file = '~/scShinyHubDebug/tempReport.RData', list = c("myparams","renderEnv"))
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = renderEnv

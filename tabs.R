@@ -1,21 +1,4 @@
-# jscode <- '
-# $(function() {
-# var $els = $("[data-proxy-click]");
-# $.each(
-# $els,
-# function(idx, el) {
-# var $el = $(el);
-# var $proxy = $("#" + $el.data("proxyClick"));
-# $el.keydown(function (e) {
-# if (e.keyCode == 13) {
-# $proxy.click();
-# }
-# });
-# }
-# );
-# });
-# '
-# 
+
 source('modulesUI.R')
 # this is where the general tabs are defined:
 if(file.exists('defaultValues.R')){
@@ -25,9 +8,6 @@ if(file.exists('defaultValues.R')){
   defaultValueMultiGenes = ""
   defaultValueRegExGene = ""
 }
-# defaultValueSingleGene='malat1'
-# defaultValueMultiGenes='MALAT1, B2M, TMSB4X, EEF1A1, FTH1'
-# defaultValueRegExGene='' # tip: '^CD7$|^KIT$; genes with min expression
 
 inputTab = tabItem(tabName = "input",
                    fluidRow(div(h3('scShinyHub Input'), align = 'center')),
@@ -56,20 +36,7 @@ inputTab = tabItem(tabName = "input",
                          '.tsv'
                        )
                      )))
-                   # br(),
-                   # br(),
-                   # fluidRow(
-                   #   column(3, offset = 1,
-                   #          textInput('defaultValueSingleGene', 'default value for single genes input', value = defaultValueSingleGene))
-                   #   
-                   # ),
-                   # br(),
-                   # fluidRow(
-                   #   column(6, offset = 1,
-                   #          textInput('defaultValueMultiGenes', 'default value for multi genes input', value = defaultValueMultiGenes))
-                   #   
-                   # )
-                   
+
 )
 
 
@@ -124,6 +91,20 @@ geneSelectionTab  = tabItem(tabName = "geneSelection",
                             )
 )
 
+generalParametersTab = tabItem("generalParameters",
+                               fluidRow(div(h3('General parameters'), align = 'center')),
+                               br(),
+                               fluidRow(div(
+                                 h4(
+                                   'How many clusters should be calculated?'
+                                 ),
+                                 align = 'center'
+                               )),
+                               fluidRow(
+                                 column(5, offset=1,
+                                        numericInput('kNr', 'Number of clusters', 10, min=2, max = 30)
+                                 ))
+)
 
 cellSelectionTab  = tabItem(tabName = "cellSelection",
                             fluidRow(div(h3('Cell selection'), align = 'center')),
@@ -179,11 +160,37 @@ cellSelectionTab  = tabItem(tabName = "cellSelection",
                               tableSelectionUi("cellSelectionMod")
                             )
                             ),br()
-                            
-                            
 )
 
 
+# parse all parameters.R files under contributions to include in application
+# allTabs holds all tabs regardsless of their location in the GUI
+parameterContributions = list()
+parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
+for(fp in parFiles){
+  myPparameters = list()
+  source(fp, local = TRUE)
+  
+  for (li in myPparameters){
+    if(length(li)>0){
+       if(DEBUG)cat(file=stderr(), paste(li$children[[1]], "\n"))
+      parameterContributions[[length(parameterContributions) + 1]] = li
+    }
+  }
+}
+
+# submenu items for the paramters main tab
+parameterItems  = list(
+  menuSubItem("Normalization", tabName = "normalizations"),
+  parameterContributions,
+  menuSubItem("General Parameters", tabName = "generalParameters")
+)
 
 
-
+  
+  
+# # link to the content of the 
+# parametersTab  = tabItem(tabName = "normalizations",
+#                             fluidRow(div(h3('Cell selection'), align = 'center')),
+#                             br()
+# )

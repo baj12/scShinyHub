@@ -2,6 +2,67 @@
 source("moduleServer.R", local=TRUE)
 source("reactives.R", local=TRUE)
 
+
+#################################
+# Parameters / normalization 
+output$normalizationRadioButtonValue <- renderPrint({ input$normalizationRadioButton })
+
+normaliztionParameters = list(raw = "no Parameters needed")
+parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
+for(fp in parFiles){
+  myNormalizationParameters = list()
+  source(fp, local = TRUE)
+  if(DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/normalizationsParameters.RData", 
+         list = c("normaliztionParameters",ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/normalizationsParameters.RData")
+  
+  for (li in 1:length(myNormalizationParameters)){
+    lVal = myNormalizationParameters[[li]]
+    if(length(lVal)>0){
+      if(DEBUG){
+        cat(file=stderr(), paste("normalization Choice: ", 
+                                        names(myNormalizationParameters)[li], " ",
+                   lVal, "\n"))
+        cat(file=stderr(), paste("class: ", 
+                                 class(myNormalizationParameters[[li]]), " ",
+                                 lVal, "\n"))
+      }
+      oldNames = names(normaliztionParameters)
+      normaliztionParameters[[length(normaliztionParameters) + 1]] = lVal
+      names(normaliztionParameters ) = c(oldNames, names(myNormalizationParameters)[li])
+    }
+  }
+}
+
+output$normalizationsParametersDynamic <- renderUI({
+  if(is.null(input$normalizationRadioButton))
+    return(NULL)
+  selectedChoice = input$normalizationRadioButton
+  
+  if (DEBUG) {
+    cat(file=stderr(), paste(class(normaliztionParameters)),"\n")
+    cat(file=stderr(), paste(length(normaliztionParameters)),"\n")
+    for (li in normaliztionParameters){
+      if(length(li)>0){
+        if(DEBUG)cat(file=stderr(), paste("normaliztionParameters: ", li, "\n"))
+        if(DEBUG)cat(file=stderr(), paste("normaliztionParameters: ", names(li), "\n"))
+      }
+    }
+  }
+   if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData", 
+         list = c("normaliztionParameters",ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData")
+  do.call("switch", args = c(selectedChoice,
+         normaliztionParameters,
+          h3('no parameters provided')
+  ))
+})
+
+# End of Parameters / normalization
+#################################
+
 output$summaryStatsSideBar<-renderUI({
   if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar\n")
   gbm = gbm_matrix()
@@ -99,7 +160,7 @@ output$gsSelectedGenes <- renderText({
 output$gsrmGenes <- renderText({
   if(DEBUG)cat(file=stderr(), "gsrmGenes\n")
   dataTables = inputData()
-  useGenes = !useGenes()
+  useGenes = useGenes()
   useCells = useCells()
   if(is.null(dataTables) | is.null(useGenes) | is.null(useCells))
     return(NULL)
@@ -115,5 +176,6 @@ output$DEBUGSAVEstring <-  renderText({ DEBUGSAVE <<- input$DEBUGSAVE })
 
 r<-callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 
+r<-callModule(tableSelectionServer, "normalizationResult", gbmLogMatrixDisplay)
 
 

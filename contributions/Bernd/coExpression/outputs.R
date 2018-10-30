@@ -38,41 +38,42 @@ updateInputx3 = reactive({
 })
 
 heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
-  genesin <- toupper(genesin)
-  genesin <- gsub(" ", "", genesin, fixed = TRUE)
-  genesin <- strsplit(genesin, ',')
-  
-  map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
-  cat(file = stderr(), length(map))
-  if(!is.null(getDefaultReactiveDomain())){
-    removeNotification( id="heatmapWarning")
-    removeNotification( id="heatmapNotFound")
-  }
-  if(length(map) == 0){
-    if(!is.null(getDefaultReactiveDomain())){
-      showNotification("no genes found", id = "heatmapWarning", type = "warning", duration = 20)
-    }
-    return(list(src = "empty.png",
-         contentType = 'image/png',
-         width = 96,
-         height = 96,
-         alt = "heatmap should be here")
-         )
-  }
-  expression <- gbm_matrix[map, cells]
+  genesin = geneName2Index(genesin, featureData)
+  # genesin <- toupper(genesin)
+  # genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  # genesin <- strsplit(genesin, ',')
+  # 
+  # map <- rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+  # cat(file = stderr(), length(map))
+  # if(!is.null(getDefaultReactiveDomain())){
+  #   removeNotification( id="heatmapWarning")
+  #   removeNotification( id="heatmapNotFound")
+  # }
+  # if(length(genesin) == 0){
+  #   if(!is.null(getDefaultReactiveDomain())){
+  #     showNotification("no genes found", id = "heatmapWarning", type = "warning", duration = 20)
+  #   }
+  #   return(list(src = "empty.png",
+  #        contentType = 'image/png',
+  #        width = 96,
+  #        height = 96,
+  #        alt = "heatmap should be here")
+  #        )
+  # }
+  expression <- gbm_matrix[genesin, cells]
   
   validate(need(
     is.na(sum(expression)) != TRUE,
     'Gene symbol incorrect or genes not expressed'
   ))
   
-  # display genes not found
-  notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
-  if(length(notFound)>0){
-    if(!is.null(getDefaultReactiveDomain())){
-      showNotification(paste("following genes were not found", notFound,collapse = " "), id="heatmapNotFound", type = "warning", duration = 20)
-    }
-  }
+  # # display genes not found
+  # notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
+  # if(length(notFound)>0){
+  #   if(!is.null(getDefaultReactiveDomain())){
+  #     showNotification(paste("following genes were not found", notFound,collapse = " "), id="heatmapNotFound", type = "warning", duration = 20)
+  #   }
+  # }
 
   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
   
@@ -94,9 +95,16 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
   if (is.null(width)) {width = 96*7} # 7x7 inch output
   if (is.null(height)) {height = 96*7}
   outfile <- paste0(tempdir(), '/heatmap', base::sample(1:10000, 1), '.png')
-  
+  cat(file = stderr(), paste("saving to: ", outfile, '\n'))
+  # this can fail with na/inf in hclust error message if there is a row with all the same values
+  # med = median(as.vector(as.matrix(expression)))
+  # stDev = sd(as.vector(as.matrix(expression)))
+  # minBreak = max(0, med - 3* stDev)
+  # maxBreak = med + 3* stDev
+  # stepBreak = (maxBreak - minBreak) / 6
+  nonZeroRows = which(rowSums(expression)>0)
   pheatmap(
-      as.matrix(expression)[,order(annotation[,1], annotation[,2])],
+      as.matrix(expression)[nonZeroRows,order(annotation[,1], annotation[,2])],
       cluster_rows = TRUE,
       cluster_cols = FALSE,
       scale = 'row',
@@ -107,12 +115,13 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
       annotation_col = annotation,
       show_colnames = FALSE,
       annotation_legend = TRUE,
-      breaks = seq(-6, 6, by = .12),
+      # breaks = seq(minBreak, maxBreak, by = stepBreak),
+      # filename = 'test.png',
       filename = normalizePath(outfile),
       colorRampPalette(rev(brewer.pal(
         n = 6, name =
           "RdBu"
-      )))(100)
+      )))(6)
       
     )
   if (!is.null(getDefaultReactiveDomain())) {
@@ -130,10 +139,10 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
 output$heatmap <- renderImage({
   if(DEBUG)cat(file=stderr(), "output$heatmap\n")
   featureData = featureDataReact()
-  gbm_matrix = gbm_matrix()
+  gbm_log = gbm_log()
   projections = projections()
   genesin <- input$heatmap_geneids
-  if(is.null(featureData) | is.null(gbm_matrix) | is.null(projections)){
+  if(is.null(featureData) | is.null(gbm_log) | is.null(projections)){
     return(list(src = "empty.png",
                 contentType = 'image/png',
                 width = 96,
@@ -148,8 +157,9 @@ output$heatmap <- renderImage({
   if(DEBUGSAVE)
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/heatmap.RData")
-  
-   retval = heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = colnames(gbm_matrix))
+  gbm_matrix = as.matrix(exprs(gbm_log))
+   retval = heatmapFunc(featureData = featureData, gbm_matrix = gbm_matrix, 
+                        projections = projections, genesin = genesin, cells = colnames(gbm_matrix))
     
    if(!is.null(getDefaultReactiveDomain())){
       removeNotification( id="heatmap")
@@ -180,6 +190,10 @@ output$selectedHeatmap <- renderImage({
   scCL = sc$cluster
   # scBP = sc$brushedPs()
   scCells = sc$selectedCells()
+ 
+  if(DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   if (is.null(featureData) |
       is.null(gbm_matrix) |
       is.null(projections) | is.null(scCells) | length(scCells) == 0) {
@@ -223,37 +237,38 @@ plotCoExpressionFunc <-
            cl3,
            dimx3,
            dimy3) {
-    genesin <- toupper(genesin)
-    genesin <- gsub(" ", "", genesin, fixed = TRUE)
-    genesin <- strsplit(genesin, ',')
     
-    subsetData <-
-      subset(projections, dbCluster %in% cl3)
-    cells.1 <- rownames(subsetData)
+    genesin = geneName2Index(genesin, featureData)
+    # genesin <- toupper(genesin)
+    # genesin <- gsub(" ", "", genesin, fixed = TRUE)
+    # genesin <- strsplit(genesin, ',')
+    
+    subsetData <- subset(projections, dbCluster %in% cl3)
+    # cells.1 <- rownames(subsetData)
     
     
-    map <-
-      rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+    # map <-
+    #   rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
     #if(DEBUG)cat(file=stderr(),map[1])
     
-    expression <- gbm_log[map, ]
+    expression <- gbm_log[genesin, ]
     #if(DEBUG)cat(file=stderr(),rownames(expression))
     
     #expression<-expression[complete.cases(expression),]
     #if(DEBUG)cat(file=stderr(),rownames(expression))
     
     # display genes not found
-    notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
-    if (length(notFound) > 0) {
-      if (!is.null(getDefaultReactiveDomain())) {
-        showNotification(
-          paste("following genes were not found", notFound, collapse = " "),
-          id = "plotCoExpressionNotFound",
-          type = "warning",
-          duration = 20
-        )
-      }
-    }
+    # notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
+    # if (length(notFound) > 0) {
+    #   if (!is.null(getDefaultReactiveDomain())) {
+    #     showNotification(
+    #       paste("following genes were not found", notFound, collapse = " "),
+    #       id = "plotCoExpressionNotFound",
+    #       type = "warning",
+    #       duration = 20
+    #     )
+    #   }
+    # }
     
     validate(need(
       is.na(sum(expression)) != TRUE,
@@ -263,8 +278,7 @@ plotCoExpressionFunc <-
     bin <- expression
     bin[] <- 0
     
-    for (i in 1:nrow(expression))
-    {
+    for (i in 1:nrow(expression)) {
       x <- Mclust(expression[i, ], G = 2)
       bin[i, ] <- x$classification
     }
@@ -287,7 +301,7 @@ plotCoExpressionFunc <-
              aes_string(x = dimx3, y = dimy3)) +
       geom_point(aes_string(
         shape = "sample",
-        alpha = 'CoExpression',
+        # alpha = 'CoExpression',
         color = "dbCluster"
       ),
       size = 4) +

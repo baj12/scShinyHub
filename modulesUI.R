@@ -1,7 +1,8 @@
 # to select clusters from the list of available knn clusters
 
 clusterUI <- function(id){
-  if(DEBUG)cat(file=stderr(), paste("clusterUI: ", NS(id)("clusters"), "\n"))
+  if (DEBUG)
+    cat(file=stderr(), paste("clusterUI: ", NS(id)("clusters"), "\n"))
   ns <- NS(id)
   tagList(fluidRow(
     column(12, offset = 1,
@@ -49,7 +50,11 @@ tableSelectionUi <- function(id){
     fluidRow(
       h4('Cells', offset = 1),
       checkboxInput(ns("selectAll"), "Select all rows", FALSE),br(),
-      DTOutput(ns('cellNameTable')) %>% withSpinner()
-    )
+      column(width = 12,
+             DTOutput(ns('cellNameTable')) %>% withSpinner(),
+             style = "height:500px; overflow-y: scroll;overflow-x: scroll;"
+      )
+    ),
+    fluidRow()
   )
 }

@@ -1,12 +1,13 @@
 # here we define reactive values/variables
 
-scaterReadsFunc <- function(gbm, gbm_log, fd){
-
+# scaterReadsFunc <- function(gbm, gbm_log, fd){
+scaterReadsFunc <- function(gbm, fd){
+  
   if(DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
-
-    counts = as.matrix(exprs( gbm))
+  
+  counts = as.matrix(exprs( gbm))
   
   anno = pData(gbm)
   anno$sample_id = anno$sampleNames
@@ -50,12 +51,13 @@ scaterReadsFunc <- function(gbm, gbm_log, fd){
 scaterReads <- reactive({
   if(DEBUG)cat(file=stderr(), "scaterReads\n")
   gbm = gbm()
-  gbm_log = gbm_log()
+  # gbm_log = gbm_log()
   fd = featureDataReact()
   if( is.null(gbm) | is.null(gbm_log))
     return(NULL)
-  return(scaterReadsFunc(gbm, gbm_log, fd))
-
+  # return(scaterReadsFunc(gbm, gbm_log, fd))
+  return(scaterReadsFunc(gbm, fd))
+  
 })
 
 
@@ -66,7 +68,7 @@ sampleHistFunc <- function(samples){
 inputTSNESample <- reactive({
   if(DEBUG)cat(file=stderr(), "inputTSNESample\n")
   projections = projections()
-   if( is.null(projections)){
+  if( is.null(projections)){
     return(NULL)
   }
   if(!is.null(getDefaultReactiveDomain())){
@@ -76,9 +78,9 @@ inputTSNESample <- reactive({
   if(DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/inputTSNESample.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
-
-   if(!is.null(getDefaultReactiveDomain())){
-    removeNotification( id="heatmap")
+  
+  if(!is.null(getDefaultReactiveDomain())){
+    removeNotification( id="inputTSNESample")
   }
   return(projections)
   
@@ -216,11 +218,11 @@ tsne.data = reactive({
 
 
 myProjections <- list(c("tsne1", "tsne1"),
-                        c("tsne2", "tsne2"),
-                        c("tsne3", "tsne3"),
-                        c("tsne4", "tsne4"),
-                        c("tsne5", "tsne5"),
-                        c("dbCluster", "dbCluster"))
+                      c("tsne2", "tsne2"),
+                      c("tsne3", "tsne3"),
+                      c("tsne4", "tsne4"),
+                      c("tsne5", "tsne5"),
+                      c("dbCluster", "dbCluster"))
 
 
 # declare function as heavy
