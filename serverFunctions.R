@@ -1,3 +1,45 @@
+geneName2Index <- function(g_id, featureData){
+  g_id <- toupper(g_id)
+  g_id <- gsub(" ", "", g_id, fixed = TRUE)
+  g_id <- strsplit(g_id, ',')
+  g_id <- g_id[[1]]
+  
+  notFound = g_id[!toupper(g_id) %in% featureData$Associated.Gene.Name]
+  if (length(featureData$Associated.Gene.Name) == length(notFound)) { # in case there is only one gene that is not available. 
+    notFound = g_id
+  }
+  if(length(notFound)>0){
+    if(DEBUG)cat(file=stderr(), paste("gene names not found: ",notFound, "\n"))
+    if(!is.null(getDefaultReactiveDomain())){
+      showNotification(paste("following genes were not found", notFound,collapse = " "), id="moduleNotFound", type = "warning", duration = 20)
+    }
+    
+  }
+  
+  geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+                                         toupper(g_id)), ])
+  return(geneid)
+}
+
+
+updateProjectionsWithUmiCount <- function(dimY, dimX, geneNames, featureData, gbm, projections){
+  if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes"){
+    geneNames = geneName2Index(geneNames, featureData)
+    if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
+      
+      if(length(geneNames) == 1) {
+        projections$UmiCountPerGenes = exprs(gbm)[geneNames, ]
+      }else{
+        projections$UmiCountPerGenes = Matrix::colSums(exprs(gbm)[geneNames, ])
+      }
+      
+    }else{
+      projections$UmiCountPerGenes = 0
+    }
+    
+  }
+  return(projections)
+}
 
 
 # append to heavyCalculations

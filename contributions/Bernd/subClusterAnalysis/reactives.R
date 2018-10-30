@@ -1,4 +1,6 @@
-selectedDge <- reactiveValues()
+selectedDge <- reactiveValues(
+  dgeTable = data.frame()
+)
 
 
 # TODO remove log2cpm change to gbm_log
@@ -74,7 +76,7 @@ dge <- reactive({
     }
   }
   if(DEBUG)cat(file=stderr(), "dge15\n")
-  selectedDge <- toReturn
+  selectedDge$dgeTable <- toReturn
   cat(stderr(), rownames(toReturn)[1:5])
   if(DEBUG)cat(file=stderr(), "dge: done\n")
   if(!is.null(getDefaultReactiveDomain())){

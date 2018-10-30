@@ -7,7 +7,7 @@ output: html_document
 
 ```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
 if(exists("params")){
-  cat(file=stderr(), paste("Scater Plot report\n"))
+  cat(file = stderr(), paste("Scater Plot report\n"))
 }else{
   rm(list = ls())
   load("~/scShinyHubDebug/report.RData")
@@ -37,7 +37,12 @@ if(exists("params")){
   source("reactives.R", local = TRUE)
   
   LOCALEXECUTION = TRUE # to know that we are debugging.
-  useCells = useCellsFunc(dataTables, minG = input$minGenes, maxG = input$maxGenes, geneNames = input$minExpGenes)
+  useCells = useCellsFunc(dataTables, 
+                          geneNames = input$minExpGenes,
+                          rmCells = input$cellsFiltersOut,
+                          rmPattern = input$cellPatternRM,
+                          keepCells = input$cellKeep,
+                          cellKeepOnly = input$cellKeepOnly)
   ipIDs = input$selectIds
   geneListSelection = input$geneListSelection
   minGene <- input$minGenesGS
@@ -82,14 +87,15 @@ if(exists("params")){
 
 cat(file=stderr(),paste(ls(),collapse = "\n"))
   cat(file=stderr(), paste("\nmy Scater Plot report\n"))
-cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
+cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsneData), "\n"))
   
 ```
 
 
 
 
-```{r bj-gQC-tsne3d, eval=TRUE, echo=FALSE}
+```{r bj-gQC-tsne3d, eval=FALSE, echo=FALSE}
+# TODO: not working because tsne.data is not available
 cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
   
   tsne.data <- as.data.frame(tsne.data)

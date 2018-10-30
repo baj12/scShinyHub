@@ -37,7 +37,12 @@ if(exists("params")){
   # source("reactives.R", local = TRUE)
   
   LOCALEXECUTION = TRUE # to know that we are debugging.
-  useCells = useCellsFunc(dataTables, minG = input$minGenes, maxG = input$maxGenes, geneNames = input$minExpGenes)
+  useCells = useCellsFunc(dataTables, 
+                          geneNames = input$minExpGenes,
+                          rmCells = input$cellsFiltersOut,
+                          rmPattern = input$cellPatternRM,
+                          keepCells = input$cellKeep,
+                          cellKeepOnly = input$cellKeepOnly)
   ipIDs = input$selectIds
   geneListSelection = input$geneListSelection
   minGene <- input$minGenesGS

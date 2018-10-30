@@ -161,7 +161,7 @@ output$download_dge_table <- downloadHandler(
     paste("SubCluster", "DGE_table.csv", sep = '_')
   },
   content = function(file) {
-    write.csv(selectedDge, file)
+    write.csv(selectedDge$dgeTable, file)
   }
 )
 

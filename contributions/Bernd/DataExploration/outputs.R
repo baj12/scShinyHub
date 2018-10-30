@@ -28,6 +28,16 @@ updateInputx4 = reactive({
   return(TRUE)
 })
 
+output$NumberOfGenesInclude = renderText({
+  idx = scGeneIdxInclude()
+  paste("Number of genes to be included: ", length(idx))
+})
+
+output$NumberOfGenesExclude = renderText({
+  idx = scGeneIdxExclude()
+  paste("Number of genes to be included: ", length(idx))
+})
+
 
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
 # TODO module for violin plot  ??
@@ -36,22 +46,35 @@ output$gene_vio_plot <- renderPlot({
   # if (v$doPlot == FALSE)
   #   return()
   featureData = featureDataReact()
-  log2cpm = log2cpm()
+  # log2cpm = log2cpm()
+  gbm_log = gbm_log()
   projections = projections()
-  if ( is.null(featureData) | is.null(log2cpm) | is.null(projections)) {
-    if( DEBUG )cat(file=stderr(), "output$gene_vio_plot:NULL\n")
+  g_id = input$gene_id
+  
+  if ( is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+    if ( DEBUG ) cat(file = stderr(), "output$gene_vio_plot:NULL\n")
     return(NULL)
   }
+  if (DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/gene_vio_plot.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/gene_vio_plot.RData")
   
-  geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
-                                         toupper(input$gene_id)), ])[1]
+  geneid = geneName2Index(g_id, featureData)  
   
-  expression <- log2cpm[geneid, ]
+  # geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+  #                                        toupper(input$gene_id)), ])[1]
+  
+  # expression <- exprs(gbm_log)[geneid, ]
+  if (length(geneid) == 1) {
+    expression = exprs(gbm_log)[geneid, ]
+  }else{
+    expression = Matrix::colSums(exprs(gbm_log)[geneid, ])
+  }
   
   validate(need(is.na(sum(expression)) != TRUE, ''))
   
-  projections <- cbind(projections, t(expression))
-  names(projections)[names(projections) == geneid] <- 'values'
+  projections <- cbind(projections, expression)
+  names(projections)[length(projections)] <- 'values'
   
   p1 <-
     ggplot(projections, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
@@ -79,7 +102,7 @@ output$gene_vio_plot <- renderPlot({
     ) +
     xlab('Cluster') +
     ylab('Expression') +
-    ggtitle(toupper(input$gene_id))
+    ggtitle(paste(toupper(featureData[geneid,"Associated.Gene.Name"]),collapse = ", "))
   if(DEBUG)cat(file=stderr(), "output$gene_vio_plot:done\n")
   return(p1)
   # })
@@ -96,15 +119,19 @@ output$downloadExpression <- downloadHandler(
   },
   content = function(file) {
     featureData = featureDataReact()
-    log2cpm = log2cpm()
+    # log2cpm = log2cpm()
+    gbm_log = gbm_log()
     projections = projections()
-    if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
+    if(is.null(featureData) | is.null(gbm_log) | is.null(projections)){
       return(NULL)
     }
+    if (DEBUGSAVE) 
+      save(file = "~/scShinyHubDebug/downloadExpression.RData", list = c(ls(),ls(envir = globalenv())))
+    # load(file="~/scShinyHubDebug/downloadExpression.RData")
     geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
                                            toupper(input$gene_id)), ])[1]
     
-    expression <- log2cpm[geneid, ]
+    expression <- exprs(gbm_log)[geneid, ]
     #cat(stderr(),colnames(expression)[1:5])
     projections <- cbind(projections, t(expression))
     #if(DEBUG)cat(file=stderr(),grep('^T_',rownames(projections)))
@@ -122,16 +149,16 @@ output$downloadExpression <- downloadHandler(
     #if(DEBUG)cat(file=stderr(),cells[1:5])
     
     if (length(cells) == 1) {
-      subsetExpression <- log2cpm[, cells]
+      subsetExpression <- exprs(gbm_log)[, cells]
       subsetExpression <-
-        as.data.frame(subsetExpression, row.names = rownames(log2cpm))
+        as.data.frame(subsetExpression, row.names = rownames(gbm_log))
       colnames(subsetExpression) <- cells
       subsetExpression$Associated.Gene.Name <-
         featureData[rownames(subsetExpression), 'Associated.Gene.Name']
       write.csv(subsetExpression, file)
     }
     else{
-      subsetExpression <- log2cpm[, cells]
+      subsetExpression <- exprs(gbm_log)[, cells]
       #cat(stderr(),colnames(subsetExpression)[1:5])
       
       subsetExpression$Associated.Gene.Name <-
@@ -167,9 +194,10 @@ output$panelPlot <- renderPlot({
   if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
   
   featureData = featureDataReact()
-  log2cpm = log2cpm()
+  # log2cpm = log2cpm()
+  gbm_log = gbm_log()
   projections = projections()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
+  if(is.null(featureData) | is.null(gbm_log) | is.null(projections)){
     return(NULL)
   }
   
@@ -197,7 +225,7 @@ output$panelPlot <- renderPlot({
         as.numeric(
           cut(
             as.numeric(
-              log2cpm[
+              exprs(gbm_log)[
                 rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
                 ,]
             ),breaks = 10))]
@@ -215,7 +243,7 @@ output$panelPlot <- renderPlot({
         as.numeric(
           cut(
             as.numeric(
-              log2cpm[
+              exprs(gbm_log)[
                 rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
                 ,]
             ),breaks = 10))]
@@ -250,24 +278,37 @@ output$tsne_plt <- renderPlotly({
   # if (v$doPlot == FALSE)
   #   return()
   featureData = featureDataReact()
-  log2cpm = log2cpm()
+  # log2cpm = log2cpm()
+  gbm_log = gbm_log()
+  g_id = input$gene_id
   projections = projections()
-  if(is.null(featureData) | is.null(log2cpm) | is.null(projections)){
+  
+  if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
     return(NULL)
   }
-  geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
-                                         toupper(input$gene_id)), ])[1]
+  if (DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/tsne_plt.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/tsne_plt.RData")
+
   
-  expression <- log2cpm[geneid, ]
-  cat(file = stderr(), rownames(expression))
+  geneid = geneName2Index(g_id, featureData)  
+  
+  if (length(geneid) == 1) {
+    expression = exprs(gbm_log)[geneid, ]
+  }else{
+    expression = Matrix::colSums(exprs(gbm_log)[geneid, ])
+  }
+  
+  # expression <- log2cpm[geneid, ]
+  # cat(file = stderr(), rownames(expression))
   
   validate(need(
     is.na(sum(expression)) != TRUE,
     'Gene symbol incorrect or gene not expressed'
   ))
   
-  projections <- cbind(projections, t(expression))
-  names(projections)[names(projections) == geneid] <- 'values'
+  projections <- cbind(projections, expression)
+  names(projections)[ncol(projections)] <- 'values'
   
   p <-
     plot_ly(
@@ -286,7 +327,7 @@ output$tsne_plt <- renderPlotly({
         colors = 'Greens'
       )
     )
-  layout(p, title = toupper(input$gene_id))
+  layout(p, title = paste(toupper(featureData[geneid,"Associated.Gene.Name"]),collapse = ", "))
   # })
 })
 

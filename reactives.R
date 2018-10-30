@@ -250,7 +250,7 @@ useCells <- reactive({
   return(retVal)
 })
 
-
+# TODO: check that it is ok that we use dataTables directly and not useGenes()
 featureDataReact = reactive({
   if (DEBUG)
     cat(file = stderr(), "featureData\n")
@@ -494,7 +494,12 @@ gbm_matrix <- reactive({
 })
 
 
-
+rawNormalization <- reactive({
+  gbm = gbm()
+  if (DEBUG)
+    cat(file = stderr(), "rawNormalization\n")
+  return(gbm)
+})
 
 # individual values
 gbm_log <- reactive({
@@ -504,20 +509,21 @@ gbm_log <- reactive({
   # useCells = useCells()
   # useGenes = useGenes()
   gbm = gbm()
+  normMethod = input$normalizationRadioButton
+  
   if (is.null(gbm)) {
     if (DEBUG)
       cat(file = stderr(), "gbm_log:NULL\n")
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Calculating log", id = "gbm_log", duration = NULL)
+    showNotification("Normalizing data", id = "gbm_log", duration = NULL)
   }
   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/gbm_log.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/gbm_log.RData")
-  use_genes <- get_nonzero_genes(gbm)
-  gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-  gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
+
+  gbm_log <- do.call(normMethod, args = list())
   
   # gbm rownames are ENSG numbers
   # dataTables$gbm_log[useGenes, useCells]
@@ -562,6 +568,42 @@ gbmLogMatrix <- reactive({
   
 })
 
+# gbmLog matrix with symbol as first column
+# TODO
+# we should probably just rename the rows and then have an option to tableSelectionServer that shows (or not) rownames
+gbmLogMatrixDisplay <- reactive({
+  if (DEBUG)
+    cat(file = stderr(), "gbmLogMatrixDisplay\n")
+  # dataTables = inputData()
+  # useCells = useCells()
+  # useGenes = useGenes()
+  gbmLog = gbm_log()
+  if (is.null(gbmLog)) {
+    if (DEBUG)
+      cat(file = stderr(), "gbmLogMatrixDisplay:NULL\n")
+    return(NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("Calculating gbmLogmatrix",
+                     id = "gbmLogMatrixDisplay",
+                     duration = NULL)
+  }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/gbmLogMatrixDisplay.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/gbmLogMatrixDisplay.RData")
+  
+  retVal = as.data.frame(as.matrix(exprs(gbmLog)))
+  rownames(retVal) = make.names(fData(gbmLog)$symbol, unique = TRUE)
+  
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "gbmLogMatrixDisplay")
+  }
+  if (DEBUG)
+    cat(file = stderr(), "gbmLogMatrixDisplay:Done\n")
+  return(retVal)
+  
+  
+})
 
 pcaFunc <- function(gbm_log) {
   if (DEBUGSAVE)
@@ -606,18 +648,17 @@ pca = reactive({
   return(retVal)
 })
 
-# TODO separate  function from reactive
 
-kmClusteringFunc <- function(pca, seed) {
+kmClusteringFunc <- function(pca, seed, kNr = 10) {
   clustering = list()
   
-  kNr = 10
-  for (kNr in 2:10) {
+  # kNr = 10
+  # for (kNr in 2:kNr) {
     set.seed(seed = seed)
     km = run_kmeans_clustering(pca, k = kNr)
     clustering[[paste0("kmeans_", kNr, "_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)),
                                                                    "Cluster" = km$cluster)
-  }
+  # }
   return(clustering)
 }
 
@@ -626,11 +667,16 @@ kmClustering = reactive({
     cat(file = stderr(), "kmClustering\n")
   pca = pca()
   seed = input$seed
+  kNr = input$kNr
+  # kNr = 10
   if (is.null(pca)) {
     if (DEBUG)
       cat(file = stderr(), "kmClustering:NULL\n")
     return(NULL)
   }
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/kmClustering.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/kmClustering.RData")
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("kmClustering", id = "kmClustering", duration = NULL)
   }
@@ -638,7 +684,7 @@ kmClustering = reactive({
   if (is.null(seed)) {
     seed = 1
   }
-  retVal = kmClusteringFunc(pca, seed = seed)
+  retVal = kmClusteringFunc(pca, seed = seed, kNr = kNr)
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "kmClustering")
   }
@@ -649,6 +695,7 @@ kmClustering = reactive({
 })
 
 
+# TODO separate  function from reactive
 # projections
 # each column is of length of number of cells
 # if factor than it is categorical and can be cluster number of sample etc
@@ -680,29 +727,7 @@ projections = reactive({
     return(NULL)
   }
   
-  # for (cn in colnames(pd)) {
-  #   if (class(pd[,cn]) == "factor") {
-  #     if (length(levels(pd[,cn])) > 1 & length(levels(pd[,cn])) < nrow(pd)) {
-  #       if (ncol(projections) == 0) {
-  #         projections = data.frame(tmp = pd[,cn])
-  #       }else{
-  #         if (nrow(projections) == length(pd[,cn])) {
-  #           projections = cbind(projections, pd[,cn])
-  #         } else {
-  #           showNotification(
-  #             paste("warning: ", proj[1], "didn't produce a result"),
-  #             type = "warning",
-  #             duration = NULL
-  #           )
-  #         }
-  #       }
-  #       
-  #       colnames(projections[,"tmp"]) = cn
-  #       
-  #     }
-  #   }
-  # }
-  
+ 
   if (DEBUGSAVE)
     save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/projections.RData")
@@ -714,11 +739,11 @@ projections = reactive({
       assign("tmp", eval(parse(text = paste0( proj[2], "()"))))
       cn = make.names(c(colnames(projections), make.names(proj[1])))
       if(length(tmp) == 0){
-        showNotification(
-          paste("warning: ", proj[1], "didn't produce a result"),
-          type = "warning",
-          duration = NULL
-        )
+      #   showNotification(
+      #     paste("warning: ", proj[1], "didn't produce a result"),
+      #     type = "warning",
+      #     duration = NULL
+      #   )
         next()
       }
       if(ncol(projections)==0){
@@ -739,6 +764,8 @@ projections = reactive({
       observe(proj[2],quoted = TRUE)
     }
   })
+  # add a column for gene specific information that will be filled/updated on demand
+  projections$UmiCountPerGenes = 0
   return(projections)
 })
 
@@ -785,9 +812,14 @@ initializeGroupNames <- reactive({
 
 
 dbCluster = reactive({
+  kNr = input$kNr
+  # kNr = 10
   if (DEBUG)
     cat(file = stderr(), "dbCluster\n")
   clustering = kmClustering()
+  if (DEBUGSAVE)
+    save(file = "~/scShinyHubDebug/dbCluster.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/dbCluster.RData")
   
   if (is.null(clustering)) {
     if (DEBUG)
@@ -795,7 +827,7 @@ dbCluster = reactive({
     return(NULL)
   }
   
-  dbCluster = factor(clustering$kmeans_10_clusters$Cluster - 1)
+  dbCluster = factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
   
   return(dbCluster)
 })
