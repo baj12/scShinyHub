@@ -1,4 +1,55 @@
 require(ggplot2)
+
+gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour = NULL, 
+                        limits = c(-3, 3)) 
+{
+  if (!is.list(genes_to_plot)) {
+    cat("Plotting one gene set instead of multiple cluster-specific gene sets\n")
+    gene_indices <- sapply(genes_to_plot, function(x) get_gene_index(gbm, 
+                                                                     x))
+    gene_annotation <- NULL
+  }
+  else {
+    if ("significant" %in% names(genes_to_plot[[1]])) {
+      gene_indices <- unlist(lapply(genes_to_plot, function(x) with(x, 
+                                                                    head(ix[significant], n_genes))))
+      gene_grouping <- unlist(lapply(names(genes_to_plot), 
+                                     function(nm) rep(nm, with(genes_to_plot[[nm]], 
+                                                               length(head(ix[significant], n_genes))))))
+    }
+    else {
+      gene_indices <- unlist(lapply(genes_to_plot, function(x) x$ix[1:n_genes]))
+      gene_grouping <- rep(names(genes_to_plot), each = n_genes)
+    }
+    gene_annotation <- data.frame(ClusterID = as.factor(gene_grouping))
+  }
+  cell_indices <- unlist(lapply(cells_to_plot, function(x) x$ix))
+  value <- t(scale(t(as.matrix(exprs(gbm))[gene_indices, cell_indices])))
+  value[value < limits[1]] <- limits[1]
+  value[value > limits[2]] <- limits[2]
+  rownames(value) <- make.unique(fData(gbm)$symbol[gene_indices])
+  cell_grouping <- unlist(lapply(1:length(cells_to_plot), function(x) {
+    rep(names(cells_to_plot)[x], length(cells_to_plot[[x]]$barcode))
+  }))
+  cell_annotation <- data.frame(ClusterID = as.factor(cell_grouping))
+  rownames(cell_annotation) <- colnames(value)
+  if (!is.null(gene_annotation)) {
+    rownames(gene_annotation) <- rownames(value)
+  }
+  if (is.null(colour)) {
+    anno_colors <- NULL
+  }
+  else {
+    names(colour) <- names(cells_to_plot)
+    anno_colors <- list(ClusterID = colour)
+  }
+  list(data = value, cluster_rows = FALSE, cluster_cols = FALSE, 
+           show_colnames = FALSE, annotation_row = gene_annotation, 
+           annotation_col = cell_annotation, annotation_names_row = FALSE, 
+           annotation_names_col = FALSE, annotation_colors = anno_colors)
+}
+
+
 crHeatImage <- reactive({
   if(DEBUG)cat(file=stderr(), "output$crHeat_plot1\n")
   gbm = gbm()
@@ -42,7 +93,7 @@ crHeatImage <- reactive({
   logGB = log_gene_bc_matrix(gbm)
 
   retVal = tryCatch({
-    gbm_pheatmap(gbm=logGB, 
+    gbmPheatmap(gbm=logGB, 
                  genes_to_plot=prioritized_genes, 
                  cells_to_plot=cells_to_plot,
                  n_genes = 10, 

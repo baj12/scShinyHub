@@ -134,7 +134,13 @@ heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells){
               alt = "heatmap should be here"))
   
 }
-
+# clusterServer <- function(input, output, session,
+#                           tData,
+#                           gene_id,
+#                           # selectedCells  = NULL,
+#                           legend.position = "none") {
+  
+callModule(pHeatMapServer, "coExpress", projections, reactive(input$gene_id))
 # TODO mnodule for heatmap?  
 output$heatmap <- renderImage({
   if(DEBUG)cat(file=stderr(), "output$heatmap\n")

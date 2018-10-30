@@ -1,3 +1,70 @@
+drawTrajectoryHeatmap <- function(x, time, progression_group = NULL, modules = NULL, 
+          show_labels_row = FALSE, show_labels_col = FALSE, scale_features = TRUE, 
+          ...) 
+{
+  if (!is.matrix(x) && !is.data.frame(x)) 
+    stop(sQuote("x"), " must be a numeric matrix or data frame")
+  if (!is.vector(time) || !is.numeric(time)) 
+    stop(sQuote("time"), " must be a numeric vector")
+  if (nrow(x) != length(time)) 
+    stop(sQuote("time"), " must have one value for each row in ", 
+         sQuote("x"))
+  if ((!is.null(progression_group) && !is.vector(progression_group) && 
+       !is.factor(progression_group)) || (!is.null(progression_group) && 
+                                          length(progression_group) != nrow(x))) 
+    stop(sQuote("progression_group"), " must be a vector or a factor of length nrow(x)")
+  if (is.null(rownames(x))) {
+    rownames(x) <- paste("Row ", seq_len(nrow(x)))
+  }
+  col_ann <- data.frame(row.names = rownames(x), Time = time)
+  x_part <- x[order(time), , drop = FALSE]
+  if (scale_features) {
+    x_part <- scale_quantile(x_part)
+  }
+  x_part <- t(x_part)
+  gg_color_hue <- function(n) {
+    hues = seq(15, 375, length = n + 1)
+    grDevices::hcl(h = hues, l = 65, c = 100)[1:n]
+  }
+  ann_col <- list(Time = RColorBrewer::brewer.pal(5, "RdGy"))
+  if (!is.null(progression_group)) {
+    if (!is.factor(progression_group)) 
+      progression_group <- factor(progression_group)
+    col_ann$Progression <- progression_group
+    num_progressions <- length(levels(progression_group))
+    progression_cols <- if (num_progressions <= 9) {
+      RColorBrewer::brewer.pal(num_progressions, "Set1")
+    }
+    else {
+      gg_color_hue(num_progressions)
+    }
+    ann_col$Progression <- stats::setNames(progression_cols, 
+                                           levels(progression_group))
+  }
+  labels_row <- if (!show_labels_row) 
+    rep("", nrow(x_part))
+  else NULL
+  labels_col <- if (!show_labels_col) 
+    rep("", ncol(x_part))
+  else NULL
+  if (!is.null(modules)) {
+    x_part <- x_part[modules$feature, ]
+    gaps_row <- which(modules$module[-1] != modules$module[-length(modules$module)])
+    cluster_rows <- F
+  }
+  else {
+    gaps_row <- NULL
+    cluster_rows <- T
+  }
+  return(list(data = x_part, cluster_cols = F, cluster_rows = cluster_rows, 
+         annotation_col = col_ann, annotation_colors = ann_col, 
+         gaps_row = gaps_row, labels_row = labels_row, labels_col = labels_col, 
+         ...))
+  pheatmap::pheatmap(x_part, cluster_cols = F, cluster_rows = cluster_rows,
+                     annotation_col = col_ann, annotation_colors = ann_col,
+                     gaps_row = gaps_row, labels_row = labels_row, labels_col = labels_col,
+                     ...)
+}
 
 scorpiusSpace <- reactive({
   projections = projections()

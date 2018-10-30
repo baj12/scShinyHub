@@ -54,6 +54,10 @@ tabList = list(
                                     fluidRow(column(
                                       10, offset = 1,
                                       plotOutput('selectedHeatmap') %>% withSpinner()
+                                    )),
+                                    fluidRow(column(
+                                      10,offset = 1,
+                                      pHeatMapUI("heatmapCoexpr") %>% withSpinner()
                                     ))
   ),
   binarizeTab = tabItem("coexpressionBinarized",

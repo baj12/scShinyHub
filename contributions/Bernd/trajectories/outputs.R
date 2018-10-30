@@ -63,9 +63,11 @@ output$scorpiusHeatmapPlot <- renderImage({
   cat(file = stderr(), paste("saving to: ", outfile, '\n'))
   
   # modules <- extract_modules(scale_quantile(expr_sel), traj$time, verbose = F)
-  retVal = draw_trajectory_heatmap(expr_sel, traj$time, projections[,dimCol], modules,
+  retVal = drawTrajectoryHeatmap(expr_sel, traj$time, projections[,dimCol], modules,
                                    filename = normalizePath(outfile))
-  
+  heatmaply(retVal$data, Rowv = retVal$cluster_rows, Colv = retVal$cluster_cols,
+            showticklabels = c(retVal$show_colnames,T), row_side_colors = retVal$annotation_row, 
+            col_side_colors = retVal$annotation_col)
   
   # if(DEBUG)cat(file=stderr(), paste("scorpiusHeatmapPlot:done\n"))
   return(list(src = normalizePath(outfile),
