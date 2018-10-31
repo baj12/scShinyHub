@@ -51,7 +51,11 @@ gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour =
     anno_colors <- list(ClusterID = colour)
   }
   list(
+<<<<<<< HEAD
     mat = value, cluster_rows = FALSE, cluster_cols = FALSE,
+=======
+    data = value, cluster_rows = FALSE, cluster_cols = FALSE,
+>>>>>>> 6ac34d55ac3b313b7fb27d9b0662ac04ed85c705
     show_colnames = FALSE, annotation_row = gene_annotation,
     annotation_col = cell_annotation, annotation_names_row = FALSE,
     annotation_names_col = FALSE, annotation_colors = anno_colors
