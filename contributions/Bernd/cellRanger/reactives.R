@@ -2,6 +2,11 @@ require(ggplot2)
 
 gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour = NULL,
                         limits = c(-3, 3)) {
+  if (DEBUG) cat(file = stderr(), "gbmPheatmap\n")
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/gbmPheatmap.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/gbmPheatmap.RData")
   if (!is.list(genes_to_plot)) {
     cat("Plotting one gene set instead of multiple cluster-specific gene sets\n")
     gene_indices <- sapply(genes_to_plot, function(x) get_gene_index(

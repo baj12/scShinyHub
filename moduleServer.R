@@ -602,12 +602,12 @@ heatmapModuleFunc <- function(
 
   expression <- expression[complete.cases(expression), ]
 
-  if (!("sample" %in% colnames(projections))) {
+  if (!("sampleNames" %in% colnames(projections))) {
     projections$sample <- 1
   }
-  annotation <- data.frame(projections[cells, c("dbCluster", "sample")])
+  annotation <- data.frame(projections[cells, c("dbCluster", "sampleNames")])
   rownames(annotation) <- colnames(expression)
-  colnames(annotation) <- c("Cluster", "sample")
+  colnames(annotation) <- c("Cluster", "sampleNames")
 
   # For high-res displays, this will be greater than 1
   pixelratio <- session$clientData$pixelratio

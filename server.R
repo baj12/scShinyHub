@@ -82,7 +82,7 @@ shinyServer(function(input, output, session) {
   # base projections 
   # display name, reactive to calculate projections
   projectionFunctions <<- list(
-                             c("sample", "sample"),
+                             c("sampleNames", "sample"),
                              c("Gene count", "geneCount"),
                              c("UMI count", "umiCount")
   )

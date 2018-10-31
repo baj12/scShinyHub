@@ -58,12 +58,12 @@ heatmapFunc <- function (featureData, gbm_matrix, projections, genesin, cells) {
   # expression <- expression[, rownames(projections)]
   expression <- expression[complete.cases(expression), ]
   
-  if (!("sample" %in% colnames(projections))) {
+  if (!("sampleNames" %in% colnames(projections))) {
     projections$sample <- 1
   }
-  annotation <- data.frame(projections[cells, c("dbCluster", "sample")])
+  annotation <- data.frame(projections[cells, c("dbCluster", "sampleNames")])
   rownames(annotation) <- colnames(expression)
-  colnames(annotation) <- c("Cluster", "sample")
+  colnames(annotation) <- c("Cluster", "sampleNames")
   
   # For high-res displays, this will be greater than 1
   pixelratio <- session$clientData$pixelratio
@@ -76,8 +76,8 @@ heatmapFunc <- function (featureData, gbm_matrix, projections, genesin, cells) {
   if (is.null(height)) {
     height <- 96 * 7
   }
-  outfile <- paste0(tempdir(), "/heatmap", base::sample(1:10000, 1), ".png")
-  cat(file = stderr(), paste("saving to: ", outfile, "\n"))
+  # outfile <- paste0(tempdir(), "/heatmap", base::sample(1:10000, 1), ".png")
+  # cat(file = stderr(), paste("saving to: ", outfile, "\n"))
   # this can fail with na/inf in hclust error message if there is a row with all the same values
   # med = median(as.vector(as.matrix(expression)))
   # stDev = sd(as.vector(as.matrix(expression)))
@@ -99,7 +99,7 @@ heatmapFunc <- function (featureData, gbm_matrix, projections, genesin, cells) {
     annotation_legend = TRUE,
     # breaks = seq(minBreak, maxBreak, by = stepBreak),
     # filename = 'test.png',
-    filename = normalizePath(outfile),
+    # filename = normalizePath(outfile),
     colorRampPalette(rev(brewer.pal(
       n = 6, name =
         "RdBu"
@@ -486,7 +486,7 @@ plotCoExpressionFunc <-
         aes_string(x = dimx3, y = dimy3)
       ) +
       geom_point(aes_string(
-        shape = "sample",
+        shape = "sampleNames",
         # alpha = 'CoExpression',
         color = "dbCluster"
       ),
