@@ -3,7 +3,7 @@ source("moduleServer.R", local=TRUE)
 source("reactives.R", local=TRUE)
 
 
-#################################
+# normalizationRadioButtonValue --------------------------------
 # Parameters / normalization 
 output$normalizationRadioButtonValue <- renderPrint({ input$normalizationRadioButton })
 
@@ -35,6 +35,7 @@ for(fp in parFiles){
   }
 }
 
+# normalizationsParametersDynamic -------------------------
 output$normalizationsParametersDynamic <- renderUI({
   if(is.null(input$normalizationRadioButton))
     return(NULL)
@@ -60,9 +61,8 @@ output$normalizationsParametersDynamic <- renderUI({
   ))
 })
 
-# End of Parameters / normalization
-#################################
 
+# summaryStatsSideBar -----------------------------
 output$summaryStatsSideBar<-renderUI({
   if(DEBUG)cat(file=stderr(), "output$summaryStatsSideBar\n")
   gbm = gbm_matrix()
@@ -120,6 +120,7 @@ output$selectedGenesTable <- DT::renderDataTable({
   DT::datatable(dt)
 })
 
+# removedGenesTable --------------------------
 # TODO module for DT
 # TODO move to were it belongs  
 output$removedGenesTable <- DT::renderDataTable({
@@ -138,7 +139,7 @@ output$removedGenesTable <- DT::renderDataTable({
   DT::datatable(dt)
 })
 
-
+# gsSelectedGenes ---------------------------
 # TODO module of DT with selected names above
 # Print names of selected genes for gene selection above table
 output$gsSelectedGenes <- renderText({
@@ -156,6 +157,7 @@ output$gsSelectedGenes <- renderText({
   paste0(dt$Associated.Gene.Name[input$selectedGenesTable_rows_selected],",")
 })
 
+# gsrmGenes -----------------
 # Print names of removed genes for gene selection  
 output$gsrmGenes <- renderText({
   if(DEBUG)cat(file=stderr(), "gsrmGenes\n")
@@ -172,10 +174,11 @@ output$gsrmGenes <- renderText({
   paste0(dt$Associated.Gene.Name[input$removedGenesTable_rows_selected],",")
 })
 
-output$DEBUGSAVEstring <-  renderText({ DEBUGSAVE <<- input$DEBUGSAVE })
 
-r<-callModule(tableSelectionServer, "cellSelectionMod", inputSample)
+output$DEBUGSAVEstring <-  renderText({DEBUGSAVE <<- input$DEBUGSAVE })
 
-r<-callModule(tableSelectionServer, "normalizationResult", gbmLogMatrixDisplay)
+callModule(tableSelectionServer, "cellSelectionMod", inputSample)
+
+callModule(tableSelectionServer, "normalizationResult", gbmLogMatrixDisplay)
 
 
