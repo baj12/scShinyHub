@@ -62,7 +62,7 @@ scaterReads <- reactive({
 
 
 sampleHistFunc <- function(samples){
-  hist(as.integer(as.factor(samples)), main="histogram of number of cell per sample")
+  hist(as.integer(as.factor(samples)), main="histogram of number of cell per sample", labels = levels(as.factor(samples)))
 }
 
 inputTSNESample <- reactive({

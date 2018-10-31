@@ -23,10 +23,9 @@ tabList = list(
                                    textInput('heatmap_geneids', 'Comma seperated gene names', value = defaultValueMultiGenes)
                                  )
                                ),
-                               
                                fluidRow(column(
-                                 10, offset = 1,
-                                 plotOutput('heatmap') %>% withSpinner()
+                                 10,offset = 1,
+                                 pHeatMapUI("coExpHeatmapModule") %>% withSpinner()
                                ))
   ),
   
@@ -52,9 +51,14 @@ tabList = list(
                                       textInput('heatmap_geneids2', 'Comma seperated gene names', value = defaultValueMultiGenes)
                                     )),
                                     fluidRow(column(
-                                      10, offset = 1,
-                                      plotOutput('selectedHeatmap') %>% withSpinner()
+                                      10,offset = 1,
+                                      pHeatMapUI("heatmapSelectedModule") %>% withSpinner()
                                     ))
+                                    # ,
+                                    # fluidRow(column(
+                                    #   10, offset = 1,
+                                    #   plotOutput('selectedHeatmap') %>% withSpinner()
+                                    # ))
   ),
   binarizeTab = tabItem("coexpressionBinarized",
                         tags$ul(

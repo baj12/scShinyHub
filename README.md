@@ -59,13 +59,14 @@ The original version of this app is CellView (https://github.com/mohanbolisetty/
 
 Download git repository from gitlab/github (https://gitlab.pasteur.fr/hub/scShinyHub (need account for this one) or https://github.com/baj12/scShinyHub (public more stable version)).
   In RStudio create a new project (version control, git)
+  
+I needed to have TCL/TK installed to be able to install the sm package.
 
 ```R
-requiredPackages= c("shiny", "shinyTree", "shinyBS", "plotly", "shinythemes", "ggplot2", "DT", "pheatmap", "threejs", "sm", "RColorBrewer", "mclust", "reshape", "SCORPIUS", "knitr", "kableExtra", "shinyWidgets", "scater", "biomaRt", "devtools", "dplyr", "edgeR", "gplots", "shinydashboard", "stringi", "svglite")
-install.packages("rafalib")
+requiredPackages= c("shiny", "shinyTree", "plotly", "shinythemes", "ggplot2", "DT", "pheatmap", "threejs", "sm", "RColorBrewer", "mclust", "reshape", "SCORPIUS", "knitr", "kableExtra", "shinyWidgets", "scater", "biomaRt", "devtools", "dplyr", "edgeR", "gplots", "shinydashboard", "stringi", "svglite")
+install.packages(c("rafalib", "shinydashboard", "shinyBS", "shinythemes", "Rfast", "shinycssloaders", "pryr", "scran"))
 rafalib::install_bioc(requiredPackages)
 source("http://cf.10xgenomics.com/supp/cell-exp/rkit-install-2.0.0.R")
-devtools::install_github('andrewsali/shinycssloaders')
 install.packages("sm")
 ```
 

@@ -28,10 +28,14 @@ myNormalizationChoices = list(
 # value should be of class shiny.tag
 # will be displayed via renderUI
 myNormalizationParameters = list(
-  scater_norm = list(textInput("scaterGeneList", "List of genes to use for normalization"),
-                     textOutput("NumberOfGenesInclude", inline = TRUE),
-                     textInput("scaterGeneListRM", "List of genes to exclude for normalization"),
-                     textOutput("NumberOfGenesExclude", inline = TRUE)
+  scater_norm = list(
+    p(strong("Important note:")),
+    p("In case you encounter an error message using the Scater normalization,
+      check that there are more than 21 cells in each class."),
+    textInput("scaterGeneList", "List of genes to use for normalization"),
+    textOutput("NumberOfGenesInclude", inline = TRUE),
+    textInput("scaterGeneListRM", "List of genes to exclude for normalization"),
+    textOutput("NumberOfGenesExclude", inline = TRUE)
   )
 )
 
