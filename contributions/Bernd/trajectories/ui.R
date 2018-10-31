@@ -40,9 +40,10 @@ tabList = list(
                          fluidRow(column(12,
                            plotOutput('scropius_trajectory_plot', height = '672px') #%>% withSpinner()
                          )  ),
-                         tags$h3("Heatmap "),
+                         # tags$h3("Heatmap "),
                          fluidRow(column(12,
-                           imageOutput('scorpiusHeatmapPlot', height = '672px') #%>% withSpinner() 
+                                         pHeatMapUI("scorpiusHeatmapPlotModule") %>% withSpinner()
+                           # imageOutput('scorpiusHeatmapPlotModule', height = '672px') #%>% withSpinner() 
                          )),
                          tags$h3("table"),
                          fluidRow(column(

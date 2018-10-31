@@ -81,12 +81,9 @@ pHeatMapUI <- function(id) {
   ns <- NS(id)
   tagList(
     tags$h3("Heatmap plot"),
-    fluidRow(column(
-      8,
-      plotOutput(ns("pHeatMapPlot"),
-        height = "auto",
-        brush = brushOpts(id = "crh1")
-      ) %>% withSpinner()
-    ))
+    plotOutput(ns("pHeatMapPlot"),
+               height = "auto",
+               brush = brushOpts(id = "crh1")
+    ) %>% withSpinner()
   )
 }
