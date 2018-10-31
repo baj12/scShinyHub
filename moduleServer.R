@@ -658,19 +658,18 @@ heatmapModuleFunc <- function(
 
 
 
-pHeatMapServer <- function(input, output, session,
-                           dataTab) {
-  if (DEBUG) cat(file = stderr(), paste("pHeatMapServer", session$ns("test"), "\n"))
+pHeatMapModule <- function(input, output, session,
+                           pheatmapList # list with arguments for pheatmap
+                           ) {
+  if (DEBUG) cat(file = stderr(), paste("pHeatMapModule", session$ns("test"), "\n"))
   ns <- session$ns
 
   output$pHeatMapPlot <- renderImage({
     ns <- session$ns
-    if (DEBUG) cat(file = stderr(), "output$pHeatMapServer:pHeatMapPlot\n")
-    featureData <- featureDataReact()
-    gbm_log <- gbm_log()
-    projections <- projections()
+    heatmapData = pheatmapList()
+    if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
-    if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+    if (is.null(pheatmapList)) {
       return(list(
         src = "empty.png",
         contentType = "image/png",
@@ -680,25 +679,37 @@ pHeatMapServer <- function(input, output, session,
       ))
     }
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("pHeatMapPlot", id = "pHeatMapPlot", duration = NULL)
+      showNotification("pHeatMapPlotModule", id = "pHeatMapPlotModule", duration = NULL)
     }
 
     if (DEBUGSAVE) {
-      save(file = "~/scShinyHubDebug/pHeatMapPlot.RData", list = c(ls(), ls(envir = globalenv())))
+      save(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData", list = c(ls(), ls(envir = globalenv()), "heatmapData","input", "output", "session", "pheatmapList", "ns"))
     }
-    # load(file = "~/scShinyHubDebug/pHeatMapPlot.RData")
-    gbm_matrix <- as.matrix(exprs(gbm_log))
-    retval <- heatmapModuleFunc(
-      featureData = featureData,
-      gbm_matrix = gbm_matrix,
-      projections = projections,
-      # genesin = genesin,
-      cells = colnames(gbm_matrix)
-    )
-
+    # load(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData")
+    outfile <- paste0(tempdir(), "/heatmap", ns("debug"),base::sample(1:10000, 1), ".png")
+    filename = normalizePath(outfile)
+    heatmapData$filename = outfile
+    do.call(pheatmap, heatmapData)
+    
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "pHeatMapPlot")
+      removeNotification(id = "pHeatMapPlotModule")
     }
-    return(retval)
+    pixelratio <- session$clientData$pixelratio
+    if (is.null(pixelratio)) pixelratio <- 1
+    width <- session$clientData$output_plot_width
+    height <- session$clientData$output_plot_height
+    if (is.null(width)) {
+      width <- 96 * 7
+    } # 7x7 inch output
+    if (is.null(height)) {
+      height <- 96 * 7
+    }
+    
+    return(list(src = normalizePath(outfile),
+                contentType = 'image/png',
+                width = width,
+                height = height,
+                alt = "heatmap should be here"))
+    
   })
 }

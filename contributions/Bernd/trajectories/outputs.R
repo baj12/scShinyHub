@@ -22,8 +22,9 @@ output$scropius_trajectory_plot <- renderPlot({
 })
 
 callModule(tableSelectionServer, "scorpiusTableMod", scorpiusModules)
+# selected clusters heatmap module
 
-output$scorpiusHeatmapPlot <- renderImage({
+scorpiusHeatmapPlotReactive <- reactive({
   if (DEBUG) cat(file=stderr(), paste("scorpiusHeatmapPlot:\n"))
   upI <- updateScorpiusInput() # needed to update input 
   projections = projections()
@@ -37,11 +38,7 @@ output$scorpiusHeatmapPlot <- renderImage({
   
   if (!doCalc | is.null(projections) | is.null(modules) | is.null(expr_sel) | is.null(traj) ){
     if(DEBUG)cat(file=stderr(), paste("scorpiusHeatmapPlot:NULL\n"))
-    return(list(src = "empty.png",
-                contentType = 'image/png',
-                width = 96,
-                height = 96,
-                alt = "heatmap should be here"))
+    return(NULL)
   }
   if(DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/scorpiusHeatmapPlot.RData", list = c(ls(),ls(envir = globalenv())))
@@ -65,15 +62,24 @@ output$scorpiusHeatmapPlot <- renderImage({
   # modules <- extract_modules(scale_quantile(expr_sel), traj$time, verbose = F)
   retVal = drawTrajectoryHeatmap(expr_sel, traj$time, projections[,dimCol], modules,
                                    filename = normalizePath(outfile))
-  heatmaply(retVal$data, Rowv = retVal$cluster_rows, Colv = retVal$cluster_cols,
-            showticklabels = c(retVal$show_colnames,T), row_side_colors = retVal$annotation_row, 
-            col_side_colors = retVal$annotation_col)
+
+  retVal
   
-  # if(DEBUG)cat(file=stderr(), paste("scorpiusHeatmapPlot:done\n"))
-  return(list(src = normalizePath(outfile),
-              contentType = 'image/png',
-              width = width,
-              height = height,
-              alt = "heatmap should be here"))
+  # pheatmap(retVal$data, Rowv = retVal$cluster_rows, Colv = retVal$cluster_cols,
+  #           showticklabels = c(retVal$show_colnames,T), row_side_colors = retVal$annotation_row, 
+  #           col_side_colors = retVal$annotation_col)
   
+  # # if(DEBUG)cat(file=stderr(), paste("scorpiusHeatmapPlot:done\n"))
+  # return(list(src = normalizePath(outfile),
+  #             contentType = 'image/png',
+  #             width = width,
+  #             height = height,
+  #             alt = "heatmap should be here"))
+  # 
 })
+
+callModule(
+  pHeatMapModule, 
+  "scorpiusHeatmapPlotModule", 
+  scorpiusHeatmapPlotReactive
+)
