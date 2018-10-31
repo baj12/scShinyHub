@@ -674,11 +674,7 @@ pHeatMapModule <- function(input, output, session,
     heatmapData = pheatmapList()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
-<<<<<<< HEAD
     if (is.null(heatmapData)) {
-=======
-    if (is.null(pheatmapList)) {
->>>>>>> 6ac34d55ac3b313b7fb27d9b0662ac04ed85c705
       return(list(
         src = "empty.png",
         contentType = "image/png",
