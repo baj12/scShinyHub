@@ -1,4 +1,5 @@
 source("reactives.R")
+library(psych)
 
 #' clusterServer
 #'
@@ -148,6 +149,8 @@ clusterServer <- function(input, output, session,
     clId <- input$clusters
     g_id <- gene_id()
     geneNames <- input$geneIds
+    colSelected <- input$ColNames
+    showLegend <- input$showLegend
     
     if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
@@ -155,13 +158,22 @@ clusterServer <- function(input, output, session,
     }
     
     if (DEBUGSAVE) {
+      cat(file = stderr(), paste("output$clusterPlot:SAVING\n"))
       save(
         file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
-        list = c(ls(envir = globalenv()), ls(), "legend.position")
+        list = c(ls(envir = globalenv()), ls(), "legend.position", "colSelected")
       )
+      cat(file = stderr(), paste("output$clusterPlot:SAVING done\n"))
+      
     }
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     
+    if (is.null(colSelected)) {
+      colSelected = "exprs"
+    }
+    if (!is.null(showLegend)) {
+      legend.position <- showLegend
+    }
     geneid <- geneName2Index(g_id, featureData)
     
     if (length(geneid) == 1) {
@@ -194,12 +206,14 @@ clusterServer <- function(input, output, session,
       save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/clusterPlot.RData")
+    subsetData[, colSelected] <- as.numeric(subsetData[, colSelected])
+    subsetData[, "shape"] <- as.factor(subsetData[, "shape"])
     p1 <-
       ggplot(
         subsetData,
         aes_string(x = dimX, y = dimY)
       ) +
-      geom_point(aes_string(shape = "shape", size = 2, color = "exprs"), show.legend = TRUE) +
+      geom_point(aes_string(shape = "shape", size = 2, color = colSelected)) +
       scale_shape_identity() +
       geom_point(
         shape = 1,
@@ -229,6 +243,7 @@ clusterServer <- function(input, output, session,
         selectedCells <- rownames(grpNSub[grpNSub[, grpN], ])
       }
     }
+    # print selected cells
     if (!is.null(selectedCells)) {
       shape <- rep("a", nrow(subsetData))
       selRows <- which(rownames(subsetData) %in% selectedCells)
@@ -396,6 +411,7 @@ clusterServer <- function(input, output, session,
     ns <- session$ns
     moreOptions <- input$moreOptions
     groupNs <- groupNames$namesDF
+    proje <- projections()
     if (!moreOptions) {
       return("")
     }
@@ -406,6 +422,19 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/additionalOptions.RData")
     
     tagList(
+      selectInput(
+        ns("ColNames"),
+        label = "Color",
+        choices = colnames(proje),
+        selected = "Gene.count",
+        multiple = FALSE
+      ),
+      selectInput(
+        ns("showLegend"),
+        label = "Lable position",
+        choices = c("none", "right", "left", "top", "bottom"),
+        selected = "none",
+        multiple = FALSE),
       checkboxInput(ns("addToGroup"), "Add to group/otherwise overwrite", addToGroupValue),
       textInput(ns(id = "groupName"), label = "name group", value = groupName),
       selectInput(
@@ -690,6 +719,8 @@ pHeatMapModule <- function(input, output, session,
     ns <- session$ns
     heatmapData = pheatmapList()
     addColNames <- input$ColNames
+    orderColNames <- input$orderNames
+    moreOptions <- (input$moreOptions)
     proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
@@ -716,8 +747,12 @@ pHeatMapModule <- function(input, output, session,
     filename = normalizePath(outfile)
     heatmapData$filename = outfile
     
-    if (length(addColNames) > 0) {
+    if (length(addColNames) > 0 & moreOptions) {
       heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+    }
+    if (length(orderColNames) > 0& moreOptions) {
+      heatmapData$cluster_cols <- FALSE
+      heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
     }
     
     do.call(pheatmap, heatmapData)
@@ -766,6 +801,14 @@ pHeatMapModule <- function(input, output, session,
         label = "group names",
         choices = colnames(proje),
         selected = "sampleNames",
+        multiple = TRUE
+      ),
+    
+      selectInput(
+        ns("orderNames"),
+        label = "order of columns",
+        choices = colnames(proje),
+        selected = "",
         multiple = TRUE
       )
     )
