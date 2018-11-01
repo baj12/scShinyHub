@@ -1,4 +1,5 @@
 source("reactives.R")
+library(psych)
 
 #' clusterServer
 #'
@@ -690,6 +691,8 @@ pHeatMapModule <- function(input, output, session,
     ns <- session$ns
     heatmapData = pheatmapList()
     addColNames <- input$ColNames
+    orderColNames <- input$orderNames
+    moreOptions <- (input$moreOptions)
     proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
@@ -716,8 +719,12 @@ pHeatMapModule <- function(input, output, session,
     filename = normalizePath(outfile)
     heatmapData$filename = outfile
     
-    if (length(addColNames) > 0) {
+    if (length(addColNames) > 0 & moreOptions) {
       heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+    }
+    if (length(orderColNames) > 0& moreOptions) {
+      heatmapData$cluster_cols <- FALSE
+      heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
     }
     
     do.call(pheatmap, heatmapData)
@@ -766,6 +773,14 @@ pHeatMapModule <- function(input, output, session,
         label = "group names",
         choices = colnames(proje),
         selected = "sampleNames",
+        multiple = TRUE
+      ),
+    
+      selectInput(
+        ns("orderNames"),
+        label = "order of columns",
+        choices = colnames(proje),
+        selected = "",
         multiple = TRUE
       )
     )
