@@ -689,9 +689,11 @@ pHeatMapModule <- function(input, output, session,
   output$pHeatMapPlot <- renderImage({
     ns <- session$ns
     heatmapData = pheatmapList()
+    addColNames <- input$ColNames
+    proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
-    if (is.null(heatmapData)) {
+    if (is.null(heatmapData) | is.null(proje)) {
       return(list(
         src = "empty.png",
         contentType = "image/png",
@@ -705,12 +707,19 @@ pHeatMapModule <- function(input, output, session,
     }
     
     if (DEBUGSAVE) {
+      cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot saving\n")
       save(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData", list = c(ls(), ls(envir = globalenv()), "heatmapData","input", "output", "session", "pheatmapList", "ns"))
+      cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot saving done\n")
     }
     # load(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData")
     outfile <- paste0(tempdir(), "/heatmap", ns("debug"),base::sample(1:10000, 1), ".png")
     filename = normalizePath(outfile)
     heatmapData$filename = outfile
+    
+    if (length(addColNames) > 0) {
+      heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+    }
+    
     do.call(pheatmap, heatmapData)
     
     if (!is.null(getDefaultReactiveDomain())) {
@@ -740,9 +749,11 @@ pHeatMapModule <- function(input, output, session,
     ns <- session$ns
     moreOptions <- (input$moreOptions)
     groupNs <- groupNames$namesDF
-    if (!moreOptions) {
+    proje <- projections()
+    if (!moreOptions | is.null(proje)) {
       return("")
     }
+    
     
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/heatMapadditionalOptions.RData", list = c(ls(), ls(envir = globalenv())))
@@ -753,8 +764,9 @@ pHeatMapModule <- function(input, output, session,
       selectInput(
         ns("ColNames"),
         label = "group names",
-        choices = "sampleNames",
-        selected = "sampleNames"
+        choices = colnames(proje),
+        selected = "sampleNames",
+        multiple = TRUE
       )
     )
   })
