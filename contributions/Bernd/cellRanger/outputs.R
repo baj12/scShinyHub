@@ -34,8 +34,9 @@ crPrioGenesTable <- reactive({
   if (DEBUG) cat(file = stderr(), "output$crPrioGenes\n")
   prioritized_genes <- prioritized_genes()
   # cl5 = input$cluster5
-  if (is.null(prioritized_genes) | is.null(cl5)) {
-    return(NULL)
+  # if (is.null(prioritized_genes) | is.null(cl5)) {
+    if (is.null(prioritized_genes)) {
+      return(NULL)
   }
 
 

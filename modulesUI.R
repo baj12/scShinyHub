@@ -84,6 +84,14 @@ pHeatMapUI <- function(id) {
     plotOutput(ns("pHeatMapPlot"),
                height = "auto",
                brush = brushOpts(id = "crh1")
-    ) %>% withSpinner()
+    ) %>% withSpinner(),
+    fluidRow(
+      checkboxInput(ns("moreOptions"), "show more options", FALSE),
+      uiOutput(ns("additionalOptions"))
+      # checkboxInput(ns("showCells"), "show cell names", FALSE),
+      #
+      # verbatimTextOutput(ns('cellSelection'))
+    
+    )
   )
 }
