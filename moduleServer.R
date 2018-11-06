@@ -151,6 +151,7 @@ clusterServer <- function(input, output, session,
     geneNames <- input$geneIds
     colSelected <- input$ColNames
     showLegend <- input$showLegend
+    proje <- projections()
     
     if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
@@ -161,7 +162,7 @@ clusterServer <- function(input, output, session,
       cat(file = stderr(), paste("output$clusterPlot:SAVING\n"))
       save(
         file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
-        list = c(ls(envir = globalenv()), ls(), "legend.position", "colSelected")
+        list = c(ls(envir = globalenv()), ls(), "legend.position", "colSelected", "dbCluster")
       )
       cat(file = stderr(), paste("output$clusterPlot:SAVING done\n"))
       
@@ -183,16 +184,19 @@ clusterServer <- function(input, output, session,
     }
     validate(need(is.na(sum(expression)) != TRUE, ""))
     
-    geneid <- geneName2Index(geneNames, featureData)
+    # geneid <- geneName2Index(geneNames, featureData)
     projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
     
     
-    projections <- cbind(projections, t(expression))
+    projections <- cbind(projections, expression)
     names(projections)[ncol(projections)] <- "exprs"
     
     if (DEBUG) {
       cat(file = stderr(), paste("output$dge_plot1:---", ns(clId), "---\n"))
     }
+    clId = c("0", "1")
+    
+    # subset works with reactive
     subsetData <- subset(projections, dbCluster %in% clId)
     # subsetData$dbCluster = factor(subsetData$dbCluster)
     # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
@@ -206,7 +210,14 @@ clusterServer <- function(input, output, session,
       save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/clusterPlot.RData")
-    subsetData[, colSelected] <- as.numeric(subsetData[, colSelected])
+    # colSelected <- "shape"
+    # colSelected <- "UmiCountPerGenes"
+    # colSelected <- "sampleNames"  
+    # colSelected <- "class"
+    if (class(subsetData[, colSelected]) == "character") {
+      subsetData[, colSelected] = factor(subsetData[, colSelected])
+    }
+    # subsetData[, colSelected] <- as.numeric(subsetData[, colSelected])
     subsetData[, "shape"] <- as.factor(subsetData[, "shape"])
     p1 <-
       ggplot(
@@ -214,12 +225,12 @@ clusterServer <- function(input, output, session,
         aes_string(x = dimX, y = dimY)
       ) +
       geom_point(aes_string(shape = "shape", size = 2, color = colSelected)) +
-      scale_shape_identity() +
-      geom_point(
-        shape = 1,
-        size = 4,
-        aes(colour = as.numeric(dbCluster))
-      ) +
+      # scale_shape_identity() +
+      # geom_point(
+      #   shape = 1,
+      #   size = 4,
+      #   aes(colour = (dbCluster))
+      # ) +
       theme_bw() +
       theme(
         axis.text.x = element_text(
