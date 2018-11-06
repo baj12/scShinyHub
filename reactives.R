@@ -381,7 +381,7 @@ gbmFunc <-
              minGene,
              minG,
              maxG) {
-    # save(file="~/scShinyHubDebug/gbmFunc.RData", list=ls())
+    save(file="~/scShinyHubDebug/gbmFunc.RData", list=ls())
     # load(file="~/scShinyHubDebug/gbmFunc.RData")
     if (DEBUG) {
       cat(file = stderr(), "gbmFunc\n")
@@ -453,6 +453,14 @@ gbmFunc <-
         return(NULL)
       }
     }
+    
+    pD <- pData(gbmNew)
+    for (colN in colnames(pD)) {
+      if (colN == "barcode") next()
+      pD[, colN] = factor(as.character(pD[, colN]))
+    }
+    pData(gbmNew) <- pD
+    
     return(gbmNew)
   }
 
@@ -929,7 +937,7 @@ sample <- reactive({
         retVal <- data.frame(pd[, pdColName])
         colnames(retVal) <- pdColName
       }
-      retVal[, pdColName] <- pd[, pdColName]
+      retVal[, pdColName] <- factor(as.character(pd[, pdColName]))
     }
   } 
   retVal
