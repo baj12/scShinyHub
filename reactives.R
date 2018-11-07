@@ -381,7 +381,7 @@ gbmFunc <-
              minGene,
              minG,
              maxG) {
-    save(file="~/scShinyHubDebug/gbmFunc.RData", list=ls())
+    # save(file="~/scShinyHubDebug/gbmFunc.RData", list=ls())
     # load(file="~/scShinyHubDebug/gbmFunc.RData")
     if (DEBUG) {
       cat(file = stderr(), "gbmFunc\n")
