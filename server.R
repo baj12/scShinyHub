@@ -170,11 +170,11 @@ shinyServer(function(input, output, session) {
     filename = paste0("counts.",Sys.Date(),".csv"),
     content = function(file){
       if(DEBUG)cat(file=stderr(), paste("countcsv: \n"))
-      gbm = gbm()
-      if(is.null(gbm)){
+      gbmlog = gbm_log()
+      if(is.null(gbmlog)){
         return(NULL)
       }
-      write.csv(as.matrix(exprs(gbm)), file)
+      write.csv(as.matrix(exprs(gbmlog)), file)
     }
   )
   
