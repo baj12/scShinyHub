@@ -288,7 +288,7 @@ featureDataReact <- reactive({
 
 useGenesFunc <-
   function(dataTables,
-             ipIDs,
+             ipIDs,# regular expression of genes to be removed
              geneListSelection,
              genesKeep,
              geneLists) {
@@ -301,7 +301,7 @@ useGenesFunc <-
     if (nchar(ipIDs) > 0) {
       keepIDs <- !grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
     } else {
-      keepIDs <- rep(FALSE, nrow(dataTables$gbm))
+      keepIDs <- rep(TRUE, nrow(dataTables$gbm))
     }
     genesKeep <- toupper(genesKeep)
     genesKeep <- gsub(" ", "", genesKeep, fixed = TRUE)
@@ -344,7 +344,7 @@ useGenes <- reactive({
   dataTables <- inputData()
   # useCells = useCells()
   # minGene <- input$minGenesGS
-  ipIDs <- input$selectIds
+  ipIDs <- input$selectIds # regular expression of genes to be removed
   genesKeep <- input$genesKeep
   geneListSelection <- input$geneListSelection
 
