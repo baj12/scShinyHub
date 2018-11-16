@@ -3,9 +3,9 @@ title: "child report"
 output: html_document
 ---
 
-## Scater Plot
+## General QC
 
-```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE}
+```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
 if(exists("params")){
   cat(file = stderr(), paste("Scater Plot report\n"))
 }else{

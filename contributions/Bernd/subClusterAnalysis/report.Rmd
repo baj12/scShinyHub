@@ -4,12 +4,26 @@ output: html_document
 ---
 
 
-```{r dge, eval=FALSE}
+```{r dge, eval=TRUE, echo=FALSE, results='asis'}
 if(DEBUG)cat(file=stderr(), "dge\n")
-if(!is.null(input$db1) & ! is.null(input$db2)){
-  subsetData <- subset(tsne.data, dbCluster == input$clusters1)
-  cells.1 <- rownames(brushedPoints(subsetData, input$db1))
-  cells.2 <- rownames(brushedPoints(subsetData, input$db2))
+if(!is.null(input$db1) & !is.null(input$db2)){
+      # if (DEBUGSAVE) {
+      cat(file = stderr(), "cluster: selectedCellNames: saving\n")
+      save(file = "~/scShinyHubDebug/selectedCellNames.RMD.RData", list = c(ls(), ls(envir = globalenv())))
+    # }
+
+  prj = projections
+  gn <- groupNames$namesDF
+  
+  cl1 = input$clusters1
+  db1 = input$db1
+  db2 = input$db2
+
+  dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2) 
+      
+  subsetData <- subset(projections, dbCluster %in% input$clusters1)
+  cells.1 <- rownames(shiny::brushedPoints(subsetData, input$db1))
+  cells.2 <- rownames(shiny::brushedPoints(subsetData, input$db2))
   
   subsetExpression <- log2cpm[, union(cells.1, cells.2)]
   
@@ -30,6 +44,8 @@ if(!is.null(input$db1) & ! is.null(input$db2)){
   cat(stderr(), rownames(toReturn)[1:5])
   
   dge <-     toReturn
+  # print(knitr::kable(dge))
+  shiny::renderTable(dge)
   if(DEBUG)cat(file=stderr(), "dge:done11\n")
 }else{
   dge=NA

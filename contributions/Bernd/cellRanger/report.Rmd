@@ -5,12 +5,100 @@ date: "3/23/2018"
 output: html_document
 ---
 
-## Cell ranger output
+# Cellranger output
 
-```{r , include=FALSE}
-if(exists("DEVELOPMENT") ){
-  # rm(list = ls())
-  # load("~/scShinyHubDebug/report.RData")
+```{r bj-cellRanger-checkDEBUG, include=FALSE}
+if(!exists("DEBUG")){
+  DEBUG=TRUE
+  # DEBUG=FALSE
 }
+if(!exists("DEBUGSAVE")){
+  # DEBUGSAVE=TRUE
+  DEBUGSAVE=FALSE
+}
+
+
+```
+
+```{r bj-cellRanger-loadData, include=FALSE}
+require(shiny)
+require(shinyTree)
+require(shinyBS)
+require(plotly)
+require(shinythemes)
+require(ggplot2)
+require(DT)
+require(pheatmap)
+require(threejs)
+require(sm)
+require(RColorBrewer)
+require(mclust)
+require(reshape)
+require(cellrangerRkit)
+require(SCORPIUS)
+require(ggplot2)
+require(knitr)
+require(kableExtra)
+require(shinyWidgets)
+require(scater)
+
+# params only exsits if called from somewhere with parameters
+if (exists("params")) {
+  cat(file = stderr(), paste("params:", params$calledFromShiny,"\n"))
+  cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
+  LOCALEXECUTION = FALSE
+  if (DEBUGSAVE) {
+    base::save(file = "~/scShinyHubDebug/tempReport-rmd.RData", list = c(ls()))
+  }
+}else{
+  # rm(list = ls())
+  source("serverFunctions.R")
+  source("reactives.R", local = TRUE)
+  uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  for (fp in uiFiles) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    source(fp, local = TRUE)
+  }
+  load("~/scShinyHubDebug/tempReport.RData")
+  params = myparams
+  LOCALEXECUTION = TRUE # to know that we are debugging.
+}
+
+```
+## table
+
+```{r bj-cellRanger-table, echo=FALSE}
+require("forcats")
+require("tidyverse")
+prioritized_genes <- prioritized_genes_func(gbm, projections, seed = 1)
+
+dt <- data.frame()
+for (listIter in 1:length(prioritized_genes)) {
+  prioritized_genes[[listIter]]$cluster <- listIter
+  dt <- rbind(dt, prioritized_genes[[listIter]])
+}
+rownames(dt) <- make.unique(as.character(dt$gene_name), sep = "___")
+dt$cluster <- factor(dt$cluster)
+
+# move cluster column to second position
+cnames <- colnames(dt)
+clNr <- which(cnames == "cluster")
+sigCol <- which(cnames == "significant")
+adjCol <- which(cnames == "p_adj")
+dt <- dt[, c(1, clNr, sigCol, adjCol, c(1:length(cnames))[-c(1, clNr, sigCol, adjCol)])]
+
+save(file = "~/scShinyHubDebug/bj.cellRanger.table.Rdata", list = ls())
+# load(file = "~/scShinyHubDebug/bj.cellRanger.table.Rdata")
+
+maxCol <- min(20, ncol(dt))
+print(DT::datatable(dt[, 1:maxCol],
+  rownames = F, filter = "top",
+  options = list(
+    orderClasses = TRUE,
+    autoWidth = TRUE
+  )
+))
+  cat(file = stderr(), paste("bj-cellRanger-table: done\n"))
+
 ```
 

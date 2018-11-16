@@ -145,7 +145,33 @@ crHeatImage <- reactive({
 })
 
 
-
+prioritized_genes_func <- function(gbm, projections, seed) {
+  set.seed(seed = seed)
+  retVal <- tryCatch({
+    prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
+                         logscale = FALSE,
+                         min_mean = 0.5,
+                         p_cutoff = 0.05,
+                         order_by = "pvalue"
+    )
+  },
+  error = function(cond) {
+    cat(file = stderr(), "prioritized_genes.Rdata: problem, are id and sample column persent?\n")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "crpriotGenes")
+    }
+    return(NULL)
+  },
+  warning = function(cond) {
+    return("prioritize warning")
+  }
+  )
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "crpriotGenes")
+  }
+  
+  return(retVal)
+}
 
 
 prioritized_genes <- reactive({
@@ -163,30 +189,9 @@ prioritized_genes <- reactive({
     save(file = "~/scShinyHubDebug/prioritized_genes.Rdata", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/prioritized_genes.Rdata')
-  set.seed(seed = seed)
-  retVal <- tryCatch({
-    prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
-      logscale = FALSE,
-      min_mean = 0.5,
-      p_cutoff = 0.05,
-      order_by = "pvalue"
-    )
-  },
-  error = function(cond) {
-    cat(file = stderr(), "prioritized_genes.Rdata: problem, are id and sample column persent?\n")
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "crpriotGenes")
-    }
-    return(NULL)
-  },
-  warning = function(cond) {
-    return("prioritize warning")
-  }
-  )
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "crpriotGenes")
-  }
-
+  retVal = prioritized_genes_func(gbm, projections, seed) 
+    set.seed(seed = seed)
+    
   return(retVal)
 })
 

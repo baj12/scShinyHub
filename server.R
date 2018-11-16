@@ -141,7 +141,7 @@ shinyServer(function(input, output, session) {
   
   # ------------------------------------------------------------------------------------------------------------
   # handling expensive calcualtions
-  forceCalc <-observe({
+  forceCalc <- observe({
     input$goCalc
     start.time <- Sys.time()
     isolate({
@@ -239,7 +239,7 @@ shinyServer(function(input, output, session) {
       # otherwise reactie might overwrite projections...
       reactiveFiles = paste0(reactiveFiles, "load(file=\"", tmpPrjFile,"\")\n", collapse = "\n")
       # encapsulte the load files in an R block
-      reactiveFiles = paste0("\n\n```{r load-reactives}\n", reactiveFiles, "\n```\n\n")
+      reactiveFiles = paste0("\n\n```{r load-reactives, include=FALSE}\n", reactiveFiles, "\n```\n\n")
       
       
       

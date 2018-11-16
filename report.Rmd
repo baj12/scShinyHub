@@ -13,7 +13,7 @@ params:
 #__PARAMPLACEHOLDER__
 ---
 
-```{r checkDEBUG}
+```{r checkDEBUG, include=FALSE}
 if(!exists("DEBUG")){
   DEBUG=TRUE
   # DEBUG=FALSE
@@ -26,7 +26,7 @@ if(!exists("DEBUGSAVE")){
 
 ```
 
-```{r loadData}
+```{r loadData, include=FALSE}
 require(shiny)
 require(shinyTree)
 require(shinyBS)
@@ -53,6 +53,9 @@ if (exists("params")) {
   cat(file = stderr(), paste("params:", params$calledFromShiny,"\n"))
   cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
   LOCALEXECUTION = FALSE
+  if (DEBUGSAVE) {
+    base::save(file = "~/scShinyHubDebug/tempReport-rmd.RData", list = c(ls()))
+  }
 }else{
   # rm(list = ls())
   source("serverFunctions.R")
@@ -63,6 +66,7 @@ if (exists("params")) {
     source(fp, local = TRUE)
   }
   load("~/scShinyHubDebug/tempReport.RData")
+  params = myparams
   LOCALEXECUTION = TRUE # to know that we are debugging.
 }
 
@@ -76,59 +80,70 @@ __LOAD_REACTIVES__
 ```{r setup, include=FALSE}
 input = params
 print(str(input$file1))
-if(file.exists(params$file1$datapath)){
-  load(params$file1$datapath)
+  cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
+
+if(file.exists(input$file1$datapath)){
+  load(input$file1$datapath)
+}else{
+  cat(file = stderr(), paste("Error input file not existing\n"))
 }
 print(ls())
+  cat(file = stderr(), paste("env:", ls(),"\n"))
+  cat(file = stderr(), paste("input:", names(input),input,"\n"))
+  # cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
+
 ```
 
 
 
-```{r check Variables}
+```{r check Variables, include=FALSE}
 # TODO this needs to go to individual packages
 
-if(is.null(input$cluster)) {
-  input$cluster = '0'
+if (is.null(input$cluster)) {
+  input$cluster <- "0"
   print("Warning: setting cluster to 0")
 }
-if(is.null(input$cluster5)) {
-  input$cluster5 = '0'
+if (is.null(input$cluster5)) {
+  input$cluster5 <- "0"
   print("Warning: setting cluster5 to 0")
 }
-if(is.null(input$clusters)) {
-  input$clusters = '0'
+if (is.null(input$clusters)) {
+  input$clusters <- "0"
   print("Warning: setting clusters to 0")
 }
-if(is.null(input$clusters1)) {
-  input$clusters1 = '0'
+if (is.null(input$clusters1)) {
+  input$clusters1 <- "0"
   print("Warning: setting clusters1 to All")
 }
-if(is.null(input$clusters2)) {
-  input$clusters2 = '0'
+if (is.null(input$clusters2)) {
+  input$clusters2 <- "0"
   print("Warning: setting clusters2 to 0")
 }
-if(is.null(input$clusters3)) {
-  input$clusters3 = '0'
+if (is.null(input$clusters3)) {
+  input$clusters3 <- "0"
   print("Warning: setting clusters4 to 0")
 }
-if(is.null(input$clusters4)) {
-  input$clusters4 = 'All'
+if (is.null(input$clusters4)) {
+  input$clusters4 <- "All"
   print("Warning: setting clusters4 to All")
 }
 
 ```
 
 
-```{r inputData}
-if(! exists("dataTables")) # needed when working with ~/scShinyHubDebug/reports.Data
+```{r inputData, include=FALSE}
+# if ( !exists("dataTables")) {# needed when working with ~/scShinyHubDebug/reports.Data
+  cat(file = stderr(), paste("loading dataTables\n"))
   dataTables = inputDataFunc(input$file1)
+# }
 ```
 
-```{r useCells}
+```{r useCells, include=FALSE}
 geneNames = input$minExpGenes
 rmCells = input$cellsFiltersOut
 rmPattern = input$cellPatternRM
 keepCells = input$cellKeep
+  # cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
 useCells = useCellsFunc(dataTables, 
                         geneNames = input$minExpGenes,
                         rmCells = input$cellsFiltersOut,
@@ -137,8 +152,8 @@ useCells = useCellsFunc(dataTables,
                         cellKeepOnly = input$cellKeepOnly)
 ```
 
-```{r useGenes}
-base::save(file = "/Users/bernd/Desktop/report.useGenes.RData", list =ls())
+```{r useGenes, include=FALSE}
+base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list =ls())
 ipIDs = input$selectIds
 genesKeep = input$genesKeep
 geneListSelection = input$geneListSelection
@@ -148,13 +163,13 @@ useGenes = useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLis
 ```
 
 
-```{r featureDataReact}
+```{r featureDataReact, include=FALSE}
 
 featureDataReact = dataTables$featuredata[useGenes, ]
 featureData = dataTables$featuredata[useGenes, ]
 ```
 
-```{r gbm}
+```{r gbm, include=FALSE}
 if(DEBUG)cat(file=stderr(), "gbm\n")
 minGene <- input$minGenesGS # min number of reads per gene 
 minG = input$minGenes # min number of reads per cell
@@ -168,23 +183,23 @@ if(DEBUG)cat(file=stderr(), paste("gbm:", class(gbm), "\n"))
 ```
 
 
-```{r medianENSG}
+```{r medianENSG, include=FALSE}
 medianENSG = medianENSGfunc(as.matrix(exprs(gbm)))
 ```
 
 
-```{r medianUMI}
+```{r medianUMI, include=FALSE}
 medianUMI = medianUMIfunc(as.matrix(exprs(gbm)))
 ```
 
-```{r groupNames}
+```{r groupNames, include=FALSE}
 groupNames = list()
 groupNames$namesDF = gNames
 
 ```
 
 
-```{r gbm_log, eval=FALSE}
+```{r gbm_log, eval=FALSE, include=FALSE}
 # gbm_log is the normalized version of the data. This stored in a separate RData 
 # and thus doen't need to be recomputed.
 if(DEBUG)cat(file=stderr(), "gbm_log\n")
@@ -200,20 +215,20 @@ if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
 ```
 
 
-```{r gbm_matrix}
+```{r gbm_matrix, include=FALSE}
 
 gbm_matrix=as.matrix(exprs(gbm))
 ```
 
-```{r gbmLogMatrix}
+```{r gbmLogMatrix, include=FALSE}
 as.data.frame(as.matrix(exprs(gbm_log)))
 ```
 
-```{r rawNormalization}
+```{r rawNormalization, include=FALSE}
 rawNormalization = gbm
 ```
 
-```{r gbmLogMatrixDisplay}
+```{r gbmLogMatrixDisplay, include=FALSE}
   retVal = as.data.frame(as.matrix(exprs(gbm_log)))
   rownames(retVal) = make.names(fData(gbm_log)$symbol, unique = TRUE)
 
@@ -222,13 +237,13 @@ gbmLogMatrixDisplay = retVal
 ```
 
 
-```{r pca, eval=TRUE}
+```{r pca, eval=TRUE, include=FALSE}
 if(DEBUG)cat(file=stderr(), "pca\n")
 
 pca = pcaFunc(gbm_log)
 ```
 
-```{r kmClustering, eval=TRUE}
+```{r kmClustering, eval=TRUE, include=FALSE}
 if(DEBUG)cat(file=stderr(), "kmClustering\n")
 seed=1
 kmClustering = kmClusteringFunc(pca, seed)
@@ -237,7 +252,7 @@ if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
 
 ```
 
-```{r tsne, eval=TRUE}
+```{r tsne, eval=TRUE, include=FALSE}
 if(DEBUG)cat(file=stderr(), "tsne\n")
 tsneDim = input$tsneDim
 tsnePerplexity = input$tsnePerplexity
@@ -252,7 +267,7 @@ if(DEBUG)cat(file=stderr(), "tsne: done\n")
 ```
 
 
-```{r projections, eval=FALSE}
+```{r projections, eval=FALSE, include=FALSE}
 if(DEBUG)cat(file=stderr(), "projections\n")
 clustering = kmClustering
 projections = data.frame(tsne$Y)
@@ -291,11 +306,11 @@ projections$UmiCountPerGenes = 0
 if(DEBUG)cat(file=stderr(), "projections: done\n")
 ```
 
-```{r sampleInfo}
+```{r sampleInfo, include=FALSE}
 sampleInfo = sampleInfoFunc(gbm)
 ```
 
-```{r inputSample}
+```{r inputSample, include=FALSE}
 sampInf = gsub(".*-(.*)","\\1", dataTables$gbm$barcode)
 inputSample = data.frame(cellName = colnames(dataTables$gbm),
                          sample = sampInf,
@@ -303,7 +318,7 @@ inputSample = data.frame(cellName = colnames(dataTables$gbm),
 
 ```
 
-```{r prioritized_genes, eval=FALSE}
+```{r prioritized_genes, eval=FALSE, include=FALSE}
 set.seed(seed = seed)
 prioritized_genes =    prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
                                             logscale = FALSE, 
@@ -313,7 +328,7 @@ prioritized_genes =    prioritize_top_genes(gbm, as.numeric(as.character(project
 
 ```
 
-```{r log2cpm, eval=TRUE}
+```{r log2cpm, eval=TRUE, include=FALSE}
 if(DEBUG)cat(file=stderr(), "log2cpm\n")
 log2cpm = log2cpm = as.data.frame(as.matrix(exprs(gbm_log)))
 if(DEBUG)cat(file=stderr(), "log2cpm:Done\n")
@@ -321,7 +336,7 @@ if(DEBUG)cat(file=stderr(), "log2cpm:Done\n")
 ```
 
 
-```{r summaryStats, eval=TRUE}
+```{r summaryStats, eval=TRUE, include=FALSE}
 
 
 line1<-paste('No. of cells:', dim(log2cpm)[2],sep='\t')
@@ -342,7 +357,7 @@ HTML(
 
 
 
-```{r bernd}
+```{r bernd, include=FALSE}
 cat(file=stderr(),paste(ls(),collapse = "\n"))
 
 bernd=TRUE
@@ -353,7 +368,7 @@ bernd=TRUE
 __CHILDREPORTS__
 
 
-```{r}
+```{r, include=FALSE}
 print(ls())
 if(!LOCALEXECUTION){
   save(file = "~/scShinyHubDebug/report.RData", list=ls())

@@ -3,7 +3,7 @@ title: "child report"
 output: html_document
 ---
 
-## Scater Plot
+## Data exploration
 
 ```{r bj-DE-setup, echo=FALSE, warning=FALSE}
 if(exists("params")){
@@ -57,26 +57,45 @@ if(exists("params")){
 }
 ```
 
-```{r bj-DE-scater, eval=FALSE }
-cat(file=stderr(),paste(class(gbm_log),collapse = "\n"))
-scaterReads = scaterReadsFunc(gbm, gbm_log, featureDataReact)
-scater::plotQC(scaterReads, type = "highest-expression", col_by_variable="fixed")
+
+## normalization
+
+Normalization method used: `r input$normalizationRadioButton` used.
+
+
+`r input$scaterGeneList`
+
+`r input$scaterGeneListRM`
+
+
+## Expression 
+
+2D plot 
+
+
+```{r bj-DE-2Dprojection, echo=FALSE, eval=TRUE}
+
+g_id <- input$gene_id
+geneNames <- input$"expclusters-geneIds"
+clId <- input$"expclusters-clusters"
+dimX <- input$"expclusters-dimension_x"
+dimY <- input$"expclusters-dimension_y"
+legend.position <- "none"
+grpN <- make.names(input$groupName)
+cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
+
+save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
+# load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
+
+plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position)
 
 ```
 
 
-# Expression ------------------------------------------------------------------
-expCluster <- callModule(clusterServer, "expclusters", projections, reactive(input$gene_id))
 
+# EXPLORE TAB VIOLIN PLOT 
 
-
-
-# EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
-# TODO module for violin plot  ??
-output$gene_vio_plot <- renderPlot({
-
-
-```{r gene_vio_plot, eval=TRUE}
+```{r bj-DE-gene_vio_plot, eval=TRUE, echo=FALSE}
 if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")
 
 geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
@@ -122,11 +141,18 @@ p1
 
 ```
 
-
+## Panel plot
 output$panelPlot <- renderPlot({
 
+input$clusters4 : `r input$clusters4`
 
-```{r panelPlot, eval=TRUE}
+input$panelplotids : `r input$panelplotids`
+
+input$dimension_x4 : `r input$dimension_x4`
+
+input$dimension_y4 : `r input$dimension_y4`
+
+```{r bj-DE-panelPlot, eval=TRUE, echo=FALSE}
 if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
 
 genesin <- input$panelplotids
@@ -178,9 +204,9 @@ if (input$clusters4 == 'All')
 
 
 
-output$tsne_plt <- renderPlotly({
+## 3D TSNE plot
 
-```{r bj-DE-tsne_plt, eval=TRUE}
+```{r bj-DE-tsne_plt, eval=TRUE, echo=FALSE}
 if(DEBUG)cat(file=stderr(), "output$tsne_plt\n")
 geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
                                        toupper(input$gene_id)), ])[1]
@@ -211,54 +237,16 @@ layout(p, title = toupper(input$gene_id))
 
 ```
 
+## scater QC
 
-```{r bj-coExp-panelPlot, eval=TRUE}
-if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
-
-genesin <- input$panelplotids
-genesin <- toupper(genesin)
-genesin <- gsub(" ", "", genesin, fixed = TRUE)
-genesin <- strsplit(genesin, ',')
-genesin<-genesin[[1]]
-
-par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
-rbPal <- colorRampPalette(c('#f0f0f0','red'))
-
-if (input$clusters4 == 'All') 
-{
-  for (i in 1:length(genesin)){
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    plot(projections[,input$dimension_x4],projections[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-  }
-}else{
-  for (i in 1:length(genesin)){
-    
-    subsetTSNE <- subset(projections, dbCluster == input$clusters4)
-    
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    
-    names(Col)<-rownames(projections)
-    plotCol<-Col[rownames(subsetTSNE)]
-    plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-    
-  }
-}
-
+```{r bj-DE-scater, eval=TRUE, echo=FALSE, warning=FALSE }
+cat(file = stderr(), paste(class(gbm_log), collapse = "\n"))
+featureDataReact <- dataTables$featuredata[useGenes, ]
+# featureData = dataTables$featuredata[useGenes, ]
+scaterReads <- scaterReadsFunc(gbm, featureDataReact)
+n = min(nrow(scaterReads),50)
+scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by = "fixed", n = n)
 ```
+
+
 

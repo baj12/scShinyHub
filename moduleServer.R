@@ -17,8 +17,6 @@ library(psych)
 
 
 
-
-
 #
 # TODO parameter gene_id should be able to handle multiple gene_ids
 # TODO coloring based on number of genes selected (if NULL=color by cluster NR)
@@ -162,82 +160,9 @@ clusterServer <- function(input, output, session,
       )
     }
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
-    
-    geneid <- geneName2Index(g_id, featureData)
-    
-    if (length(geneid) == 1) {
-      expression <- exprs(gbm_log)[geneid, ]
-    } else {
-      expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
-    }
-    validate(need(is.na(sum(expression)) != TRUE, ""))
-    
-    geneid <- geneName2Index(geneNames, featureData)
-    projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
-    
-    
-    projections <- cbind(projections, t(expression))
-    names(projections)[ncol(projections)] <- "exprs"
-    
-    if (DEBUG) {
-      cat(file = stderr(), paste("output$dge_plot1:---", ns(clId), "---\n"))
-    }
-    subsetData <- subset(projections, dbCluster %in% clId)
-    # subsetData$dbCluster = factor(subsetData$dbCluster)
-    # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
-    # sample information
-    if (length(as.numeric(as.factor(subsetData$sample))) > 18) {
-      subsetData$shape <- 1
-    } else {
-      subsetData$shape <- as.numeric(as.factor(subsetData$sample))
-    }
-    if (DEBUGSAVE) {
-      save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
-    }
-    # load(file="~/scShinyHubDebug/clusterPlot.RData")
-    p1 <-
-      ggplot(
-        subsetData,
-        aes_string(x = dimX, y = dimY)
-      ) +
-      geom_point(aes_string(shape = "shape", size = 2, color = "exprs"), show.legend = TRUE) +
-      scale_shape_identity() +
-      geom_point(
-        shape = 1,
-        size = 4,
-        aes(colour = as.numeric(dbCluster))
-      ) +
-      theme_bw() +
-      theme(
-        axis.text.x = element_text(
-          angle = 90,
-          size = 12,
-          vjust = 0.5
-        ),
-        axis.text.y = element_text(size = 12),
-        strip.text.x = element_text(size = 16),
-        strip.text.y = element_text(size = 14),
-        axis.title.x = element_text(face = "bold", size = 16),
-        axis.title.y = element_text(face = "bold", size = 16),
-        legend.position = legend.position
-      ) +
-      ggtitle(paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")) +
-      scale_fill_continuous()
-    selectedCells <- NULL
-    if (length(grpN) > 0) {
-      if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN]) > 0) {
-        grpNSub <- grpNs[rownames(subsetData), ]
-        selectedCells <- rownames(grpNSub[grpNSub[, grpN], ])
-      }
-    }
-    if (!is.null(selectedCells)) {
-      shape <- rep("a", nrow(subsetData))
-      selRows <- which(rownames(subsetData) %in% selectedCells)
-      shape[selRows] <- "b"
-      p1 <- p1 + geom_point(data = subsetData[selRows, ], mapping = aes(shape = shape, size = 4), colour = "red")
-    }
-    p1
-  })
+ 
+    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position))   
+   })
   
   # observe({
   #   updateTextInput(session = session, inputId = "groupName",
