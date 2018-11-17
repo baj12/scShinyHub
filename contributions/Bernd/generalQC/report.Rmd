@@ -3,7 +3,9 @@ title: "child report"
 output: html_document
 ---
 
-## General QC
+# General QC
+
+
 
 ```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
 if(exists("params")){
@@ -127,25 +129,71 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 
 ```
 
+## UMI histogram
+
+
 ```{r plotUmiHist, eval=TRUE, echo=FALSE}
 
 hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
+## Variances of PCs
 
 ```{r variancePCA, eval=TRUE, echo=FALSE}
-if(exists("pca$var_pcs")){
+# if(exists("pca$var_pcs")){
   barplot(pca$var_pcs, main="Variance captured by first PCs")
-}
+# }
 ```
 
 ## Histogram of samples
 
 
-```{r histSamples}
+```{r histSamples, eval=TRUE, echo=FALSE}
 if(DEBUGSAVE) 
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
 sampleInf <- sampleInfoFunc(gbm)
 sampleHistFunc(sampleInf)
+```
+
+## TSNE plot
+
+```{r bj-GC-tsne, echo=FALSE}
+
+
+  dimX = input$dim3D_x
+  dimY = input$dim3D_y
+  dimZ = input$dim3D_z
+  dimCol = input$col3D
+  
+  
+  if (DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/tsne_main.RData")
+  
+  projections <- as.data.frame(projections)
+  
+  #cat(stderr(),colnames(projections)[1:5])
+  #TODO it can happen that dbCluster is not available (if the view hasn't been used)
+  projections$dbCluster <- as.factor(projections$dbCluster)
+  
+  p <-
+    plot_ly(
+      projections,
+      x = formula(paste("~ ", dimX)),
+      y = formula(paste("~ ", dimY)),
+      z = formula(paste("~ ", dimZ)),
+      type = "scatter3d",
+      color =  formula(paste("~ ", dimCol)),
+      hoverinfo = "text",
+      text = paste('Cluster:', as.numeric(as.character(projections$dbCluster))),
+      mode = 'markers',
+      marker =
+        list(
+          line = list(width = 0),
+          size = rep(10, nrow(projections)),
+          sizeref = 3
+        )
+    )
+ layout(p)
 ```
 

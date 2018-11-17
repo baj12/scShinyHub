@@ -25,11 +25,11 @@ scaterPNG <- reactive({
   outfile <- paste0(tempdir(),'/scaterPlot.png')
   # outfile <- paste0("~/scShinyHubDebug",'/scaterPlot.png')
   if(DEBUG)cat(file=stderr(), paste("output file: ", outfile, "\n"))
-  if(DEBUG)cat(file=stderr(), paste("output file normalized: ", normalizePath(outfile), "\n"))
+  if(DEBUG)cat(file=stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
   n = min(nrow(scaterReads),50)
   p1 <- scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by="fixed", n=n)
   tryCatch(
-    ggsave(file=normalizePath(outfile), plot=p1, width=myPNGwidth, height=myPNGheight, units="in"),
+    ggsave(file=normalizePath(outfile, mustWork = FALSE), plot=p1, width=myPNGwidth, height=myPNGheight, units="in"),
     error = function(e){
       if(!is.null(getDefaultReactiveDomain())){
         showNotification("Problem saving ggplot", type="warning", duration = NULL)
@@ -40,7 +40,7 @@ scaterPNG <- reactive({
 
   if(DEBUG)cat(file=stderr(), "done:scaterPNG\n")
   
-  return(list(src = normalizePath(outfile),
+  return(list(src = normalizePath(outfile, mustWork = FALSE),
               contentType = 'image/png',
               width = width,
               height = height,

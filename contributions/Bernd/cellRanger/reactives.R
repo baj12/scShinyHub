@@ -64,53 +64,42 @@ gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour =
 }
 
 
-crHeatImage <- reactive({
-  if (DEBUG) cat(file = stderr(), "output$crHeat_plot1\n")
-  gbm <- gbm()
-  # projections = projections()
-  projections <- projections()
-  prioritized_genes <- prioritized_genes()
-  if (is.null(gbm) | is.null(gbm) | is.null(prioritized_genes)) {
-    if (DEBUG) cat(file = stderr(), "output$crHeat_plot1:NULL\n")
-    return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("cell ranger heat map", id = "crHeatMap", duration = NULL)
-  }
-
+crHeatImage_func <- function(gbm, projections, prioritized_genes) {
   example_K <- 10
   example_Cols <- rev(brewer.pal(10, "Set3")) # customize plotting colors
-
+  
   cells_to_plot <- order_cell_by_clusters(gbm, as.numeric(as.character(projections$dbCluster)))
-
+  
   example_col <- example_Cols[1:example_K]
-
+  
   # For high-res displays, this will be greater than 1
-  pixelratio <- session$clientData$pixelratio
+  if (!is.null(session)){
+    pixelratio <- session$clientData$pixelratio
+    width <- session$clientData$output_plot_width
+    height <- session$clientData$output_plot_height
+  }else{
+    pixelratio <- NULL
+    width <- NULL
+    height <- NULL
+  }
   if (is.null(pixelratio)) pixelratio <- 1
-  width <- session$clientData$output_plot_width
-  height <- session$clientData$output_plot_height
   if (is.null(width)) {
     width <- 96 * 7
   } # 7x7 inch output
   if (is.null(height)) {
     height <- 96 * 12
   }
-
+  
   # px to inch conversion
   myPNGwidth <- width / 96
   myPNGheight <- height / 96
-
+  
   # outfile <- paste0(tempdir(),'/crHeatImage.svg')
   outfile <- paste0(tempdir(), "/crHeatImage.png")
   if (DEBUG) cat(file = stderr(), paste("output file: ", outfile, "\n"))
-  if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile), "\n"))
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/crHeatImage.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file='~/scShinyHubDebug/crHeatImage.RData')
+  if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
   logGB <- log_gene_bc_matrix(gbm)
-
+  
   retVal <- tryCatch({
     gbmPheatmap(
       gbm = logGB,
@@ -136,6 +125,27 @@ crHeatImage <- reactive({
     return(NULL)
   }
   )
+  
+}
+
+crHeatImage <- reactive({
+  if (DEBUG) cat(file = stderr(), "output$crHeatImage\n")
+  gbm <- gbm()
+  # projections = projections()
+  projections <- projections()
+  prioritized_genes <- prioritized_genes()
+  if (is.null(gbm) | is.null(gbm) | is.null(prioritized_genes)) {
+    if (DEBUG) cat(file = stderr(), "output$crHeatImage:NULL\n")
+    return(NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("cell ranger heat map", id = "crHeatMap", duration = NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/crHeatImage.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file='~/scShinyHubDebug/crHeatImage.RData')
+  retVal <- crHeatImage_func(gbm, projections, prioritized_genes)
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "crHeatMap")
   }

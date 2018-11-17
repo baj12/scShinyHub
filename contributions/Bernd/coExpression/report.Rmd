@@ -5,6 +5,7 @@ date: "3/23/2018"
 output: html_document
 ---
 
+# Co-expression
 
 ```{r bj-coExp-setup, echo=FALSE, warning=FALSE}
 if(exists("params")){
@@ -58,9 +59,197 @@ if(exists("params")){
 }
 ```
 
+## All clusters 
 
-```{r}
+### Heatmap
 
-````
+```{r coE_heatmapFunc, echo=FALSE}
+require(pheatmap)
 
+gbm_matrix <- as.matrix(exprs(gbm_log))
+genesin <- input$heatmap_geneids
+heatmapReactive <- coE_heatmapFunc(
+  featureData = featureData, gbm_matrix = gbm_matrix,
+  projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
+)
+    addColNames <- input$'coExpHeatmapModule-ColNames'
+    orderColNames <- input$'coExpHeatmapModule-orderNames'
+    moreOptions <- input$'coExpHeatmapModule-moreOptions'
+    proje <- projections
+    
+    heatmapData$filename = NA
+    if(is.null(moreOptions)) moreOptions <- FALSE
+    
+    if (length(addColNames) > 0 & moreOptions) {
+      heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+    }
+    if (length(orderColNames) > 0 & moreOptions) {
+      heatmapData$cluster_cols <- FALSE
+      heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
+    }
+    
+    do.call(pheatmap, heatmapData)
+
+
+
+```
+
+## Selected
+
+### 2D plot with selection of cells 
+
+geneNames <- `r input$"selected-geneIds"`
+
+clId <- `r input$"selected-clusters"`
+
+dimX <- `r input$"selected-dimension_x"`
+
+dimY <- `r input$"selected-dimension_y"`
+
+
+
+```{r selectd2D, echo=FALSE}
+g_id <- input$gene_id
+geneNames <- input$"selected-geneIds"
+clId <- input$"selected-clusters"
+dimX <- input$"selected-dimension_x"
+dimY <- input$"selected-dimension_y"
+legend.position <- "none"
+grpN <- make.names(input$groupName)
+cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
+
+# save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
+# load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
+
+plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position)
+
+```
+
+
+### Heatmap selected
+
+callModule(
+  pHeatMapModule, 
+  "heatmapSelectedModule", 
+  heatmapSelectedReactive
+)
+
+heatmap_geneids2 `r input$heatmap_geneids2`
+
+'selected-geneIds' `r input$'selected-geneIds'`
+
+'selected-clusters' `r input$'selected-clusters'`
+
+'heatmapSelectedModule-ColNames' `r input$'heatmapSelectedModule-ColNames'`
+
+    orderColNames : `r input$'heatmapSelectedModule-orderNames'`
+    
+    moreOptions <- `r input$'heatmapSelectedModule-moreOptions'`
+
+
+```{r heatmapSelectedModule, echo=FALSE}
+
+genesin <- input$heatmap_geneids2
+
+# get selected cells
+brushedPs <- input$'selected-b1'
+geneNames <- input$'selected-geneIds'
+inpClusters <- input$'selected-clusters'
+geneid <- geneName2Index(geneNames, featureData)
+subsetData <- subset(projections, dbCluster %in% inpClusters)
+cells.names <- shiny::brushedPoints(subsetData, brushedPs)
+
+cells.1 <- rownames(cells.names)
+heatmapSelectedReactive <- coE_heatmapFunc(featureData, 
+                                           gbm_matrix, 
+                                           projections, 
+                                           genesin, 
+                                           cells = cells.1)
+
+# print heatmap
+addColNames <- input$'heatmapSelectedModule-ColNames'
+orderColNames <- input$'heatmapSelectedModule-orderNames'
+moreOptions <- input$'heatmapSelectedModule-moreOptions'
+proje <- projections
+
+heatmapData$filename = NA
+if(is.null(moreOptions)) moreOptions <- FALSE
+
+if (length(addColNames) > 0 & moreOptions) {
+  heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+}
+if (length(orderColNames) > 0 & moreOptions) {
+  heatmapData$cluster_cols <- FALSE
+  heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
+}
+
+do.call(pheatmap, heatmapData)
+
+
+```
+
+### binarized
+
+genesin <- `r input$mclustids`
+
+  cl3 <- `r input$clusters3`
+  
+  dimx3 <- `r input$dimension_x3`
+  
+  dimy3 <- `r input$dimension_y3`
+
+not really working on this since I don't know if we really need it what this is about..
+
+```{r coEx-binarized, eval=FALSE, echo=FALSE}
+
+genesin <- input$mclustids
+  cl3 <- input$clusters3
+  dimx3 <- input$dimension_x3
+  dimy3 <- input$dimension_y3
+  posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
+  posCellsAll <- positiveCells$positiveCellsAll
+  
+  
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/plotCoExpression.RData")
+  p1 <- plotCoExpressionFunc(
+    featureData,
+    gbm_log,
+    upI,
+    projections,
+    genesin,
+    cl3,
+    dimx3,
+    dimy3
+  )
+  return(p1)
+
+```
+
+## Violin plot coexpressed genes
+
+  geneListStr <- `r input$geneGrpVioIds`
+  
+  projectionVar <- `r input$dimension_xVioiGrp`
+  
+  minExpr <- `r input$coEminExpr`
+
+```{r violinPlot, echo=FALSE}
+  geneListStr <- input$geneGrpVioIds
+  projectionVar <- input$dimension_xVioiGrp
+  minExpr <- input$coEminExpr
+
+  retVal <- geneGrp_vioFunc(
+    genesin = geneListStr,
+    projections = projections,
+    gbm = gbm,
+    featureData = featureData,
+    minExpr = minExpr,
+    dbCluster = projectionVar
+  )
+  retVal
+
+```
 

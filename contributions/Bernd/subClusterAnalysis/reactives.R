@@ -5,36 +5,23 @@ selectedDge <- reactiveValues(
 
 # TODO remove log2cpm change to gbm_log
 dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2){
-  if(DEBUG)cat(file=stderr(), "dge1\n")
   subsetData <- subset(projections, dbCluster %in% cl1)
-  if(DEBUG)cat(file=stderr(), "dge2\n")
-  cells.1 <- rownames(brushedPoints(subsetData, db1))
-  if(DEBUG)cat(file=stderr(), "dge3\n")
-  cells.2 <- rownames(brushedPoints(subsetData, db2))
+  cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
+  cells.2 <- rownames(shiny::brushedPoints(subsetData, db2))
   
-  if(DEBUG)cat(file=stderr(), "dge4\n")
   subsetExpression <- log2cpm[, union(cells.1, cells.2)]
   
-  if(DEBUG)cat(file=stderr(), "dge5\n")
   genes.use <- rownames(subsetExpression)
-  if(DEBUG)cat(file=stderr(), "dge6\n")
   data.1 = apply(subsetExpression[genes.use, cells.1], 1, expMean)
-  if(DEBUG)cat(file=stderr(), "dge7\n")
   data.2 = apply(subsetExpression[genes.use, cells.2], 1, expMean)
-  if(DEBUG)cat(file=stderr(), "dge8\n")
   total.diff = (data.1 - data.2)
   
-  if(DEBUG)cat(file=stderr(), "dge9\n")
   genes.diff = names(which(abs(total.diff) > .2))
-  if(DEBUG)cat(file=stderr(), "dge10\n")
   genes.use = ainb(genes.use, genes.diff)
   
-  if(DEBUG)cat(file=stderr(), "dge11\n")
   toReturn <-
     DiffExpTest(subsetExpression, cells.1, cells.2, genes.use = genes.use)
-  if(DEBUG)cat(file=stderr(), "dge12\n")
   toReturn[, "avg_diff"] = total.diff[rownames(toReturn)]
-  if(DEBUG)cat(file=stderr(), "dge13\n")
   toReturn$Associated.Gene.Name <-
     featureData[rownames(toReturn), 'Associated.Gene.Name']
   return(toReturn)
@@ -67,7 +54,9 @@ dge <- reactive({
     save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file='~/scShinyHubDebug/dge.RData')
 
-  toReturn = dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
+  toReturn = dge_func(projections = prj, log2cpm = log2cpm, 
+                      featureData = featureData, 
+                      dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
   if(DEBUG)cat(file=stderr(), "dge14\n")
   if(nrow(toReturn)==0){
     if(DEBUG)cat(file=stderr(), "dge: nothing found\n")

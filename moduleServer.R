@@ -566,7 +566,7 @@ heatmapModuleFunc <- function(
     annotation_legend = TRUE,
     # breaks = seq(minBreak, maxBreak, by = stepBreak),
     # filename = 'test.png',
-    filename = normalizePath(outfile),
+    filename = normalizePath(outfile, mustWork = FALSE),
     colorRampPalette(rev(brewer.pal(
       n = 6, name =
         "RdBu"
@@ -576,7 +576,7 @@ heatmapModuleFunc <- function(
     removeNotification(id = "heatmap")
   }
   return(list(
-    src = normalizePath(outfile),
+    src = normalizePath(outfile, mustWork = FALSE),
     contentType = "image/png",
     width = width,
     height = height,
@@ -617,7 +617,7 @@ pHeatMapModule <- function(input, output, session,
     heatmapData = pheatmapList()
     addColNames <- input$ColNames
     orderColNames <- input$orderNames
-    moreOptions <- (input$moreOptions)
+    moreOptions <- input$moreOptions
     proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
@@ -641,7 +641,7 @@ pHeatMapModule <- function(input, output, session,
     }
     # load(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData")
     outfile <- paste0(tempdir(), "/heatmap", ns("debug"),base::sample(1:10000, 1), ".png")
-    filename = normalizePath(outfile)
+    filename = normalizePath(outfile, mustWork = FALSE)
     heatmapData$filename = outfile
     
     if (length(addColNames) > 0 & moreOptions) {
@@ -649,7 +649,9 @@ pHeatMapModule <- function(input, output, session,
     }
     if (length(orderColNames) > 0& moreOptions) {
       heatmapData$cluster_cols <- FALSE
-      heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
+      colN <- rownames(psych::dfOrder(proje, orderColNames))
+      colN <- colN[colN %in% colnames(heatmapData$mat)]
+      heatmapData$mat = heatmapData$mat[, colN, drop=FALSE]
     }
     
     do.call(pheatmap, heatmapData)
@@ -668,7 +670,7 @@ pHeatMapModule <- function(input, output, session,
       height <- 96 * 7
     }
     
-    return(list(src = normalizePath(outfile),
+    return(list(src = normalizePath(outfile, mustWork = FALSE),
                 contentType = 'image/png',
                 width = width,
                 height = height,

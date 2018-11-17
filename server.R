@@ -134,7 +134,7 @@ shinyServer(function(input, output, session) {
     projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
   }
   
-  # TODO move somewhere else
+  # TODO move coexpression for binarized needed
   # in reactives., report, server, coexpression/output
   positiveCells <- reactiveValues(positiveCells = NULL,
                                   positiveCellsAll = NULL)

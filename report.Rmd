@@ -80,7 +80,6 @@ __LOAD_REACTIVES__
 ```{r setup, include=FALSE}
 input = params
 print(str(input$file1))
-  cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
 
 if(file.exists(input$file1$datapath)){
   load(input$file1$datapath)
@@ -318,15 +317,6 @@ inputSample = data.frame(cellName = colnames(dataTables$gbm),
 
 ```
 
-```{r prioritized_genes, eval=FALSE, include=FALSE}
-set.seed(seed = seed)
-prioritized_genes =    prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
-                                            logscale = FALSE, 
-                                            min_mean=0.5, 
-                                            p_cutoff=0.05,
-                                            order_by='pvalue')
-
-```
 
 ```{r log2cpm, eval=TRUE, include=FALSE}
 if(DEBUG)cat(file=stderr(), "log2cpm\n")

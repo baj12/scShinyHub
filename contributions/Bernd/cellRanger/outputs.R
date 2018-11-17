@@ -7,9 +7,9 @@ callModule(
   crHeatImage
 )
 
-output$crHeat_plot1 <- renderImage({
-  crHeatImage()
-}, deleteFile = TRUE)
+# output$crHeat_plot1 <- renderImage({
+#   crHeatImage()
+# }, deleteFile = TRUE)
 
 # output$crPrioGenes <- DT::renderDataTable({
 #   if(DEBUG)cat(file=stderr(), "output$crPrioGenes\n")

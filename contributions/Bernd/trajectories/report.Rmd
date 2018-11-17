@@ -5,7 +5,7 @@ date: "3/23/2018"
 output: html_document
 ---
 
-## dummy report
+# Trajectories
 
 ```{r dummy-setup, include=FALSE}
 if (exists("DEVELOPMENT")) {

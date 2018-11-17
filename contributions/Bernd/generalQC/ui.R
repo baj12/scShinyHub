@@ -63,8 +63,8 @@ tabList = list(
                         fluidRow(column(12,selectInput(
                           'col3D',
                           label = 'colored by',
-                          choices = c('clusterDB'),
-                          selected = 'clusterDB'
+                          choices = c('tsne1'),
+                          selected = 'tsne1'
                         ))),
                         fluidRow(column(12,
                                         plotlyOutput('tsne_main') %>% withSpinner()

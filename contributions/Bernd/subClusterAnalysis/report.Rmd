@@ -3,56 +3,173 @@ title: "subclusterreport"
 output: html_document
 ---
 
+# sub cluster analysis
 
 ```{r dge, eval=TRUE, echo=FALSE, results='asis'}
 if(DEBUG)cat(file=stderr(), "dge\n")
-if(!is.null(input$db1) & !is.null(input$db2)){
-      # if (DEBUGSAVE) {
-      cat(file = stderr(), "cluster: selectedCellNames: saving\n")
-      save(file = "~/scShinyHubDebug/selectedCellNames.RMD.RData", list = c(ls(), ls(envir = globalenv())))
-    # }
 
-  prj = projections
+if (is.null(input$db1) | is.null(input$db2)) {
+  knit_exit()
+}
+
+```
+
+
+## Plot 1
+
+  x1 = `r input$dimension_x1`
+  
+  y1 = `r input$dimension_y1`
+  
+  c1 = `r input$clusters1`
+  
+  gn <- `r groupNames$namesDF`
+
+
+
+```{r selectedDge1, eval=TRUE, echo=FALSE}
+# TODO module?  
+  x1 = input$dimension_x1
+  y1 = input$dimension_y1
+  c1 = input$clusters1
+  gn <- groupNames$namesDF
+
+  
+  xmin <- input$db1$xmin
+  xmax <- input$db1$xmax
+  ymin <- input$db1$ymin
+  ymax <- input$db1$ymax
+  
+  if (length(gn) > 0){
+    projections = cbind(projections, gn[rownames(projections),]*1)
+  }
+  subsetData <- subset(projections, dbCluster %in% c1)
+  p1 <-
+    ggplot(subsetData,
+           aes_string(x = x1, y = y1),
+           colour = "dbCluster") +
+    geom_point(aes(colour = dbCluster)) +
+    geom_point(shape = 1,
+               size = 4,
+               aes(colour = dbCluster)) +
+    annotate("rect",
+             xmin = xmin, xmax = xmax,
+             ymin = ymin, ymax = ymax,
+             fill = "palegreen", alpha = 0.2) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    ggtitle(c1)
+  p1
+  
+```
+
+## SUBCLUSTER DGE PLOT2 
+
+  gn <- `r groupNames$namesDF`
+  
+  inpCl1 <- `r input$clusters1`
+
+
+```{r dgePlot2, echo=FALSE}
+
+  gn <- groupNames$namesDF
+  inpCl1 <- input$clusters1
+  
+  xmin <- input$db2$xmin
+  xmax <- input$db2$xmax
+  ymin <- input$db2$ymin
+  ymax <- input$db2$ymax
+
+  subsetData <- subset(projections, dbCluster %in% inpCl1)
+  # save(file = "~/scShinyHubDebug/dge.Rmd.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/dge.Rmd.RData")
+  p1 <-
+    ggplot(subsetData,
+           aes_string(x = input$dimension_x1, y = input$dimension_y1),
+           color = "dbCluster") +
+    geom_point(aes(colour = dbCluster)) +
+    geom_point(shape = 1,
+               size = 4,
+               aes(colour = dbCluster)) +
+    annotate("rect",
+             xmin = xmin, xmax = xmax,
+             ymin = ymin, ymax = ymax,
+             fill = "palegreen", alpha = 0.2) +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    ggtitle(input$clusters1)
+  p1
+
+```
+
+## DGE table
+
+
+  gn <- `r groupNames$namesDF`
+  
+  cl1 = `r input$clusters1`
+  
+  
+
+```{r DGETable, eval=TRUE, echo=FALSE}
   gn <- groupNames$namesDF
   
   cl1 = input$clusters1
   db1 = input$db1
   db2 = input$db2
+  prj <- projections
+  
+  if (length(gn) > 0){
+    prj = cbind(prj, gn[rownames(prj),]*1)
+  }
+  
+  toReturn = dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
 
-  dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2) 
-      
-  subsetData <- subset(projections, dbCluster %in% input$clusters1)
-  cells.1 <- rownames(shiny::brushedPoints(subsetData, input$db1))
-  cells.2 <- rownames(shiny::brushedPoints(subsetData, input$db2))
-  
-  subsetExpression <- log2cpm[, union(cells.1, cells.2)]
-  
-  genes.use <- rownames(subsetExpression)
-  data.1 = apply(subsetExpression[genes.use, cells.1], 1, expMean)
-  data.2 = apply(subsetExpression[genes.use, cells.2], 1, expMean)
-  total.diff = (data.1 - data.2)
-  
-  genes.diff = names(which(abs(total.diff) > .2))
-  genes.use = ainb(genes.use, genes.diff)
-  
-  toReturn <-
-    DiffExpTest(subsetExpression, cells.1, cells.2, genes.use = genes.use)
-  toReturn[, "avg_diff"] = total.diff[rownames(toReturn)]
-  toReturn$Associated.Gene.Name <-
-    featureData[rownames(toReturn), 'Associated.Gene.Name']
-  selectedDge <- toReturn
-  cat(stderr(), rownames(toReturn)[1:5])
-  
-  dge <-     toReturn
-  # print(knitr::kable(dge))
-  shiny::renderTable(dge)
-  if(DEBUG)cat(file=stderr(), "dge:done11\n")
-}else{
-  dge=NA
-}
-```
+    if(nrow(toReturn)==0){
+    if(DEBUG)cat(file=stderr(), "dge: nothing found\n")
+    if(!is.null(getDefaultReactiveDomain())){
+      showNotification("dge: nothing found", id="dgewarning", duration = 10, type = 'warning')
+    }
+  }
+  # selectedDge$dgeTable <- toReturn
+  # cat(stderr(), rownames(toReturn)[1:5])
+
+  # toReturn
 
 
-```{r selectedDge, eval=FALSE}
+  top.genes <-  toReturn
+  top.genes$Associated.Gene.Name <-
+    featureData[rownames(top.genes), 'Associated.Gene.Name']
+DT::datatable(top.genes,
+                  options = list(
+                    orderClasses = TRUE,
+                    lengthMenu = c(10, 30, 50),
+                    pageLength = 10
+                  ))
+
 
 ```

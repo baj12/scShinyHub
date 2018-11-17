@@ -3,7 +3,7 @@ title: "child report"
 output: html_document
 ---
 
-## Data exploration
+# Data exploration
 
 ```{r bj-DE-setup, echo=FALSE, warning=FALSE}
 if(exists("params")){
@@ -72,6 +72,12 @@ Normalization method used: `r input$normalizationRadioButton` used.
 
 2D plot 
 
+g_id <- `r input$gene_id`
+geneNames <- `r input$"expclusters-geneIds"`
+clId <- `r input$"expclusters-clusters"`
+dimX <- `r input$"expclusters-dimension_x"`
+dimY <- `r input$"expclusters-dimension_y"`
+
 
 ```{r bj-DE-2Dprojection, echo=FALSE, eval=TRUE}
 
@@ -84,7 +90,7 @@ legend.position <- "none"
 grpN <- make.names(input$groupName)
 cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
 
-save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
+# save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
 plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position)
@@ -93,7 +99,7 @@ plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, 
 
 
 
-# EXPLORE TAB VIOLIN PLOT 
+## VIOLIN PLOT 
 
 ```{r bj-DE-gene_vio_plot, eval=TRUE, echo=FALSE}
 if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")

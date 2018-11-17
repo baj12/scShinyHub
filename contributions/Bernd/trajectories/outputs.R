@@ -61,7 +61,7 @@ scorpiusHeatmapPlotReactive <- reactive({
   
   # modules <- extract_modules(scale_quantile(expr_sel), traj$time, verbose = F)
   retVal = drawTrajectoryHeatmap(expr_sel, traj$time, projections[,dimCol], modules,
-                                   filename = normalizePath(outfile))
+                                   filename = normalizePath(outfile, mustWork = FALSE))
 
   retVal
   
