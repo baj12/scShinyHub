@@ -202,6 +202,8 @@ shinyServer(function(input, output, session) {
     filename = "report.html",
     
     content = function(file) {
+      if (DEBUGSAVE) save(file = '~/scShinyHubDebug/tempReport.1.RData', list = c("file", ls()))
+      # load('~/scShinyHubDebug/tempReport.1.RData')
       
       ip = inputData()
       if( is.null(ip) ){
@@ -276,6 +278,8 @@ shinyServer(function(input, output, session) {
         tempServerFunctions = tempServerFunctions,
         # tempprivatePlotFunctions = tempprivatePlotFunctions,
         calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
+        # save the outputfile name for others to use to save
+        # params$outputFile <- file$datapath[1]
       )
       for (idx in 1:length(names(input))) {
         params[[inputNames[idx]]] = input[[inputNames[idx]]]
@@ -301,8 +305,8 @@ shinyServer(function(input, output, session) {
       # from the code in this app)
       renderEnv = new.env(parent = globalenv())
       if (DEBUG) file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
-      myparams = params
-      if (DEBUG) save(file = '~/scShinyHubDebug/tempReport.RData', list = c("myparams","renderEnv"))
+      myparams = params # needed for saving as params is already taken by knitr
+      if (DEBUGSAVE) save(file = '~/scShinyHubDebug/tempReport.RData', list = c("myparams","renderEnv"))
       rmarkdown::render(tempReport, output_file = file,
                         params = params,
                         envir = renderEnv

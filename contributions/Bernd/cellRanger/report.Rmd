@@ -91,7 +91,7 @@ require(pheatmap)
   cat(file = stderr(), paste("crHeatImage_func\n"))
   heatmapData <- crHeatImage_func(gbm, projections, prioritized_genes) 
 # 
-# cat(file = stderr(), paste("save\n"))
+cat(file = stderr(), paste("save\n"))
 # save(file = "~/scShinyHubDebug/bj.CR.crHeatImage_func.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.CR.crHeatImage_func.Rdata")
 # file.info("~/scShinyHubDebug/bj.CR.crHeatImage_func.Rdata")
