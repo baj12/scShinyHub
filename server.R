@@ -1,4 +1,4 @@
-# devtools::install_github("https://github.com/mul118/shinyMCE.git")
+# devtools::install_github("mul118/shinyMCE")
 
 # LIBRARY -----------------------------------------------------------------
 

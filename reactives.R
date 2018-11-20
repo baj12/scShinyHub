@@ -1083,6 +1083,7 @@ log2cpm <- reactive({
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position) {
   geneid <- geneName2Index(g_id, featureData)
+  grpNs <- groupNames$namesDF
   
   if (length(geneid) == 1) {
     expression <- exprs(gbm_log)[geneid, ]
