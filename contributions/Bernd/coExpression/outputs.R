@@ -2,12 +2,12 @@
 # Update x axis selection possibilities for violin plot
 updateInputXviolinPlot <- reactive({
   tsneData <- projections()
-  
+
   # Can use character(0) to remove all choices
   if (is.null(tsneData)) {
     return(NULL)
   }
-  
+
   # Can also set the label and select items
   updateSelectInput(
     session,
@@ -21,7 +21,7 @@ updateInputXviolinPlot <- reactive({
     choices = colnames(tsneData),
     selected = colnames(tsneData)[2]
   )
-  
+
   coln <- colnames(tsneData)
   choices <- c()
   for (cn in coln) {
@@ -62,7 +62,7 @@ heatmapReactive <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("heatmap", id = "heatmap", duration = NULL)
   }
-  
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -72,12 +72,11 @@ heatmapReactive <- reactive({
     featureData = featureData, gbm_matrix = gbm_matrix,
     projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
   )
-  
+
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "heatmap")
   }
   return(retval)
-  
 })
 
 
@@ -99,7 +98,7 @@ heatmapReactive <- reactive({
 #     showNotification("heatmap", id = "heatmap", duration = NULL)
 #   }
 #   if (DEBUG) cat(file = stderr(), "output$heatmapReactive 2\n")
-# 
+#
 #   if (DEBUGSAVE) {
 #     cat(file = stderr(), "output$heatmapReactive save\n")
 #     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
@@ -114,19 +113,19 @@ heatmapReactive <- reactive({
 #     is.na(sum(expression)) != TRUE,
 #     "Gene symbol incorrect or genes not expressed"
 #   ))
-# 
+#
 #   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
-# 
+#
 #   # expression <- expression[, rownames(projections)]
 #   expression <- expression[complete.cases(expression), ]
-# 
+#
 #   if (!("sample" %in% colnames(projections))) {
 #     projections$sample <- 1
 #   }
 #   annotation <- data.frame(projections[cells, c("dbCluster", "sample")])
 #   rownames(annotation) <- colnames(expression)
 #   colnames(annotation) <- c("Cluster", "sample")
-# 
+#
 #   # For high-res displays, this will be greater than 1
 #   pixelratio <- session$clientData$pixelratio
 #   if (is.null(pixelratio)) pixelratio <- 1
@@ -171,7 +170,7 @@ heatmapReactive <- reactive({
 #   if (!is.null(getDefaultReactiveDomain())) {
 #     removeNotification(id = "heatmap")
 #   }
-# 
+#
 #   retVal
 # })
 
@@ -198,7 +197,7 @@ callModule(pHeatMapModule, "coExpHeatmapModule", heatmapReactive)
 #   if (!is.null(getDefaultReactiveDomain())) {
 #     showNotification("heatmap", id = "heatmap", duration = NULL)
 #   }
-# 
+#
 #   if (DEBUGSAVE) {
 #     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
 #   }
@@ -208,7 +207,7 @@ callModule(pHeatMapModule, "coExpHeatmapModule", heatmapReactive)
 #     featureData = featureData, gbm_matrix = gbm_matrix,
 #     projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
 #   )
-# 
+#
 #   if (!is.null(getDefaultReactiveDomain())) {
 #     removeNotification(id = "heatmap")
 #   }
@@ -227,8 +226,8 @@ selctedCluster <-
 
 # selected clusters heatmap module
 callModule(
-  pHeatMapModule, 
-  "heatmapSelectedModule", 
+  pHeatMapModule,
+  "heatmapSelectedModule",
   heatmapSelectedReactive
 )
 
@@ -247,19 +246,19 @@ output$plotCoExpression <- renderPlot({
   upI <- updateInputXviolinPlot() # no need to check because this is done in projections
   projections <- projections()
   if (is.null(featureData) |
-      is.null(projections) |
-      is.null(log2cpm) | is.null(input$clusters3)) {
+    is.null(projections) |
+    is.null(log2cpm) | is.null(input$clusters3)) {
     return(NULL)
   }
-  
+
   genesin <- input$mclustids
   cl3 <- input$clusters3
   dimx3 <- input$dimension_x3
   dimy3 <- input$dimension_y3
   posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
   posCellsAll <- positiveCells$positiveCellsAll
-  
-  
+
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -288,14 +287,14 @@ output$downloadExpressionOnOff <- downloadHandler(
   content = function(file) {
     featureData <- featureDataReact()
     log2cpm <- log2cpm()
-    
+
     if (is.null(featureData) | is.null(log2cpm) | is.null(positiveCells$positiveCells)) {
       return(NULL)
     }
-    
+
     cells <- positiveCells$positiveCells
     # if(DEBUG)cat(file=stderr(),cells[1:5])
-    
+
     if (length(cells) == 1) {
       subsetExpression <- log2cpm[, cells]
       subsetExpression <-
@@ -324,17 +323,17 @@ output$onOffTable <- DT::renderDataTable({
   }
   projections <- projections()
   posCellsAll <- positiveCells$positiveCellsAll # we use this variable to be able to save the global variable in this context
-  
+
   if (is.null(projections)) {
     return(NULL)
   }
-  
-  
+
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/onOffTable.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/onOffTable.RData")
-  
+
   merge <- projections
   if (DEBUG) {
     cat(
@@ -342,7 +341,7 @@ output$onOffTable <- DT::renderDataTable({
       paste("positiveCells$positiveCellsAll:---", posCellsAll, "---\n")
     )
   }
-  
+
   merge$CoExpression <- posCellsAll
   df <-
     as.data.frame(table(merge[, c("dbCluster", "CoExpression")]))
@@ -371,7 +370,7 @@ output$clusters3 <- renderUI({
     save(file = "~/scShinyHubDebug/clusters3.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/clusters3.RData")
-  
+
   noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
   selectizeInput(
     "clusters3",
@@ -407,7 +406,7 @@ output$geneGrp_vio_plot <- renderPlot({
     save(file = "~/scShinyHubDebug/geneGrp_vio_plot.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/geneGrp_vio_plot.RData")
-  
+
   retVal <- geneGrp_vioFunc(
     genesin = geneListStr,
     projections = projections,

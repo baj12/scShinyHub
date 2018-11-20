@@ -288,7 +288,7 @@ featureDataReact <- reactive({
 
 useGenesFunc <-
   function(dataTables,
-             ipIDs,# regular expression of genes to be removed
+             ipIDs, # regular expression of genes to be removed
              geneListSelection,
              genesKeep,
              geneLists) {
@@ -453,14 +453,14 @@ gbmFunc <-
         return(NULL)
       }
     }
-    
+
     pD <- pData(gbmNew)
     for (colN in colnames(pD)) {
       if (colN == "barcode") next()
-      pD[, colN] = factor(as.character(pD[, colN]))
+      pD[, colN] <- factor(as.character(pD[, colN]))
     }
     pData(gbmNew) <- pD
-    
+
     return(gbmNew)
   }
 
@@ -794,19 +794,19 @@ projections <- reactive({
   # load(file="~/scShinyHubDebug/projections.RData")
   withProgress(message = "Performing projections", value = 0, {
     n <- length(projectionFunctions)
-    iter = 1
+    iter <- 1
     for (proj in projectionFunctions) {
       incProgress(1 / n, detail = paste("Creating ", proj[1]))
       if (DEBUG) cat(file = stderr(), paste("calculation projection:  ", proj[1], "\n"))
       assign("tmp", eval(parse(text = paste0(proj[2], "()"))))
       if (DEBUGSAVE) {
-        save(file = paste0("~/scShinyHubDebug/projections.",iter ,".RData"), list = c("tmp"))
-        iter = iter + 1
+        save(file = paste0("~/scShinyHubDebug/projections.", iter, ".RData"), list = c("tmp"))
+        iter <- iter + 1
       }
       # load(file="~/scShinyHubDebug/projections.1.RData")
       if (class(tmp) == "data.frame") {
         cn <- make.names(c(colnames(projections), colnames(tmp)))
-      }else{
+      } else {
         cn <- make.names(c(colnames(projections), make.names(proj[1])))
       }
       if (length(tmp) == 0) {
@@ -823,9 +823,9 @@ projections <- reactive({
       } else {
         if (nrow(projections) == length(tmp)) {
           projections <- cbind(projections, tmp)
-        } else if(nrow(projections) == nrow(tmp)) {
+        } else if (nrow(projections) == nrow(tmp)) {
           projections <- cbind(projections, tmp)
-          } else {
+        } else {
           stop("error: ", proj[1], "didn't produce a result")
         }
       }
@@ -939,7 +939,7 @@ sample <- reactive({
       }
       retVal[, pdColName] <- factor(as.character(pd[, pdColName]))
     }
-  } 
+  }
   retVal
   # return(sample)
 })
@@ -1084,23 +1084,23 @@ log2cpm <- reactive({
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position) {
   geneid <- geneName2Index(g_id, featureData)
   grpNs <- groupNames$namesDF
-  
+
   if (length(geneid) == 1) {
     expression <- exprs(gbm_log)[geneid, ]
   } else {
     expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
   }
   validate(need(is.na(sum(expression)) != TRUE, ""))
-  
+
   geneid <- geneName2Index(geneNames, featureData)
   projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
-  
-  
+
+
   projections <- cbind(projections, t(expression))
   names(projections)[ncol(projections)] <- "exprs"
-  
+
   if (DEBUG) {
-    cat(file = stderr(), paste("output$dge_plot1:---",clId, "---\n"))
+    cat(file = stderr(), paste("output$dge_plot1:---", clId, "---\n"))
   }
   subsetData <- subset(projections, dbCluster %in% clId)
   # subsetData$dbCluster = factor(subsetData$dbCluster)
@@ -1158,6 +1158,4 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneN
     p1 <- p1 + geom_point(data = subsetData[selRows, ], mapping = aes(shape = shape, size = 4), colour = "red")
   }
   p1
-  
 }
-
