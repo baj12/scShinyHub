@@ -153,9 +153,9 @@ genesin <- input$heatmap_geneids2
 
 # get selected cells
 brushedPs <- input$'selected-b1'
-geneNames <- input$'selected-geneIds'
+# geneNames <- input$'selected-geneIds'
 inpClusters <- input$'selected-clusters'
-geneid <- geneName2Index(geneNames, featureData)
+# geneid <- geneName2Index(geneNames, featureData)
 subsetData <- subset(projections, dbCluster %in% inpClusters)
 cells.names <- shiny::brushedPoints(subsetData, brushedPs)
 
@@ -171,6 +171,9 @@ addColNames <- input$'heatmapSelectedModule-ColNames'
 orderColNames <- input$'heatmapSelectedModule-orderNames'
 moreOptions <- input$'heatmapSelectedModule-moreOptions'
 proje <- projections
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
+  }
 
 heatmapData$filename = NA
 if(is.null(moreOptions)) moreOptions <- FALSE

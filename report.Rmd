@@ -369,8 +369,8 @@ cat(file=stderr(),paste(ls(),collapse = "\n"))
 fileConn <- file(paste0(input$reportTempDir,"/variables.used.txt"))
 printVars <- function(x, fileConn) {
   for (varN in names(x)) {
-    writeLines(paste(varN, "=", paste(x[[varN]], collapse = "\n"), collapse = "\n"), fileConn)
-    writeLines("\n\t", fileConn)
+    write(paste(varN, "=", paste(x[[varN]], collapse = "\n"), collapse = "\n"), fileConn)
+    write("\n\t", fileConn)
   }
 }
 printVars(params, fileConn)
