@@ -8,13 +8,13 @@ output: html_document
 # Co-expression
 
 ```{r bj-coExp-setup, echo=FALSE, warning=FALSE}
-if(exists("params")){
-  cat(file=stderr(), paste("Scater Plot report\n"))
-}else{
+if (exists("params")) {
+  cat(file = stderr(), paste("Scater Plot report\n"))
+} else {
   rm(list = ls())
   load("~/scShinyHubDebug/report.RData")
-  cat(file=stderr(), getwd())
-  
+  cat(file = stderr(), getwd())
+
   require(shiny)
   require(plotly)
   require(shinythemes)
@@ -33,29 +33,29 @@ if(exists("params")){
   require(kableExtra)
   require(shinyWidgets)
   require(scater)
-  
+
   source("../../../serverFunctions.R")
   source("../../../reactives.R", local = TRUE)
   # source("reactives.R", local = TRUE)
-  
-  LOCALEXECUTION = TRUE # to know that we are debugging.
-  useCells = useCellsFunc(dataTables, 
-                          geneNames = input$minExpGenes,
-                          rmCells = input$cellsFiltersOut,
-                          rmPattern = input$cellPatternRM,
-                          keepCells = input$cellKeep,
-                          cellKeepOnly = input$cellKeepOnly)
-  ipIDs = input$selectIds
-  geneListSelection = input$geneListSelection
+
+  LOCALEXECUTION <- TRUE # to know that we are debugging.
+  useCells <- useCellsFunc(dataTables,
+    geneNames = input$minExpGenes,
+    rmCells = input$cellsFiltersOut,
+    rmPattern = input$cellPatternRM,
+    keepCells = input$cellKeep,
+    cellKeepOnly = input$cellKeepOnly
+  )
+  ipIDs <- input$selectIds
+  geneListSelection <- input$geneListSelection
   minGene <- input$minGenesGS
-  
-  useGenes = useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
-  featureDataReact = dataTables$featuredata[useGenes, ]
-  featureData = dataTables$featuredata[useGenes, ]
-  gbm = dataTables$gbm[useGenes, useCells]
-  gbm_log = dataTables$gbm_log[useGenes, useCells]
-  log2cpm = dataTables$log2cpm[useGenes, useCells]
-  
+
+  useGenes <- useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
+  featureDataReact <- dataTables$featuredata[useGenes, ]
+  featureData <- dataTables$featuredata[useGenes, ]
+  gbm <- dataTables$gbm[useGenes, useCells]
+  gbm_log <- dataTables$gbm_log[useGenes, useCells]
+  log2cpm <- dataTables$log2cpm[useGenes, useCells]
 }
 ```
 
@@ -72,26 +72,23 @@ heatmapReactive <- coE_heatmapFunc(
   featureData = featureData, gbm_matrix = gbm_matrix,
   projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
 )
-    addColNames <- input$'coExpHeatmapModule-ColNames'
-    orderColNames <- input$'coExpHeatmapModule-orderNames'
-    moreOptions <- input$'coExpHeatmapModule-moreOptions'
-    proje <- projections
-    
-    heatmapData$filename = NA
-    if(is.null(moreOptions)) moreOptions <- FALSE
-    
-    if (length(addColNames) > 0 & moreOptions) {
-      heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
-    }
-    if (length(orderColNames) > 0 & moreOptions) {
-      heatmapData$cluster_cols <- FALSE
-      heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
-    }
-    
-    do.call(pheatmap, heatmapData)
+addColNames <- input$"coExpHeatmapModule-ColNames"
+orderColNames <- input$"coExpHeatmapModule-orderNames"
+moreOptions <- input$"coExpHeatmapModule-moreOptions"
+proje <- projections
 
+heatmapData$filename <- NA
+if (is.null(moreOptions)) moreOptions <- FALSE
 
+if (length(addColNames) > 0 & moreOptions) {
+  heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
+}
+if (length(orderColNames) > 0 & moreOptions) {
+  heatmapData$cluster_cols <- FALSE
+  heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
+}
 
+do.call(pheatmap, heatmapData)
 ```
 
 ## Selected
@@ -122,7 +119,6 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
 plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position)
-
 ```
 
 
@@ -152,43 +148,42 @@ heatmap_geneids2 `r input$heatmap_geneids2`
 genesin <- input$heatmap_geneids2
 
 # get selected cells
-brushedPs <- input$'selected-b1'
+brushedPs <- input$"selected-b1"
 # geneNames <- input$'selected-geneIds'
-inpClusters <- input$'selected-clusters'
+inpClusters <- input$"selected-clusters"
 # geneid <- geneName2Index(geneNames, featureData)
 subsetData <- subset(projections, dbCluster %in% inpClusters)
 cells.names <- shiny::brushedPoints(subsetData, brushedPs)
 
 cells.1 <- rownames(cells.names)
-heatmapSelectedReactive <- coE_heatmapFunc(featureData, 
-                                           gbm_matrix, 
-                                           projections, 
-                                           genesin, 
-                                           cells = cells.1)
+heatmapSelectedReactive <- coE_heatmapFunc(featureData,
+  gbm_matrix,
+  projections,
+  genesin,
+  cells = cells.1
+)
 
 # print heatmap
-addColNames <- input$'heatmapSelectedModule-ColNames'
-orderColNames <- input$'heatmapSelectedModule-orderNames'
-moreOptions <- input$'heatmapSelectedModule-moreOptions'
+addColNames <- input$"heatmapSelectedModule-ColNames"
+orderColNames <- input$"heatmapSelectedModule-orderNames"
+moreOptions <- input$"heatmapSelectedModule-moreOptions"
 proje <- projections
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
-  }
+if (DEBUGSAVE) {
+  save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
+}
 
-heatmapData$filename = NA
-if(is.null(moreOptions)) moreOptions <- FALSE
+heatmapData$filename <- NA
+if (is.null(moreOptions)) moreOptions <- FALSE
 
 if (length(addColNames) > 0 & moreOptions) {
-  heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+  heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
 }
 if (length(orderColNames) > 0 & moreOptions) {
   heatmapData$cluster_cols <- FALSE
-  heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
+  heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
 }
 
 do.call(pheatmap, heatmapData)
-
-
 ```
 
 ### binarized
@@ -206,29 +201,28 @@ not really working on this since I don't know if we really need it what this is 
 ```{r coEx-binarized, eval=FALSE, echo=FALSE}
 
 genesin <- input$mclustids
-  cl3 <- input$clusters3
-  dimx3 <- input$dimension_x3
-  dimy3 <- input$dimension_y3
-  posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
-  posCellsAll <- positiveCells$positiveCellsAll
-  
-  
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/plotCoExpression.RData")
-  p1 <- plotCoExpressionFunc(
-    featureData,
-    gbm_log,
-    upI,
-    projections,
-    genesin,
-    cl3,
-    dimx3,
-    dimy3
-  )
-  return(p1)
+cl3 <- input$clusters3
+dimx3 <- input$dimension_x3
+dimy3 <- input$dimension_y3
+posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
+posCellsAll <- positiveCells$positiveCellsAll
 
+
+if (DEBUGSAVE) {
+  save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(), ls(envir = globalenv())))
+}
+# load(file="~/scShinyHubDebug/plotCoExpression.RData")
+p1 <- plotCoExpressionFunc(
+  featureData,
+  gbm_log,
+  upI,
+  projections,
+  genesin,
+  cl3,
+  dimx3,
+  dimy3
+)
+return(p1)
 ```
 
 ## Violin plot coexpressed genes
@@ -240,19 +234,19 @@ genesin <- input$mclustids
   minExpr <- `r input$coEminExpr`
 
 ```{r violinPlot, echo=FALSE}
-  geneListStr <- input$geneGrpVioIds
-  projectionVar <- input$dimension_xVioiGrp
-  minExpr <- input$coEminExpr
+geneListStr <- input$geneGrpVioIds
+projectionVar <- input$dimension_xVioiGrp
+minExpr <- input$coEminExpr
 
-  retVal <- geneGrp_vioFunc(
-    genesin = geneListStr,
-    projections = projections,
-    gbm = gbm,
-    featureData = featureData,
-    minExpr = minExpr,
-    dbCluster = projectionVar
-  )
-  retVal
-
+retVal <- geneGrp_vioFunc(
+  genesin = geneListStr,
+  projections = projections,
+  gbm = gbm,
+  featureData = featureData,
+  minExpr = minExpr,
+  dbCluster = projectionVar
+)
+retVal
 ```
+
 

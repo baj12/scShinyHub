@@ -14,16 +14,14 @@ params:
 ---
 
 ```{r checkDEBUG, include=FALSE}
-if(!exists("DEBUG")){
-  DEBUG=TRUE
+if (!exists("DEBUG")) {
+  DEBUG <- TRUE
   # DEBUG=FALSE
 }
-if(!exists("DEBUGSAVE")){
+if (!exists("DEBUGSAVE")) {
   # DEBUGSAVE=TRUE
-  DEBUGSAVE=FALSE
+  DEBUGSAVE <- FALSE
 }
-
-
 ```
 
 ```{r loadData, include=FALSE}
@@ -50,26 +48,25 @@ require(scater)
 
 # params only exsits if called from somewhere with parameters
 if (exists("params")) {
-  cat(file = stderr(), paste("params:", params$calledFromShiny,"\n"))
-  cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
-  LOCALEXECUTION = FALSE
+  cat(file = stderr(), paste("params:", params$calledFromShiny, "\n"))
+  cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params), "\n"))
+  LOCALEXECUTION <- FALSE
   if (DEBUGSAVE) {
     base::save(file = "~/scShinyHubDebug/tempReport-rmd.RData", list = c(ls()))
   }
-}else{
+} else {
   # rm(list = ls())
   source("serverFunctions.R")
   source("reactives.R", local = TRUE)
-  uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
   for (fp in uiFiles) {
     if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
     source(fp, local = TRUE)
   }
   load("~/scShinyHubDebug/tempReport.RData")
-  params = myparams
-  LOCALEXECUTION = TRUE # to know that we are debugging.
+  params <- myparams
+  LOCALEXECUTION <- TRUE # to know that we are debugging.
 }
-
 ```
 
 
@@ -78,19 +75,18 @@ __LOAD_REACTIVES__
 # parameters
 
 ```{r setup, include=FALSE, warning=FALSE}
-input = params
+input <- params
 print(str(input$file1))
 
-if(file.exists(input$file1$datapath)){
+if (file.exists(input$file1$datapath)) {
   load(input$file1$datapath)
-}else{
+} else {
   cat(file = stderr(), paste("Error input file not existing\n"))
 }
 print(ls())
-  cat(file = stderr(), paste("env:", ls(),"\n"))
-  cat(file = stderr(), paste("input:", names(input),input,"\n"))
-  # cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
-
+cat(file = stderr(), paste("env:", ls(), "\n"))
+cat(file = stderr(), paste("input:", names(input), input, "\n"))
+# cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
 ```
 
 
@@ -126,97 +122,93 @@ if (is.null(input$clusters4)) {
   input$clusters4 <- "All"
   print("Warning: setting clusters4 to All")
 }
-
 ```
 
 
 ```{r inputData, echo=FALSE}
 # if ( !exists("dataTables")) {# needed when working with ~/scShinyHubDebug/reports.Data
-  cat(file = stderr(), paste("loading dataTables\n"))
-  dataTables = inputDataFunc(input$file1)
+cat(file = stderr(), paste("loading dataTables\n"))
+dataTables <- inputDataFunc(input$file1)
 # }
 ```
 
 ```{r useCells, echo=FALSE}
-geneNames = input$minExpGenes
-rmCells = input$cellsFiltersOut
-rmPattern = input$cellPatternRM
-keepCells = input$cellKeep
-  # cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
-useCells = useCellsFunc(dataTables, 
-                        geneNames = input$minExpGenes,
-                        rmCells = input$cellsFiltersOut,
-                        rmPattern = input$cellPatternRM,
-                        keepCells = input$cellKeep,
-                        cellKeepOnly = input$cellKeepOnly)
+geneNames <- input$minExpGenes
+rmCells <- input$cellsFiltersOut
+rmPattern <- input$cellPatternRM
+keepCells <- input$cellKeep
+# cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
+useCells <- useCellsFunc(dataTables,
+  geneNames = input$minExpGenes,
+  rmCells = input$cellsFiltersOut,
+  rmPattern = input$cellPatternRM,
+  keepCells = input$cellKeep,
+  cellKeepOnly = input$cellKeepOnly
+)
 ```
 
 ```{r useGenes, echo=FALSE}
-base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list =ls())
-ipIDs = input$selectIds
-genesKeep = input$genesKeep
-geneListSelection = input$geneListSelection
+base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list = ls())
+ipIDs <- input$selectIds
+genesKeep <- input$genesKeep
+geneListSelection <- input$geneListSelection
 
-useGenes = useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
-
+useGenes <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
 ```
 
 
 ```{r featureDataReact, echo=FALSE}
 
-featureDataReact = dataTables$featuredata[useGenes, ]
-featureData = dataTables$featuredata[useGenes, ]
+featureDataReact <- dataTables$featuredata[useGenes, ]
+featureData <- dataTables$featuredata[useGenes, ]
 ```
 
 ```{r gbm, echo=FALSE}
-if(DEBUG)cat(file=stderr(), "gbm\n")
-minGene <- input$minGenesGS # min number of reads per gene 
-minG = input$minGenes # min number of reads per cell
-maxG = input$maxGenes # max number of reads per cell
+if (DEBUG) cat(file = stderr(), "gbm\n")
+minGene <- input$minGenesGS # min number of reads per gene
+minG <- input$minGenes # min number of reads per cell
+maxG <- input$maxGenes # max number of reads per cell
 
-gbm = gbmFunc(gbmOrg = dataTables$gbm, useCells=useCells, useGenes=useGenes, minGene=minGene, minG = minG, maxG=maxG)
+gbm <- gbmFunc(gbmOrg = dataTables$gbm, useCells = useCells, useGenes = useGenes, minGene = minGene, minG = minG, maxG = maxG)
 
-if(DEBUG)cat(file=stderr(), "gbm:DONE\n")
-if(DEBUG)cat(file=stderr(), paste("gbm:", class(gbm), "\n"))
-
+if (DEBUG) cat(file = stderr(), "gbm:DONE\n")
+if (DEBUG) cat(file = stderr(), paste("gbm:", class(gbm), "\n"))
 ```
 
 
 ```{r medianENSG, echo=FALSE}
-medianENSG = medianENSGfunc(as.matrix(exprs(gbm)))
+medianENSG <- medianENSGfunc(as.matrix(exprs(gbm)))
 ```
 
 
 ```{r medianUMI, echo=FALSE}
-medianUMI = medianUMIfunc(as.matrix(exprs(gbm)))
+medianUMI <- medianUMIfunc(as.matrix(exprs(gbm)))
 ```
 
 ```{r groupNames, echo=FALSE}
-groupNames = list()
-groupNames$namesDF = gNames
-
+groupNames <- list()
+groupNames$namesDF <- gNames
 ```
 
 
 ```{r gbm_log, eval=FALSE, include=FALSE}
-# gbm_log is the normalized version of the data. This stored in a separate RData 
+# gbm_log is the normalized version of the data. This stored in a separate RData
 # and thus doen't need to be recomputed.
-if(DEBUG)cat(file=stderr(), "gbm_log\n")
+if (DEBUG) cat(file = stderr(), "gbm_log\n")
 # use_genes <- get_nonzero_genes(gbm)
 # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
 # gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
 
 
-normMethod = input$normalizationRadioButton
+normMethod <- input$normalizationRadioButton
 gbm_log <- do.call(normMethod, args = list())
-if(DEBUG)cat(file=stderr(), "gbm_log:Done\n")
-
+if (DEBUG) cat(file = stderr(), "gbm_log:Done\n")
 ```
 
 
 ```{r gbm_matrix, include=FALSE}
 
-gbm_matrix=as.matrix(exprs(gbm))
+gbm_matrix <- as.matrix(exprs(gbm))
 ```
 
 ```{r gbmLogMatrix, include=FALSE}
@@ -224,124 +216,124 @@ as.data.frame(as.matrix(exprs(gbm_log)))
 ```
 
 ```{r rawNormalization, include=FALSE}
-rawNormalization = gbm
+rawNormalization <- gbm
 ```
 
 ```{r gbmLogMatrixDisplay, include=FALSE}
-  retVal = as.data.frame(as.matrix(exprs(gbm_log)))
-  rownames(retVal) = make.names(fData(gbm_log)$symbol, unique = TRUE)
+retVal <- as.data.frame(as.matrix(exprs(gbm_log)))
+rownames(retVal) <- make.names(fData(gbm_log)$symbol, unique = TRUE)
 
-gbmLogMatrixDisplay = retVal
-
+gbmLogMatrixDisplay <- retVal
 ```
 
 
 ```{r pca, eval=TRUE, echo=FALSE}
-if(DEBUG)cat(file=stderr(), "pca\n")
+if (DEBUG) cat(file = stderr(), "pca\n")
 
-pca = pcaFunc(gbm_log)
+pca <- pcaFunc(gbm_log)
 ```
 
 ```{r kmClustering, eval=TRUE, echo=FALSE}
-if(DEBUG)cat(file=stderr(), "kmClustering\n")
-seed=1
-kmClustering = kmClusteringFunc(pca, seed)
+if (DEBUG) cat(file = stderr(), "kmClustering\n")
+seed <- 1
+kmClustering <- kmClusteringFunc(pca, seed)
 
-if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
-
+if (DEBUG) cat(file = stderr(), "kmClustering:done\n")
 ```
 
 ```{r tsne, eval=TRUE, echo=FALSE}
-if(DEBUG)cat(file=stderr(), "tsne\n")
-tsneDim = input$tsneDim
-tsnePerplexity = input$tsnePerplexity
-tsneTheta = input$tsneTheta
-tsneSeed = input$tsneSeed
+if (DEBUG) cat(file = stderr(), "tsne\n")
+tsneDim <- input$tsneDim
+tsnePerplexity <- input$tsnePerplexity
+tsneTheta <- input$tsneTheta
+tsneSeed <- input$tsneSeed
 set.seed(seed = tsneSeed)
-tsne = run_tsne(pca, dims = tsneDim, 
-                perplexity = tsnePerplexity, 
-                theta = tsneTheta, check_duplicates = FALSE)
+tsne <- run_tsne(pca,
+  dims = tsneDim,
+  perplexity = tsnePerplexity,
+  theta = tsneTheta, check_duplicates = FALSE
+)
 
-if(DEBUG)cat(file=stderr(), "tsne: done\n")
+if (DEBUG) cat(file = stderr(), "tsne: done\n")
 ```
 
 
 ```{r projections, eval=FALSE, include=FALSE}
-if(DEBUG)cat(file=stderr(), "projections\n")
-clustering = kmClustering
-projections = data.frame(tsne$Y)
-colnames(projections) = paste0("tsne",c(1:ncol(projections)))
-projections$dbCluster = factor(clustering$kmeans_10_clusters$Cluster-1)
+if (DEBUG) cat(file = stderr(), "projections\n")
+clustering <- kmClustering
+projections <- data.frame(tsne$Y)
+colnames(projections) <- paste0("tsne", c(1:ncol(projections)))
+projections$dbCluster <- factor(clustering$kmeans_10_clusters$Cluster - 1)
 
-projections = cbind(projections, data.frame(pca$x[,c(1,2,3)]))
-  
-rownames(projections) = clustering$kmeans_10_clusters$Barcode
-samp = gsub(".*-(.*)","\\1", rownames(projections))
-if(length(levels(as.factor(samp)))>1){
-  projections$sample = samp
-}else{
-  projections$sample = "1"
+projections <- cbind(projections, data.frame(pca$x[, c(1, 2, 3)]))
+
+rownames(projections) <- clustering$kmeans_10_clusters$Barcode
+samp <- gsub(".*-(.*)", "\\1", rownames(projections))
+if (length(levels(as.factor(samp))) > 1) {
+  projections$sample <- samp
+} else {
+  projections$sample <- "1"
 }
 
-n=length(projectionFunctions)
+n <- length(projectionFunctions)
 for (proj in projectionFunctions) {
-  if(DEBUG)cat(file=stderr(), paste("forceCalc ", proj[1],"\n"))
-  assign("tmp", eval(parse(text = paste0( proj[2], "()"))))
-  cn = make.names(c(colnames(projections), make.names(proj[1])))
-  if(length(tmp) == 0){
+  if (DEBUG) cat(file = stderr(), paste("forceCalc ", proj[1], "\n"))
+  assign("tmp", eval(parse(text = paste0(proj[2], "()"))))
+  cn <- make.names(c(colnames(projections), make.names(proj[1])))
+  if (length(tmp) == 0) {
     next()
   }
-  if(ncol(projections)==0){
-    projections = data.frame(tmp = tmp)
-  }else{
-    if(nrow(projections) == length(tmp)){
-      projections = cbind(projections, tmp)
+  if (ncol(projections) == 0) {
+    projections <- data.frame(tmp = tmp)
+  } else {
+    if (nrow(projections) == length(tmp)) {
+      projections <- cbind(projections, tmp)
     }
   }
-  colnames(projections) = cn
+  colnames(projections) <- cn
 }
-projections$UmiCountPerGenes = 0
+projections$UmiCountPerGenes <- 0
 
-if(DEBUG)cat(file=stderr(), "projections: done\n")
+if (DEBUG) cat(file = stderr(), "projections: done\n")
 ```
 
 ```{r sampleInfo, include=FALSE}
-sampleInfo = sampleInfoFunc(gbm)
+sampleInfo <- sampleInfoFunc(gbm)
 ```
 
 ```{r inputSample, include=FALSE}
-sampInf = gsub(".*-(.*)","\\1", dataTables$gbm$barcode)
-inputSample = data.frame(cellName = colnames(dataTables$gbm),
-                         sample = sampInf,
-                         ncells = colSums(as.matrix(exprs(dataTables$gbm))))
-
+sampInf <- gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
+inputSample <- data.frame(
+  cellName = colnames(dataTables$gbm),
+  sample = sampInf,
+  ncells = colSums(as.matrix(exprs(dataTables$gbm)))
+)
 ```
 
 
 ```{r log2cpm, eval=TRUE, include=FALSE}
-if(DEBUG)cat(file=stderr(), "log2cpm\n")
-log2cpm = log2cpm = as.data.frame(as.matrix(exprs(gbm_log)))
-if(DEBUG)cat(file=stderr(), "log2cpm:Done\n")
-
+if (DEBUG) cat(file = stderr(), "log2cpm\n")
+log2cpm <- log2cpm <- as.data.frame(as.matrix(exprs(gbm_log)))
+if (DEBUG) cat(file = stderr(), "log2cpm:Done\n")
 ```
 
 
 ```{r summaryStats, eval=TRUE, include=FALSE}
 
 
-line1<-paste('No. of cells:', dim(log2cpm)[2],sep='\t')
-line2<-paste('Median UMIs:', medianUMI,sep='\t')
-line3<-paste('Median Genes:', medianENSG,sep='\t')
-line5<-paste('No. of reads:',  dim(log2cpm)[1],sep='\t')
+line1 <- paste("No. of cells:", dim(log2cpm)[2], sep = "\t")
+line2 <- paste("Median UMIs:", medianUMI, sep = "\t")
+line3 <- paste("Median Genes:", medianENSG, sep = "\t")
+line5 <- paste("No. of reads:", dim(log2cpm)[1], sep = "\t")
 HTML(
-  paste0("Summary statistics of this dataset:", '<br/>','<br/>',
-         line1, '<br/>', 
-         line2, '<br/>',
-         line3, '<br/>',
-         line5
+  paste0(
+    "Summary statistics of this dataset:", "<br/>", "<br/>",
+    line1, "<br/>",
+    line2, "<br/>",
+    line3, "<br/>",
+    line5
   )
 )
-
 ```
 
 # Input/General
@@ -364,9 +356,9 @@ Variables that are used can be found here: **[variables.used.txt](variables.used
 __CHILDREPORTS__
 
 ```{r variables, include=FALSE, results='asis'}
-cat(file=stderr(),paste(ls(),collapse = "\n"))
+cat(file = stderr(), paste(ls(), collapse = "\n"))
 
-fileConn <- file(paste0(input$reportTempDir,"/variables.used.txt"))
+fileConn <- file(paste0(input$reportTempDir, "/variables.used.txt"))
 printVars <- function(x, fileConn) {
   for (varN in names(x)) {
     write(paste(varN, "=", paste(x[[varN]], collapse = "\n"), collapse = "\n"), fileConn)
@@ -375,7 +367,6 @@ printVars <- function(x, fileConn) {
 }
 printVars(params, fileConn)
 close(fileConn)
-
 ```
 
 # Session information
@@ -386,4 +377,5 @@ if (!LOCALEXECUTION) {
 }
 sessionInfo()
 ```
+
 

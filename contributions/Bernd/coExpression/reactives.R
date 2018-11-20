@@ -1,27 +1,28 @@
 # heatmapFunc ---------------------------------
-# used by bot selection and all 
-coE_heatmapFunc <- function (featureData, gbm_matrix, projections, genesin, cells) {
+# used by bot selection and all
+coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells) {
   #  create parameters used for pheatmap module
+  if(length(genesin)==0 | length(cells)==0) return(NULL)
   genesin <- geneName2Index(genesin, featureData)
   expression <- gbm_matrix[genesin, cells]
-  
+
   validate(need(
     is.na(sum(expression)) != TRUE,
     "Gene symbol incorrect or genes not expressed"
   ))
-  
+
   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
-  
+
   # expression <- expression[, rownames(projections)]
   expression <- expression[complete.cases(expression), ]
-  
+
   if (!("sampleNames" %in% colnames(projections))) {
     projections$sample <- 1
   }
   annotation <- data.frame(projections[cells, c("dbCluster", "sampleNames")])
   rownames(annotation) <- colnames(expression)
   colnames(annotation) <- c("Cluster", "sampleNames")
-  
+
   # For high-res displays, this will be greater than 1
   # pixelratio <- session$clientData$pixelratio
   pixelratio <- 1
@@ -86,14 +87,14 @@ heatmapSelectedReactive <- reactive({
   scCL <- sc$cluster
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
-  
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   if (is.null(featureData) |
-      is.null(gbm_matrix) |
-      is.null(projections) | is.null(scCells) | length(scCells) == 0) {
+    is.null(gbm_matrix) |
+    is.null(projections) | is.null(scCells) | length(scCells) == 0) {
     return(
       list(
         src = "empty.png",
@@ -107,23 +108,22 @@ heatmapSelectedReactive <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
   }
-  
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
-  
+
   # subsetData <-
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
   cells.1 <- scCells
   retval <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
-  
+
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "selectedHeatmap")
   }
   return(retval)
-  
 })
 
 
@@ -142,7 +142,7 @@ heatmapSelectedReactive <- reactive({
 #   scCL <- sc$cluster
 #   # scBP = sc$brushedPs()
 #   scCells <- sc$selectedCells()
-# 
+#
 #   if (DEBUGSAVE) {
 #     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
 #   }
@@ -163,18 +163,18 @@ heatmapSelectedReactive <- reactive({
 #   if (!is.null(getDefaultReactiveDomain())) {
 #     showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
 #   }
-# 
+#
 #   if (DEBUGSAVE) {
 #     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
 #   }
 #   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
-# 
+#
 #   # subsetData <-
 #   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
 #   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 #   cells.1 <- scCells
 #   retval <- heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
-# 
+#
 #   if (!is.null(getDefaultReactiveDomain())) {
 #     removeNotification(id = "selectedHeatmap")
 #   }
@@ -185,32 +185,32 @@ heatmapSelectedReactive <- reactive({
 # used in binarized 2D plot
 plotCoExpressionFunc <-
   function(featureData,
-           gbm_log,
-           upI,
-           projections,
-           genesin,
-           cl3,
-           dimx3,
-           dimy3) {
+             gbm_log,
+             upI,
+             projections,
+             genesin,
+             cl3,
+             dimx3,
+             dimy3) {
     genesin <- geneName2Index(genesin, featureData)
     # genesin <- toupper(genesin)
     # genesin <- gsub(" ", "", genesin, fixed = TRUE)
     # genesin <- strsplit(genesin, ',')
-    
+
     subsetData <- subset(projections, dbCluster %in% cl3)
     # cells.1 <- rownames(subsetData)
-    
-    
+
+
     # map <-
     #   rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
     # if(DEBUG)cat(file=stderr(),map[1])
-    
+
     expression <- gbm_log[genesin, ]
     # if(DEBUG)cat(file=stderr(),rownames(expression))
-    
+
     # expression<-expression[complete.cases(expression),]
     # if(DEBUG)cat(file=stderr(),rownames(expression))
-    
+
     # display genes not found
     # notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
     # if (length(notFound) > 0) {
@@ -223,15 +223,15 @@ plotCoExpressionFunc <-
     #     )
     #   }
     # }
-    
+
     validate(need(
       is.na(sum(expression)) != TRUE,
       "Gene symbol incorrect or genes not expressed"
     ))
-    
+
     bin <- expression
     bin[] <- 0
-    
+
     for (i in 1:nrow(expression)) {
       x <- Mclust(expression[i, ], G = 2)
       bin[i, ] <- x$classification
@@ -244,10 +244,10 @@ plotCoExpressionFunc <-
     # TODO positiveCells is changing too often. Maybe this can be controlled a bit more? check if changed? Use global variable not a reactive value?
     positiveCells$positiveCells <- allexprs >= length(rownames(bin))
     positiveCells$positiveCellsAll <- plotexprs
-    
+
     mergeExprs <- plotexprs[rownames(subsetData)]
     # if(DEBUG)cat(file=stderr(),length(mergeExprs))
-    
+
     subsetData$CoExpression <- factor(mergeExprs)
     subsetData$dbCluster <- as.factor(subsetData$dbCluster)
     p1 <-
@@ -263,7 +263,7 @@ plotCoExpressionFunc <-
       size = 4
       ) +
       theme_bw()
-    
+
     if (DEBUG) {
       cat(file = stderr(), "output$plotCoExpression:done\n")
     }
@@ -275,7 +275,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
-  
+
   map <-
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
   if (DEBUG) {
@@ -298,11 +298,11 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
       NULL
     )
   }
-  
+
   expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
-  
-  
-  
+
+
+
   projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){
   p1 <-
@@ -339,4 +339,3 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   }
   return(p1)
 }
-
