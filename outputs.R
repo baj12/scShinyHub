@@ -81,6 +81,7 @@ output$summaryStatsSideBar<-renderUI({
   line4<-paste('Median Genes with min 1 UMI: ', medianENSG(),sep='\t')
   line5<-paste('Total number of reads: ' , sum(gbm))
   line6<-paste("Memory used:", getMemoryUsed())
+  line7 <- paste("Normalization used:", input$normalizationRadioButton)
   HTML(
     paste0("Summary statistics of this dataset:", '<br/>','<br/>',
            line1, '<br/>',
@@ -88,7 +89,8 @@ output$summaryStatsSideBar<-renderUI({
            line3, '<br/>',
            line4, '<br/>',
            line5, '<br/>',
-           line6
+           line6, '<br/>',
+           line7
     )
   )
 })
