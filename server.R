@@ -51,6 +51,9 @@ seed=2
 
 enableBookmarking(store = "server")
 
+# global variable with directory where to store files to be included in reports
+reportTempDir <<- tempdir()
+
 shinyServer(function(input, output, session) {
   
   # TODO-BJ create a UI element for seed
@@ -62,6 +65,11 @@ shinyServer(function(input, output, session) {
     }
     # TODO ??? clean directory??
   }
+  
+  # files to be included in report
+  # developers can add in outputs.R a variable called "myZippedReportFiles"
+  zippedReportFiles = c("report.html")
+  reportTempDir = tempdir()
   
   options(shiny.maxRequestSize = 2000 * 1024 ^ 2)
   
@@ -125,15 +133,19 @@ shinyServer(function(input, output, session) {
   # load contribution outputs
   # parse all outputs.R files under contributions to include in application
   uiFiles = dir(path = "contributions", pattern = "outputs.R", full.names = TRUE, recursive = TRUE)
-  for(fp in uiFiles){
+  for (fp in uiFiles){
     if(DEBUG)cat(file=stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations = NULL
     myProjections = NULL
+    myZippedReportFiles = c() 
     source(fp, local = TRUE)
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
+    zippedReportFiles <- c(zippedReportFiles, myZippedReportFiles) 
+    cat(file = stderr(), paste("zipRFiles:", zippedReportFiles, "\n"))
+    cat(file = stderr(), paste("myzipRFiles:", myZippedReportFiles, "\n"))
   }
-  
+  cat(file = stderr(), paste("zipRFiles:", zippedReportFiles, "\n"))
   # TODO move coexpression for binarized needed
   # in reactives., report, server, coexpression/output
   positiveCells <- reactiveValues(positiveCells = NULL,
@@ -199,7 +211,7 @@ shinyServer(function(input, output, session) {
   
   # Report creation ------------------------------------------------------------------
   output$report <- downloadHandler(
-    filename = "report.html",
+    filename = "report.zip",
     
     content = function(file) {
       if (DEBUGSAVE) save(file = '~/scShinyHubDebug/tempReport.1.RData', list = c("file", ls()))
@@ -210,7 +222,7 @@ shinyServer(function(input, output, session) {
         if(DEBUG) cat(file=stderr(), "output$report:NULL\n")
         return(NULL)
       }
-      tDir = tempdir()
+      tDir = reportTempDir
       reactiveFiles = ""
       
       #-----------
@@ -284,6 +296,7 @@ shinyServer(function(input, output, session) {
       for (idx in 1:length(names(input))) {
         params[[inputNames[idx]]] = input[[inputNames[idx]]]
       }
+      params[["reportTempDir"]] = reportTempDir
       
       file.copy("report.Rmd", tempReport, overwrite = TRUE)
       
@@ -306,11 +319,16 @@ shinyServer(function(input, output, session) {
       renderEnv = new.env(parent = globalenv())
       if (DEBUG) file.copy(tempReport, '~/scShinyHubDebug/tempReport.Rmd')
       myparams = params # needed for saving as params is already taken by knitr
-      if (DEBUGSAVE) save(file = '~/scShinyHubDebug/tempReport.RData', list = c("myparams","renderEnv"))
-      rmarkdown::render(tempReport, output_file = file,
+      if (DEBUGSAVE) save(file = '~/scShinyHubDebug/tempReport.RData', list = c("myparams","renderEnv", ls(), "zippedReportFiles"))
+      # load(file = '~/scShinyHubDebug/tempReport.RData')
+      cat(file = stderr(), paste("workdir: ", getwd()))
+      rmarkdown::render(tempReport, output_file = "report.html",
                         params = params,
                         envir = renderEnv
       )
+      tDir = paste0(tDir,"/")
+      zippedReportFiles = c(paste0(tDir, zippedReportFiles))
+      zip(file, zippedReportFiles, flags = "-9Xj")
     }
   )
   

@@ -347,21 +347,29 @@ HTML(
 
 
 
-```{r bernd, include=FALSE}
+__CHILDREPORTS__
+
+# Varaibles used
+
+```{r variables, echo=FALSE, results='asis'}
 cat(file=stderr(),paste(ls(),collapse = "\n"))
 
-bernd=TRUE
-# projections = data.frame(tsne$Y)
+printVars <- function(x) {
+  for (varN in names(x)) {
+    print(paste(varN, "=", paste(x[[varN]], collapse = "<br/>"), collapse = "<br/>"))
+    print("<p/>")
+  }
+}
+printVars(params)
+
 
 ```
 
-__CHILDREPORTS__
+# Session information
 
-
-```{r, include=FALSE}
-print(ls())
-if(!LOCALEXECUTION){
-  save(file = "~/scShinyHubDebug/report.RData", list=ls())
+```{r sessionInfo, echo=FALSE}
+if (!LOCALEXECUTION) {
+  # save(file = "~/scShinyHubDebug/report.RData", list=ls())
 }
 sessionInfo()
 ```

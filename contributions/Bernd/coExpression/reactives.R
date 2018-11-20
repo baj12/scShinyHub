@@ -23,10 +23,13 @@ coE_heatmapFunc <- function (featureData, gbm_matrix, projections, genesin, cell
   colnames(annotation) <- c("Cluster", "sampleNames")
   
   # For high-res displays, this will be greater than 1
-  pixelratio <- session$clientData$pixelratio
+  # pixelratio <- session$clientData$pixelratio
+  pixelratio <- 1
   if (is.null(pixelratio)) pixelratio <- 1
-  width <- session$clientData$output_plot_width
-  height <- session$clientData$output_plot_height
+  # width <- session$clientData$output_plot_width
+  # height <- session$clientData$output_plot_height
+  width <- NULL
+  height <- NULL
   if (is.null(width)) {
     width <- 96 * 7
   } # 7x7 inch output

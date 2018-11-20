@@ -73,15 +73,15 @@ crHeatImage_func <- function(gbm, projections, prioritized_genes) {
   example_col <- example_Cols[1:example_K]
   
   # For high-res displays, this will be greater than 1
-  if (!is.null(session)){
-    pixelratio <- session$clientData$pixelratio
-    width <- session$clientData$output_plot_width
-    height <- session$clientData$output_plot_height
-  }else{
+  # if (!is.null(session)){
+  #   pixelratio <- session$clientData$pixelratio
+  #   width <- session$clientData$output_plot_width
+  #   height <- session$clientData$output_plot_height
+  # }else{
     pixelratio <- NULL
     width <- NULL
     height <- NULL
-  }
+  # }
   if (is.null(pixelratio)) pixelratio <- 1
   if (is.null(width)) {
     width <- 96 * 7
