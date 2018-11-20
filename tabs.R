@@ -1,4 +1,4 @@
-
+require(shinyMCE)
 source('modulesUI.R')
 # this is where the general tabs are defined:
 if(file.exists('defaultValues.R')){
@@ -103,7 +103,17 @@ generalParametersTab = tabItem("generalParameters",
                                fluidRow(
                                  column(5, offset=1,
                                         numericInput('kNr', 'Number of clusters', 10, min=2, max = 30)
-                                 ))
+                                 )),
+                               fluidRow(
+                                 
+                                 tinyMCE("descriptionOfWork",
+                                         "Please describe your work. This will be included in the report.")
+                               )
+                               # ,
+                               # fluidRow(
+                               #   column(11,offset = 1,
+                               #          textOutput("descriptOfWorkOutput", inline = TRUE))
+                               # )
 )
 
 cellSelectionTab  = tabItem(tabName = "cellSelection",

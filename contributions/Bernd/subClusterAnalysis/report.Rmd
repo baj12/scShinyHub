@@ -173,3 +173,16 @@ DT::datatable(top.genes,
 
 
 ```
+
+### download
+
+```{r}
+
+# save full table in tmp folder to be included in report
+  write.csv(top.genes, file = paste0(input$reportTempDir, "/DGE.csv"))
+
+```
+
+
+Full table can be found here: [DGE.csv](DGE.csv)
+

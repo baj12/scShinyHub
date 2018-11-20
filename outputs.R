@@ -181,4 +181,6 @@ callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 
 callModule(tableSelectionServer, "normalizationResult", gbmLogMatrixDisplay)
 
-
+output$descriptOfWorkOutput <- renderPrint({
+  input$descriptionOfWork
+  })

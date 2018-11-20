@@ -197,3 +197,13 @@ sampleHistFunc(sampleInf)
  layout(p)
 ```
 
+## Projections table
+
+```{r savegqcProj, echo=FALSE}
+
+# save full table in tmp folder to be included in report
+  write.csv(projections, file = paste0(input$reportTempDir, "/gqcProjections.csv"))
+
+```
+
+Full table can be found here: [gqcProjections.csv](gqcProjections.csv)

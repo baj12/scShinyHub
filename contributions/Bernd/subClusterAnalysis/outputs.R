@@ -1,3 +1,7 @@
+
+myZippedReportFiles = c("DGE.csv")
+
+
 updateInputx1 <- reactive({
   projections <- projections()
   # we combine the group names with the projections to add ability to select groups

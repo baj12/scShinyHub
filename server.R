@@ -1,4 +1,4 @@
-
+# devtools::install_github("https://github.com/mul118/shinyMCE.git")
 
 # LIBRARY -----------------------------------------------------------------
 
@@ -22,7 +22,7 @@ library(knitr)
 library(kableExtra)
 library(shinyWidgets)
 library(scater)
-
+library(shinyMCE)
 if (file.exists("defaultValues.R")) {
   source(file = "defaultValues.R")
 } else {
@@ -68,7 +68,7 @@ shinyServer(function(input, output, session) {
   
   # files to be included in report
   # developers can add in outputs.R a variable called "myZippedReportFiles"
-  zippedReportFiles = c("report.html")
+  zippedReportFiles = c("report.html", "sessionData.RData", "normalizedCounts.csv", "variables.used.txt")
   reportTempDir = tempdir()
   
   options(shiny.maxRequestSize = 2000 * 1024 ^ 2)
@@ -142,10 +142,7 @@ shinyServer(function(input, output, session) {
     heavyCalculations = appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
     zippedReportFiles <- c(zippedReportFiles, myZippedReportFiles) 
-    cat(file = stderr(), paste("zipRFiles:", zippedReportFiles, "\n"))
-    cat(file = stderr(), paste("myzipRFiles:", myZippedReportFiles, "\n"))
   }
-  cat(file = stderr(), paste("zipRFiles:", zippedReportFiles, "\n"))
   # TODO move coexpression for binarized needed
   # in reactives., report, server, coexpression/output
   positiveCells <- reactiveValues(positiveCells = NULL,
@@ -327,8 +324,15 @@ shinyServer(function(input, output, session) {
                         envir = renderEnv
       )
       tDir = paste0(tDir,"/")
+      base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(),ls(envir = globalenv())))
+      write.csv(as.matrix(exprs(gbm_log)), file = paste0(reportTempDir, "/normalizedCounts.csv"))
+      
       zippedReportFiles = c(paste0(tDir, zippedReportFiles))
       zip(file, zippedReportFiles, flags = "-9Xj")
+      if(!is.null(getDefaultReactiveDomain())){
+        showNotification("Report creation is done", id="reportDone", duration = 10, type = "message")
+      }
+      
     }
   )
   

@@ -1,3 +1,8 @@
+
+
+myZippedReportFiles = c("gqcProjections.csv")
+
+
 update3DInput <- reactive({
   tsneData <- projections()
   
