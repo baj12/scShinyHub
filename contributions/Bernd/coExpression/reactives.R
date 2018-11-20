@@ -2,6 +2,7 @@
 # used by bot selection and all 
 coE_heatmapFunc <- function (featureData, gbm_matrix, projections, genesin, cells) {
   #  create parameters used for pheatmap module
+  if(length(genesin)==0 | length(cells)==0) return(NULL)
   genesin <- geneName2Index(genesin, featureData)
   expression <- gbm_matrix[genesin, cells]
   
