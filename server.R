@@ -68,7 +68,7 @@ shinyServer(function(input, output, session) {
 
   # files to be included in report
   # developers can add in outputs.R a variable called "myZippedReportFiles"
-  zippedReportFiles <- c("report.html", "sessionData.RData", "normalizedCounts.csv", "variables.used.txt")
+  zippedReportFiles <- c("report.html", "sessionData.RData", "normalizedCounts.csv", "variables.used.txt", "inputUsed.RData")
   reportTempDir <- tempdir()
 
   options(shiny.maxRequestSize = 2000 * 1024^2)
@@ -238,6 +238,8 @@ shinyServer(function(input, output, session) {
       tmpPrjFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
       projections <- projections()
       gbm_log <- gbm_log()
+      gbm <- gbm()
+      featuredata <- featureDataReact()
       gNames <- groupNames$namesDF
       base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
 
@@ -333,7 +335,7 @@ shinyServer(function(input, output, session) {
       tDir <- paste0(tDir, "/")
       base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
       write.csv(as.matrix(exprs(gbm_log)), file = paste0(reportTempDir, "/normalizedCounts.csv"))
-
+      base::save(file = paste0(reportTempDir, "/inputUsed.RData"), list = c("gbm", "featureData"))
       zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
       zip(file, zippedReportFiles, flags = "-9Xj")
       if (!is.null(getDefaultReactiveDomain())) {
