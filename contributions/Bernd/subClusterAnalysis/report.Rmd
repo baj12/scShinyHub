@@ -6,6 +6,7 @@ output: html_document
 # sub cluster analysis
 
 ```{r dge, eval=TRUE, echo=FALSE, results='asis'}
+  
 if(DEBUG)cat(file=stderr(), "dge\n")
 
 if (is.null(input$db1) | is.null(input$db2)) {
@@ -23,7 +24,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
   
   c1 = `r input$clusters1`
   
-  gn <- `r groupNames$namesDF`
+  gn <- `r dim(groupNames$namesDF)`
 
 
 
@@ -77,7 +78,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
 
 ## SUBCLUSTER DGE PLOT2 
 
-  gn <- `r groupNames$namesDF`
+  gn <- `r dim(groupNames$namesDF)`
   
   inpCl1 <- `r input$clusters1`
 
@@ -129,7 +130,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
 ## DGE table
 
 
-  gn <- `r groupNames$namesDF`
+  gn <- `r dim(groupNames$namesDF)`
   
   cl1 = `r input$clusters1`
   
@@ -149,6 +150,8 @@ if (is.null(input$db1) | is.null(input$db2)) {
   
   toReturn = dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
 
+save(file = "~/scShinyHubDebug/dge.rep2.RData", 
+     list = c(ls(),  ls(envir = globalenv())))
     if(nrow(toReturn)==0){
     if(DEBUG)cat(file=stderr(), "dge: nothing found\n")
     if(!is.null(getDefaultReactiveDomain())){

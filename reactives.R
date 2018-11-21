@@ -1085,12 +1085,18 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneN
   geneid <- geneName2Index(g_id, featureData)
   grpNs <- groupNames$namesDF
 
-  if (length(geneid) == 1) {
-    expression <- exprs(gbm_log)[geneid, ]
-  } else {
-    expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
-  }
+  # if (length(geneid) == 1) {
+  #   expression <- exprs(gbm_log)[geneid, ,drop=FALSE]
+  # } else {
+  expression <- Matrix::colSums(exprs(gbm_log)[geneid, ,drop=FALSE])
+  # }
   validate(need(is.na(sum(expression)) != TRUE, ""))
+  # if (length(geneid) == 1) {
+  #   expression <- exprs(gbm_log)[geneid, ]
+  # } else {
+  #   expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
+  # }
+  # validate(need(is.na(sum(expression)) != TRUE, ""))
 
   geneid <- geneName2Index(geneNames, featureData)
   projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
