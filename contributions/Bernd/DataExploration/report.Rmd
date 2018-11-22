@@ -103,45 +103,52 @@ plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, 
 
 ```{r bj-DE-gene_vio_plot, eval=TRUE, echo=FALSE}
 if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")
+  save(file = "~/scShinyHubDebug/bj-DE-gene_vio_plot.RData", list = c("scCells", "scCL", "sc", ls()))
+# load(file = "~/scShinyHubDebug/bj-DE-gene_vio_plot.RData")
+# geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+#                                        toupper(input$gene_id)), ])[1]
+  genesin <- toupper(input$gene_id)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ",")
+  geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+                                       genesin[[1]]), ])
+  map <-
+    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+  
+ expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
 
-geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
-                                       toupper(input$gene_id)), ])[1]
+  projections <- cbind(projections, coExpVal = expression)
+  # if(class(projections[,dbCluster])=="factor"){
+  n_fun <- function(x) {
+  return(data.frame(y = -.5, label = paste0(length(x), "\ncells")))
+}
 
-expression <- log2cpm[geneid, ]
-
-validate(need(is.na(sum(expression)) != TRUE, ''))
-
-tsneData <- cbind(projections, t(expression))
-names(tsneData)[names(tsneData) == geneid] <- 'values'
-#projections<-subset(projections,dbCluster!=0)
-
-p1 <-
-  ggplot(tsneData, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
-  geom_violin(scale = "width") +
-  stat_summary(
-    fun.y = median,
-    geom = "point",
-    size = 5,
-    color = 'black'
-  ) +
-  stat_summary(fun.data = n_fun, geom = "text") +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(
-      angle = 90,
-      size = 12,
-      vjust = 0.5
-    ),
-    axis.text.y = element_text(size = 12),
-    strip.text.x = element_text(size = 16),
-    strip.text.y = element_text(size = 14),
-    axis.title.x = element_text(face = "bold", size = 16),
-    axis.title.y = element_text(face = "bold", size = 16),
-    legend.position = "none"
-  ) +
-  xlab('Cluster') +
-  ylab('Expression') +
-  ggtitle(toupper(input$gene_id))
+  p1 <-
+    ggplot(projections, aes_string(factor(projections[, "dbCluster"]), "coExpVal", fill = factor(projections[, "dbCluster"]))) +
+    geom_violin(scale = "width") +
+    stat_summary(
+      fun.y = median,
+      geom = "point",
+      size = 5,
+      color = "black"
+    ) +
+    stat_summary(fun.data = n_fun, geom = "text") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 60,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    xlab("dbCluster") +
+    ylab("number genes from list")
 if(DEBUG)cat(file=stderr(), "output$gene_vio_plot:done\n")
 p1
 

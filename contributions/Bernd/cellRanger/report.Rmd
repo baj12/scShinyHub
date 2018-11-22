@@ -107,7 +107,7 @@ cat(file = stderr(), paste("save\n"))
     if (length(addColNames) > 0 & moreOptions) {
       heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
     }
-    if (length(orderColNames) > 0 & moreOptions) {
+    if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
       heatmapData$cluster_cols <- FALSE
       heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
     }

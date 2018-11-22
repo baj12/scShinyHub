@@ -29,40 +29,6 @@ callModule(
 # }, options = list(scrollX = TRUE)
 # )
 
-crPrioGenesTable <- reactive({
-  require("forcats")
-  require("tidyverse")
-  if (DEBUG) cat(file = stderr(), "output$crPrioGenes\n")
-  prioritized_genes <- prioritized_genes()
-  # cl5 = input$cluster5
-  # if (is.null(prioritized_genes) | is.null(cl5)) {
-    if (is.null(prioritized_genes)) {
-      return(NULL)
-  }
-
-
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/crPrioGenes.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/crPrioGenes.RData")
-
-  dt <- data.frame()
-  for (listIter in 1:length(prioritized_genes)) {
-    prioritized_genes[[listIter]]$cluster <- listIter
-    dt <- rbind(dt, prioritized_genes[[listIter]])
-  }
-  rownames(dt) <- make.unique(as.character(dt$gene_name), sep = "___")
-  dt$cluster <- factor(dt$cluster)
-
-  # move cluster column to second position
-  cnames <- colnames(dt)
-  clNr <- which(cnames == "cluster")
-  sigCol <- which(cnames == "significant")
-  adjCol <- which(cnames == "p_adj")
-  dt <- dt[, c(1, clNr, sigCol, adjCol, c(1:length(cnames))[-c(1, clNr, sigCol, adjCol)])]
-
-  return(dt)
-})
 
 callModule(
   tableSelectionServer,

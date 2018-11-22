@@ -125,7 +125,52 @@ heatmapSelectedReactive <- reactive({
   return(retval)
 })
 
+topExpGenesTable <- reactive({
+  if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
+  featureData <- featureDataReact()
+  gbm_log <- gbm_log()
+  coEtgPerc = input$coEtgPerc
+  coEtgminExpr = input$coEtgMinExpr
+  sc <- selctedCluster()
+  scCL <- sc$cluster
+  # scBP = sc$brushedPs()
+  scCells <- sc$selectedCells()
 
+  if (is.null(featureData) | is.null(gbm_log)) {
+    return(NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
+  }
+  # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
+  # we only work on genes that have been selected
+  mat <- as.matrix(exprs(gbm_log))[, scCells]
+  # only genes that express at least coEtgminExpr UMIs
+  mat[mat < coEtgminExpr] = 0
+  # only genes that are expressed in coEtgPerc or more cells
+  allexpressed <-  Matrix::rowSums(mat > 0) / length(scCells) * 100 >= coEtgPerc
+  mat = mat[allexpressed, ]
+  
+  cv <- function(x) {
+    sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+  }
+  matCV <- apply(mat, 1, cv)
+  # top.genes <- as.data.frame(exprs(gbm_log))
+  maxRows <- min(nrow(mat), 200)
+  top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
+  if (dim(mat)[1] > 0) {
+    mat <- mat[top.genesOrder, ] 
+    fd = featureData[rownames(mat),c("Associated.Gene.Name", "Description")]
+    matCV = matCV[rownames(mat)]
+    fd <- cbind(fd, matCV)
+    colnames(fd) = c("gene", "description", "CV")
+    outMat <- cbind(fd, mat)
+    rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
+    return(outMat)
+  } else {
+    return(NULL)
+  }
+})
 
 
 # TODO module for heatmap?

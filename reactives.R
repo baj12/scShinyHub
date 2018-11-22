@@ -1099,7 +1099,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneN
   # validate(need(is.na(sum(expression)) != TRUE, ""))
 
   geneid <- geneName2Index(geneNames, featureData)
-  projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+  projections <- updateProjectionsWithUmiCount(dimX, dimY, geneNames, featureData, gbm, projections)
 
 
   projections <- cbind(projections, t(expression))

@@ -88,7 +88,7 @@ clusterServer <- function(input, output, session,
       }
       # load(file="~/scShinyHubDebug/clusterServerreturnValues.RData")
       if (!is.null(projections)) {
-        projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+        projections <- updateProjectionsWithUmiCount(dimX, dimY, geneNames, featureData, gbm, projections)
         
         subsetData <- subset(projections, dbCluster %in% inpClusters)
         grpSubset <- grpNs[rownames(subsetData), ]
@@ -218,7 +218,7 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/selectedCellNames.RData")
     
     geneid <- geneName2Index(geneNames, featureData)
-    projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+    projections <- updateProjectionsWithUmiCount(dimX, dimY, geneNames, featureData, gbm, projections)
     
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
@@ -377,7 +377,7 @@ clusterServer <- function(input, output, session,
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection"))
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     geneid <- geneName2Index(geneNames, featureData)
-    subsetData <- updateProjectionsWithUmiCount(dimY, dimX, geneNames = geneNames, featureData, gbm, subsetData)
+    subsetData <- updateProjectionsWithUmiCount(dimX, dimY, geneNames = geneNames, featureData, gbm, subsetData)
     
     cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
     for (axis in c("x", "y")) {
@@ -641,13 +641,13 @@ pHeatMapModule <- function(input, output, session,
     }
     # load(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData")
     outfile <- paste0(tempdir(), "/heatmap", ns("debug"),base::sample(1:10000, 1), ".png")
-    filename = normalizePath(outfile, mustWork = FALSE)
+    outfile = normalizePath(outfile, mustWork = FALSE)
     heatmapData$filename = outfile
     
     if (length(addColNames) > 0 & moreOptions) {
       heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
     }
-    if (length(orderColNames) > 0& moreOptions) {
+    if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
       heatmapData$cluster_cols <- FALSE
       colN <- rownames(psych::dfOrder(proje, orderColNames))
       colN <- colN[colN %in% colnames(heatmapData$mat)]

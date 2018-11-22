@@ -1,3 +1,7 @@
+
+myZippedReportFiles = c("output_topExpGenes.csv")
+
+
 # updateInputXviolinPlot ---------
 # Update x axis selection possibilities for violin plot
 updateInputXviolinPlot <- reactive({
@@ -224,12 +228,20 @@ selctedCluster <-
     reactive(input$gene_id_sch)
   )
 
-# selected clusters heatmap module
+# selected clusters heatmap module -----
 callModule(
   pHeatMapModule,
   "heatmapSelectedModule",
   heatmapSelectedReactive
 )
+
+# max expressed genes ----
+callModule(
+  tableSelectionServer,
+  "topExpGenes",
+  topExpGenesTable
+)
+
 
 
 # plotCoExpression ----
