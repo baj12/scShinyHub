@@ -641,13 +641,13 @@ pHeatMapModule <- function(input, output, session,
     }
     # load(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData")
     outfile <- paste0(tempdir(), "/heatmap", ns("debug"),base::sample(1:10000, 1), ".png")
-    filename = normalizePath(outfile, mustWork = FALSE)
+    outfile = normalizePath(outfile, mustWork = FALSE)
     heatmapData$filename = outfile
     
     if (length(addColNames) > 0 & moreOptions) {
       heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
     }
-    if (length(orderColNames) > 0& moreOptions) {
+    if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
       heatmapData$cluster_cols <- FALSE
       colN <- rownames(psych::dfOrder(proje, orderColNames))
       colN <- colN[colN %in% colnames(heatmapData$mat)]

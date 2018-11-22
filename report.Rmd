@@ -356,17 +356,19 @@ Variables that are used can be found here: **[variables.used.txt](variables.used
 __CHILDREPORTS__
 
 ```{r variables, include=FALSE, results='asis'}
-cat(file = stderr(), paste(ls(), collapse = "\n"))
-
-fileConn <- file(paste0(input$reportTempDir, "/variables.used.txt"))
+# cat(file = stderr(), paste(ls(), collapse = "\n"))
+# save(file = "~/scShinyHubDebug/report.vars.RData", list = ls())
+# load(file = "~/scShinyHubDebug/report.vars.RData")
+fileConn <- (paste0(input$reportTempDir, "/variables.used.txt"))
 printVars <- function(x, fileConn) {
   for (varN in names(x)) {
-    write(paste(varN, "=", paste(x[[varN]], collapse = "\n"), collapse = "\n"), fileConn)
-    write("\n\t", fileConn)
+    # if (is.data.frame(x[[varN]])) {
+    cat(file = fileConn, x = paste(varN, "=", paste(x[[varN]], collapse = "\n"), collapse = "\n"), append = TRUE)
+    cat(file = fileConn, x = "\n\t", append = TRUE)
   }
 }
 printVars(params, fileConn)
-close(fileConn)
+# close(fileConn)
 ```
 
 # Session information

@@ -83,7 +83,7 @@ if (is.null(moreOptions)) moreOptions <- FALSE
 if (length(addColNames) > 0 & moreOptions) {
   heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
 }
-if (length(orderColNames) > 0 & moreOptions) {
+if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
   heatmapData$cluster_cols <- FALSE
   heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
 }
@@ -122,7 +122,7 @@ plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, 
 ```
 
 
-### Heatmap selected
+#### Heatmap selected
 
 callModule(
   pHeatMapModule, 
@@ -143,8 +143,8 @@ heatmap_geneids2 `r input$heatmap_geneids2`
     moreOptions <- `r input$'heatmapSelectedModule-moreOptions'`
 
 
-```{r heatmapSelectedModule, echo=FALSE}
-
+```{r heatmapSelectedModule, echo=FALSE, eval=TRUE}
+# save(file = "~/scShinyHubDebug/selectedHeatmap.1.RData", list = c(ls(), ls(envir = globalenv())))
 genesin <- input$heatmap_geneids2
 
 # get selected cells
@@ -154,6 +154,7 @@ inpClusters <- input$"selected-clusters"
 # geneid <- geneName2Index(geneNames, featureData)
 subsetData <- subset(projections, dbCluster %in% inpClusters)
 cells.names <- shiny::brushedPoints(subsetData, brushedPs)
+# save(file = "~/scShinyHubDebug/selectedHeatmap.2.RData", list = c(ls(), ls(envir = globalenv())))
 
 cells.1 <- rownames(cells.names)
 heatmapSelectedReactive <- coE_heatmapFunc(featureData,
@@ -171,20 +172,77 @@ proje <- projections
 if (DEBUGSAVE) {
   save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
 }
-
+# save(file = "~/scShinyHubDebug/selectedHeatmap.3.RData", list = c(ls(), ls(envir = globalenv())))
+# load(file = "~/scShinyHubDebug/selectedHeatmap.3.RData")
 heatmapData$filename <- NA
 if (is.null(moreOptions)) moreOptions <- FALSE
 
 if (length(addColNames) > 0 & moreOptions) {
   heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
 }
-if (length(orderColNames) > 0 & moreOptions) {
+if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
   heatmapData$cluster_cols <- FALSE
   heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
 }
+# save(file = "~/scShinyHubDebug/selectedHeatmap.4.RData", list = c(ls(), ls(envir = globalenv())))
 
 do.call(pheatmap, heatmapData)
 ```
+
+#### table of selected cells
+
+```{r topexpCells, echo=FALSE}
+if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
+coEtgPerc <- input$coEtgPerc
+coEtgminExpr <- input$coEtgMinExpr
+scCells <- cells.1
+
+if (DEBUGSAVE) {
+  save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
+}
+  save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
+# load(file="~/scShinyHubDebug/output_topExpGenes.RData")
+# we only work on genes that have been selected
+mat <- as.matrix(exprs(gbm_log))[, scCells]
+# only genes that express at least coEtgminExpr UMIs
+mat[mat < coEtgminExpr] <- 0
+# only genes that are expressed in coEtgPerc or more cells
+allexpressed <- Matrix::rowSums(mat > 0) / length(scCells) * 100 >= coEtgPerc
+mat <- mat[allexpressed, ]
+
+cv <- function(x) {
+  sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+}
+matCV <- apply(mat, 1, cv)
+# top.genes <- as.data.frame(exprs(gbm_log))
+maxRows <- min(nrow(mat), 200)
+top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
+if (dim(mat)[1] > 0) {
+  mat <- mat[top.genesOrder, ]
+  fd <- featureData[rownames(mat), c("Associated.Gene.Name", "Description")]
+  matCV <- matCV[rownames(mat)]
+  fd <- cbind(fd, matCV)
+  colnames(fd) <- c("gene", "description", "CV")
+  outMat <- cbind(fd, mat)
+  rownames(outMat) <- make.names(as.character(outMat$gene), unique = TRUE)
+  DT::datatable(outMat,
+    rownames = F, filter = "top",
+    options = list(
+      orderClasses = TRUE,
+      autoWidth = TRUE
+    )
+  )
+}
+```
+
+```{r saveTOPGENES, echo=FALSE}
+# save full table in tmp folder to be included in report
+  write.csv(outMat, file = paste0(input$reportTempDir, "/output_topExpGenes.csv"))
+
+```
+
+Full table can be found here: [output_topExpGenes.csv](output_topExpGenes.csv)
+
 
 ### binarized
 
@@ -248,5 +306,6 @@ retVal <- geneGrp_vioFunc(
 )
 retVal
 ```
+
 
 
