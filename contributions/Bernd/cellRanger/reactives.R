@@ -14,8 +14,7 @@ gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour =
         x
       ))
     gene_annotation <- NULL
-  }
-  else {
+  } else {
     if ("significant" %in% names(genes_to_plot[[1]])) {
       gene_indices <- unlist(lapply(genes_to_plot, function(x) with(
           x,
@@ -50,8 +49,7 @@ gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour =
   }
   if (is.null(colour)) {
     anno_colors <- NULL
-  }
-  else {
+  } else {
     names(colour) <- names(cells_to_plot)
     anno_colors <- list(ClusterID = colour)
   }
@@ -65,22 +63,26 @@ gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour =
 
 
 crHeatImage_func <- function(gbm, projections, prioritized_genes) {
-  example_K <- 10
-  example_Cols <- rev(brewer.pal(10, "Set3")) # customize plotting colors
-  
+  example_K <- length(levels(projections$dbCluster))
+  # max is 30 for number of clusters
+  if (example_K > 12) {
+    example_Cols <- rep(rev(brewer.pal(12, "Set3")), 3)[1:example_K]
+  } else {
+    example_Cols <- rev(brewer.pal(12, "Set3")) # customize plotting colors
+  }
   cells_to_plot <- order_cell_by_clusters(gbm, as.numeric(as.character(projections$dbCluster)))
-  
+
   example_col <- example_Cols[1:example_K]
-  
+
   # For high-res displays, this will be greater than 1
   # if (!is.null(session)){
   #   pixelratio <- session$clientData$pixelratio
   #   width <- session$clientData$output_plot_width
   #   height <- session$clientData$output_plot_height
   # }else{
-    pixelratio <- NULL
-    width <- NULL
-    height <- NULL
+  pixelratio <- NULL
+  width <- NULL
+  height <- NULL
   # }
   if (is.null(pixelratio)) pixelratio <- 1
   if (is.null(width)) {
@@ -89,17 +91,17 @@ crHeatImage_func <- function(gbm, projections, prioritized_genes) {
   if (is.null(height)) {
     height <- 96 * 12
   }
-  
+
   # px to inch conversion
   myPNGwidth <- width / 96
   myPNGheight <- height / 96
-  
+
   # outfile <- paste0(tempdir(),'/crHeatImage.svg')
   outfile <- paste0(tempdir(), "/crHeatImage.png")
   if (DEBUG) cat(file = stderr(), paste("output file: ", outfile, "\n"))
   if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
   logGB <- log_gene_bc_matrix(gbm)
-  
+
   retVal <- tryCatch({
     gbmPheatmap(
       gbm = logGB,
@@ -125,7 +127,6 @@ crHeatImage_func <- function(gbm, projections, prioritized_genes) {
     return(NULL)
   }
   )
-  
 }
 
 crHeatImage <- reactive({
@@ -151,7 +152,6 @@ crHeatImage <- reactive({
   }
 
   return(retVal)
-
 })
 
 
@@ -159,10 +159,10 @@ prioritized_genes_func <- function(gbm, projections, seed) {
   set.seed(seed = seed)
   retVal <- tryCatch({
     prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
-                         logscale = FALSE,
-                         min_mean = 0.5,
-                         p_cutoff = 0.05,
-                         order_by = "pvalue"
+      logscale = FALSE,
+      min_mean = 0.5,
+      p_cutoff = 0.05,
+      order_by = "pvalue"
     )
   },
   error = function(cond) {
@@ -179,7 +179,7 @@ prioritized_genes_func <- function(gbm, projections, seed) {
   if (!is.null(getDefaultReactiveDomain())) {
     removeNotification(id = "crpriotGenes")
   }
-  
+
   return(retVal)
 }
 
@@ -193,13 +193,13 @@ crPrioGenesTable <- reactive({
   if (is.null(prioritized_genes)) {
     return(NULL)
   }
-  
-  
+
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/crPrioGenes.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/crPrioGenes.RData")
-  
+
   dt <- data.frame()
   for (listIter in 1:length(prioritized_genes)) {
     prioritized_genes[[listIter]]$cluster <- listIter
@@ -207,14 +207,14 @@ crPrioGenesTable <- reactive({
   }
   rownames(dt) <- make.unique(as.character(dt$gene_name), sep = "___")
   dt$cluster <- factor(dt$cluster)
-  
+
   # move cluster column to second position
   cnames <- colnames(dt)
   clNr <- which(cnames == "cluster")
   sigCol <- which(cnames == "significant")
   adjCol <- which(cnames == "p_adj")
   dt <- dt[, c(1, clNr, sigCol, adjCol, c(1:length(cnames))[-c(1, clNr, sigCol, adjCol)])]
-  
+
   return(dt)
 })
 
@@ -234,9 +234,9 @@ prioritized_genes <- reactive({
     save(file = "~/scShinyHubDebug/prioritized_genes.Rdata", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/prioritized_genes.Rdata')
-  retVal = prioritized_genes_func(gbm, projections, seed) 
-    set.seed(seed = seed)
-    
+  retVal <- prioritized_genes_func(gbm, projections, seed)
+  set.seed(seed = seed)
+
   return(retVal)
 })
 
