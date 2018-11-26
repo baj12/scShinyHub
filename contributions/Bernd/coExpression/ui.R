@@ -144,17 +144,17 @@ tabList <- list(
     #     )
     #   )
     # ),
-    br(),
-    br(),
-    br(),
-    fluidRow(
-      h4("Positive Cells in all clusters", align = "center"),
-      column(6,
-        offset = 3,
-        DT::dataTableOutput("onOffTable") %>% withSpinner()
-      )
-    )
-  ),
+  #   br(),
+  #   br(),
+  #   br(),
+  #   fluidRow(
+  #     h4("Positive Cells in all clusters", align = "center"),
+  #     column(6,
+  #       offset = 3,
+  #       DT::dataTableOutput("onOffTable") %>% withSpinner()
+  #     )
+  #   )
+  # ),
   tabList = list(
     expressionTab = tabItem(
       "CoExpressionViolin",
