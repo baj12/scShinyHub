@@ -150,8 +150,6 @@ if (is.null(input$db1) | is.null(input$db2)) {
   
   toReturn = dge_func(projections = prj, log2cpm = log2cpm, featureData = featureData, dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2)
 
-save(file = "~/scShinyHubDebug/dge.rep2.RData", 
-     list = c(ls(),  ls(envir = globalenv())))
     if(nrow(toReturn)==0){
     if(DEBUG)cat(file=stderr(), "dge: nothing found\n")
     if(!is.null(getDefaultReactiveDomain())){

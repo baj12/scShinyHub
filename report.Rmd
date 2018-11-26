@@ -148,7 +148,7 @@ useCells <- useCellsFunc(dataTables,
 ```
 
 ```{r useGenes, echo=FALSE}
-base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list = ls())
+# base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list = ls())
 ipIDs <- input$selectIds
 genesKeep <- input$genesKeep
 geneListSelection <- input$geneListSelection
