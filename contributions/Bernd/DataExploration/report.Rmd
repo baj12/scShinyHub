@@ -102,9 +102,6 @@ plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, 
 ## VIOLIN PLOT 
 
 ```{r bj-DE-gene_vio_plot, eval=TRUE, echo=FALSE}
-if(DEBUG)cat(file=stderr(), "output$gene_vio_plot\n")
-  save(file = "~/scShinyHubDebug/bj-DE-gene_vio_plot.RData", list = c("scCells", "scCL", "sc", ls()))
-# load(file = "~/scShinyHubDebug/bj-DE-gene_vio_plot.RData")
 # geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
 #                                        toupper(input$gene_id)), ])[1]
   genesin <- toupper(input$gene_id)
