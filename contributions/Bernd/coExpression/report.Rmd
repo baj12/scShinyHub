@@ -204,9 +204,8 @@ coEtgminExpr <- input$coEtgMinExpr
 scCells <- cells.1
 
 if (DEBUGSAVE) {
-  save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
+  save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", ls()))
 }
-  save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
 # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
 # we only work on genes that have been selected
 mat <- as.matrix(exprs(gbm_log))[, scCells]
