@@ -268,8 +268,8 @@ genesin <- input$mclustids
 cl3 <- input$clusters3
 dimx3 <- input$dimension_x3
 dimy3 <- input$dimension_y3
-posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
-posCellsAll <- positiveCells$positiveCellsAll
+# posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
+# posCellsAll <- positiveCells$positiveCellsAll
 
 
 if (DEBUGSAVE) {

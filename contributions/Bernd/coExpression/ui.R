@@ -7,7 +7,7 @@ menuList <- list(
     tabName = "coexpression", startExpanded = FALSE,
     menuSubItem("All clusters", tabName = "coexpressionAll"),
     menuSubItem("Selected", tabName = "coexpressionSelected"),
-    menuSubItem("binarized", tabName = "coexpressionBinarized"),
+    # menuSubItem("binarized", tabName = "coexpressionBinarized"),
     menuSubItem("Co-expression Violin plot", tabName = "CoExpressionViolin")
   )
 )
@@ -87,63 +87,63 @@ tabList <- list(
     #   plotOutput('selectedHeatmap') %>% withSpinner()
     # ))
   ),
-  binarizeTab = tabItem(
-    "coexpressionBinarized",
-    tags$ul(
-      tags$li(
-        strong("Binary Expression"),
-        ":Select a cluster. Enter",
-        strong("ONE"),
-        "or",
-        strong("MULTIPLE"),
-        "gene ids to assess the co-expression of genes in these cells. Highlighted cells have all genes expressed as determined by a GMM"
-      )
-    ),
-    fluidRow(
-      column(
-        2,
-        uiOutput("clusters3")
-      ),
-      column(
-        2,
-        selectInput(
-          "dimension_x3",
-          label = "X",
-          choices = c("tsne1", "tsne2", "tsne3"),
-          selected = "tsne1"
-        )
-      ),
-      column(
-        2,
-        selectInput(
-          "dimension_y3",
-          label = "Y",
-          # TODO  get from tsne columns
-          choices = c("tsne1", "tsne2", "tsne3"),
-          selected = "tsne2"
-        )
-      ),
-      column(
-        6,
-
-        textAreaInput("mclustids", "Comma seperated gene names", value = defaultValueMultiGenes)
-      )
-    ),
-    fluidRow(column(
-      10,
-      offset = 1,
-      plotOutput("plotCoExpression") %>% withSpinner()
-    )),
-    fluidRow(
-      div(
-        align = "center",
-        style = "margin-center:50px; margin-top:25px",
-        downloadButton(
-          "downloadExpressionOnOff",
-          "Download Expression +ve Cells in cluster"
-        )
-      )
-    ),
+  # binarizeTab = tabItem(
+  #   "coexpressionBinarized",
+  #   tags$ul(
+  #     tags$li(
+  #       strong("Binary Expression"),
+  #       ":Select a cluster. Enter",
+  #       strong("ONE"),
+  #       "or",
+  #       strong("MULTIPLE"),
+  #       "gene ids to assess the co-expression of genes in these cells. Highlighted cells have all genes expressed as determined by a GMM"
+  #     )
+  #   ),
+    # fluidRow(
+    #   column(
+    #     2,
+    #     uiOutput("clusters3")
+    #   ),
+    #   column(
+    #     2,
+    #     selectInput(
+    #       "dimension_x3",
+    #       label = "X",
+    #       choices = c("tsne1", "tsne2", "tsne3"),
+    #       selected = "tsne1"
+    #     )
+    #   ),
+    #   column(
+    #     2,
+    #     selectInput(
+    #       "dimension_y3",
+    #       label = "Y",
+    #       # TODO  get from tsne columns
+    #       choices = c("tsne1", "tsne2", "tsne3"),
+    #       selected = "tsne2"
+    #     )
+    #   ),
+    #   column(
+    #     6,
+    # 
+    #     textAreaInput("mclustids", "Comma seperated gene names", value = defaultValueMultiGenes)
+    #   )
+    # ),
+    # fluidRow(column(
+    #   10,
+    #   offset = 1,
+    #   plotOutput("plotCoExpression") %>% withSpinner()
+    # )),
+    # fluidRow(
+    #   div(
+    #     align = "center",
+    #     style = "margin-center:50px; margin-top:25px",
+    #     downloadButton(
+    #       "downloadExpressionOnOff",
+    #       "Download Expression +ve Cells in cluster"
+    #     )
+    #   )
+    # ),
     br(),
     br(),
     br(),

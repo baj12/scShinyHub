@@ -214,12 +214,6 @@ Based on a given two-dimensional projection the co-expression heatmap is display
 [![screen shot of the pheatmap page](images/coexpressionSelected2.png)](images/coexpressionSelected2large.png)
 
 
-#### binarized
-
-Using Mclust (from the mclust package) with 2 mixture components (G=2) it is checked whether all genes are co-expressed. Cells that fulfill this criteria will be plotted with a solid color.
-
-[![screen shot of the pheatmap page](images/coexpressionBinarized1.png)](images/coexpressionBinarized1large.png) <br/>
-[![screen shot of the pheatmap page](images/coexpressionBinarized2.png)](images/coexpressionBinarized2large.png)
 
 
 #### Co-expression Violin plot

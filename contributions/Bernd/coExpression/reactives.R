@@ -286,8 +286,8 @@ plotCoExpressionFunc <-
     plotexprs[] <- 0
     plotexprs[allexprs >= length(rownames(bin))] <- 1
     # TODO positiveCells is changing too often. Maybe this can be controlled a bit more? check if changed? Use global variable not a reactive value?
-    positiveCells$positiveCells <- allexprs >= length(rownames(bin))
-    positiveCells$positiveCellsAll <- plotexprs
+    # positiveCells$positiveCells <- allexprs >= length(rownames(bin))
+    # positiveCells$positiveCellsAll <- plotexprs
 
     mergeExprs <- plotexprs[rownames(subsetData)]
     # if(DEBUG)cat(file=stderr(),length(mergeExprs))

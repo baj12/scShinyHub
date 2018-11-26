@@ -147,10 +147,10 @@ shinyServer(function(input, output, session) {
   }
   # TODO move coexpression for binarized needed
   # in reactives., report, server, coexpression/output
-  positiveCells <- reactiveValues(
-    positiveCells = NULL,
-    positiveCellsAll = NULL
-  )
+  # positiveCells <- reactiveValues(
+  #   positiveCells = NULL,
+  #   positiveCellsAll = NULL
+  # )
 
   # ------------------------------------------------------------------------------------------------------------
   # handling expensive calcualtions

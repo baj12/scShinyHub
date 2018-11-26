@@ -267,8 +267,8 @@ output$plotCoExpression <- renderPlot({
   cl3 <- input$clusters3
   dimx3 <- input$dimension_x3
   dimy3 <- input$dimension_y3
-  posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
-  posCellsAll <- positiveCells$positiveCellsAll
+  # posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
+  # posCellsAll <- positiveCells$positiveCellsAll
 
 
   if (DEBUGSAVE) {
@@ -292,80 +292,80 @@ output$plotCoExpression <- renderPlot({
 # downloadExpressionOnOff -----
 # binarized
 # TODO module download
-output$downloadExpressionOnOff <- downloadHandler(
-  filename = function() {
-    paste(input$clusters3, "PositiveCells.csv", sep = "_")
-  },
-  content = function(file) {
-    featureData <- featureDataReact()
-    log2cpm <- log2cpm()
-
-    if (is.null(featureData) | is.null(log2cpm) | is.null(positiveCells$positiveCells)) {
-      return(NULL)
-    }
-
-    cells <- positiveCells$positiveCells
-    # if(DEBUG)cat(file=stderr(),cells[1:5])
-
-    if (length(cells) == 1) {
-      subsetExpression <- log2cpm[, cells]
-      subsetExpression <-
-        as.data.frame(subsetExpression, row.names = rownames(log2cpm))
-      colnames(subsetExpression) <- cells
-      subsetExpression$Associated.Gene.Name <-
-        featureData[rownames(subsetExpression), "Associated.Gene.Name"]
-      write.csv(subsetExpression, file)
-    }
-    else {
-      subsetExpression <- log2cpm[, cells]
-      # cat(stderr(),colnames(subsetExpression)[1:5])
-      subsetExpression$Associated.Gene.Name <-
-        featureData[rownames(subsetExpression), "Associated.Gene.Name"]
-      # cat(stderr(),colnames(subsetExpression))
-      write.csv(subsetExpression, file)
-    }
-  }
-)
+# output$downloadExpressionOnOff <- downloadHandler(
+#   filename = function() {
+#     paste(input$clusters3, "PositiveCells.csv", sep = "_")
+#   },
+#   content = function(file) {
+#     featureData <- featureDataReact()
+#     log2cpm <- log2cpm()
+# 
+#     if (is.null(featureData) | is.null(log2cpm) | is.null(positiveCells$positiveCells)) {
+#       return(NULL)
+#     }
+# 
+#     cells <- positiveCells$positiveCells
+#     # if(DEBUG)cat(file=stderr(),cells[1:5])
+# 
+#     if (length(cells) == 1) {
+#       subsetExpression <- log2cpm[, cells]
+#       subsetExpression <-
+#         as.data.frame(subsetExpression, row.names = rownames(log2cpm))
+#       colnames(subsetExpression) <- cells
+#       subsetExpression$Associated.Gene.Name <-
+#         featureData[rownames(subsetExpression), "Associated.Gene.Name"]
+#       write.csv(subsetExpression, file)
+#     }
+#     else {
+#       subsetExpression <- log2cpm[, cells]
+#       # cat(stderr(),colnames(subsetExpression)[1:5])
+#       subsetExpression$Associated.Gene.Name <-
+#         featureData[rownames(subsetExpression), "Associated.Gene.Name"]
+#       # cat(stderr(),colnames(subsetExpression))
+#       write.csv(subsetExpression, file)
+#     }
+#   }
+# )
 
 # binarized on / off table ------
 # TODO do we need it?
-output$onOffTable <- DT::renderDataTable({
-  if (DEBUG) {
-    cat(file = stderr(), "output$onOffTable\n")
-  }
-  projections <- projections()
-  posCellsAll <- positiveCells$positiveCellsAll # we use this variable to be able to save the global variable in this context
-
-  if (is.null(projections)) {
-    return(NULL)
-  }
-
-
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/onOffTable.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/onOffTable.RData")
-
-  merge <- projections
-  if (DEBUG) {
-    cat(
-      file = stderr(),
-      paste("positiveCells$positiveCellsAll:---", posCellsAll, "---\n")
-    )
-  }
-
-  merge$CoExpression <- posCellsAll
-  df <-
-    as.data.frame(table(merge[, c("dbCluster", "CoExpression")]))
-  dfOut <- cast(df, dbCluster ~ CoExpression)
-  colnames(dfOut) <- c("Cluster", "OFF", "ON")
-  rownames(dfOut) <- dfOut$Cluster
-  dfOut["Sum", ] <- c("", sum(dfOut$OFF), sum(dfOut$ON))
-  if (DEBUG) {
-    cat(file = stderr(), "output$onOffTable:done\n")
-  }
-  DT::datatable(dfOut)
-})
+# output$onOffTable <- DT::renderDataTable({
+#   if (DEBUG) {
+#     cat(file = stderr(), "output$onOffTable\n")
+#   }
+#   projections <- projections()
+#   posCellsAll <- positiveCells$positiveCellsAll # we use this variable to be able to save the global variable in this context
+# 
+#   if (is.null(projections)) {
+#     return(NULL)
+#   }
+# 
+# 
+#   if (DEBUGSAVE) {
+#     save(file = "~/scShinyHubDebug/onOffTable.RData", list = c(ls(), ls(envir = globalenv())))
+#   }
+#   # load(file="~/scShinyHubDebug/onOffTable.RData")
+# 
+#   merge <- projections
+#   if (DEBUG) {
+#     cat(
+#       file = stderr(),
+#       paste("positiveCells$positiveCellsAll:---", posCellsAll, "---\n")
+#     )
+#   }
+# 
+#   merge$CoExpression <- posCellsAll
+#   df <-
+#     as.data.frame(table(merge[, c("dbCluster", "CoExpression")]))
+#   dfOut <- cast(df, dbCluster ~ CoExpression)
+#   colnames(dfOut) <- c("Cluster", "OFF", "ON")
+#   rownames(dfOut) <- dfOut$Cluster
+#   dfOut["Sum", ] <- c("", sum(dfOut$OFF), sum(dfOut$ON))
+#   if (DEBUG) {
+#     cat(file = stderr(), "output$onOffTable:done\n")
+#   }
+#   DT::datatable(dfOut)
+# })
 
 # TODO as module
 # coexpression binarized
