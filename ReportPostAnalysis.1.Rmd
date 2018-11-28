@@ -5,7 +5,7 @@ date: "11/28/2018"
 output: html_document
 ---
 
-```{r}
+```{r, echo=FALSE}
   cat(file = stderr(), getwd())
 
   require(shiny)
