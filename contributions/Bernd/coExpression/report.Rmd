@@ -68,6 +68,10 @@ require(pheatmap)
 
 gbm_matrix <- as.matrix(exprs(gbm_log))
 genesin <- input$heatmap_geneids
+
+genesin2 <- geneName2Index(genesin, featureData)
+genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(gbm_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
+
 heatmapData <- coE_heatmapFunc(
   featureData = featureData, gbm_matrix = gbm_matrix,
   projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
@@ -154,45 +158,46 @@ geneNames <- input$'selected-geneIds'
 inpClusters <- input$"selected-clusters"
 dimX <- brushedPs$mapping$x
 dimY <- brushedPs$mapping$y
-
-# geneid <- geneName2Index(geneNames, featureData)
- projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
-
-subsetData <- subset(projections, dbCluster %in% inpClusters)
-cells.names <- shiny::brushedPoints(subsetData, brushedPs)
-# save(file = "~/scShinyHubDebug/selectedHeatmap.2.RData", list = c(ls(), ls(envir = globalenv())))
-
-cells.1 <- rownames(cells.names)
-heatmapData <- coE_heatmapFunc(featureData,
-  gbm_matrix,
-  projections,
-  genesin,
-  cells = cells.1
-)
-
-# print heatmap
-addColNames <- input$"heatmapSelectedModule-ColNames"
-orderColNames <- input$"heatmapSelectedModule-orderNames"
-moreOptions <- input$"heatmapSelectedModule-moreOptions"
-proje <- projections
-if (DEBUGSAVE) {
-  save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
+if(!is.null(brushedPs)){
+  
+  # geneid <- geneName2Index(geneNames, featureData)
+  projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+  
+  subsetData <- subset(projections, dbCluster %in% inpClusters)
+  cells.names <- shiny::brushedPoints(subsetData, brushedPs)
+  
+  cells.1 <- rownames(cells.names)
+  heatmapData <- coE_heatmapFunc(featureData,
+                                 gbm_matrix,
+                                 projections,
+                                 genesin,
+                                 cells = cells.1
+  )
+  
+  # print heatmap
+  addColNames <- input$"heatmapSelectedModule-ColNames"
+  orderColNames <- input$"heatmapSelectedModule-orderNames"
+  moreOptions <- input$"heatmapSelectedModule-moreOptions"
+  proje <- projections
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # save(file = "~/scShinyHubDebug/selectedHeatmap.3.RData", list = c(ls(), ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/selectedHeatmap.3.RData")
+  heatmapData$filename <- NA
+  if (is.null(moreOptions)) moreOptions <- FALSE
+  
+  if (length(addColNames) > 0 & moreOptions) {
+    heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
+  }
+  if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
+    heatmapData$cluster_cols <- FALSE
+    heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
+  }
+  # save(file = "~/scShinyHubDebug/selectedHeatmap.4.RData", list = c(ls(), ls(envir = globalenv())))
+  
+  do.call(pheatmap, heatmapData)
 }
-# save(file = "~/scShinyHubDebug/selectedHeatmap.3.RData", list = c(ls(), ls(envir = globalenv())))
-# load(file = "~/scShinyHubDebug/selectedHeatmap.3.RData")
-heatmapData$filename <- NA
-if (is.null(moreOptions)) moreOptions <- FALSE
-
-if (length(addColNames) > 0 & moreOptions) {
-  heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
-}
-if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
-  heatmapData$cluster_cols <- FALSE
-  heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
-}
-# save(file = "~/scShinyHubDebug/selectedHeatmap.4.RData", list = c(ls(), ls(envir = globalenv())))
-
-do.call(pheatmap, heatmapData)
 ```
 
 #### table of selected cells

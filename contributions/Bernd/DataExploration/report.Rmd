@@ -249,7 +249,7 @@ layout(p, title = toupper(input$gene_id))
 
 ## scater QC
 
-```{r bj-DE-scater, eval=TRUE, echo=FALSE, warning=FALSE }
+```{r bj-DE-scater, eval=FALSE, echo=FALSE, warning=FALSE }
 cat(file = stderr(), paste(class(gbm_log), collapse = "\n"))
 featureDataReact <- dataTables$featuredata[useGenes, ]
 # featureData = dataTables$featuredata[useGenes, ]

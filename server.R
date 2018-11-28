@@ -206,6 +206,8 @@ shinyServer(function(input, output, session) {
       # load(file='~/scShinyHubDebug/RDSsave.RData')
 
       save(file = file, list = c("featuredata", "gbm"))
+      if (DEBUG) cat(file = stderr(), paste("RDSsave:done \n"))
+      
       # write.csv(as.matrix(exprs(gbm)), file)
     }
   )
@@ -215,6 +217,7 @@ shinyServer(function(input, output, session) {
     filename = "report.zip",
 
     content = function(file) {
+      start.time <- Sys.time()
       if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("file", ls()))
       # load('~/scShinyHubDebug/tempReport.1.RData')
 
@@ -341,6 +344,11 @@ shinyServer(function(input, output, session) {
       if (!is.null(getDefaultReactiveDomain())) {
         showNotification("Report creation is done", id = "reportDone", duration = 10, type = "message")
       }
+      if (DEBUG) {
+        end.time <- Sys.time()
+        cat(file = stderr(), "===Report:done",difftime(end.time, start.time, units = "min"),"\n")
+      }
+      
     }
   )
 }) # END SERVER
