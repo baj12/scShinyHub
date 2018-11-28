@@ -1,0 +1,97 @@
+---
+title: "PostAnalysis.specialPlots.Rmd"
+author: "Bernd Jagla"
+date: "11/28/2018"
+output: html_document
+---
+
+```{r}
+  cat(file = stderr(), getwd())
+
+  require(shiny)
+  require(plotly)
+  require(shinythemes)
+  require(ggplot2)
+  require(DT)
+  require(pheatmap)
+  require(threejs)
+  require(sm)
+  require(RColorBrewer)
+  require(mclust)
+  require(reshape)
+  require(cellrangerRkit)
+  require(SCORPIUS)
+  require(ggplot2)
+  require(knitr)
+  require(kableExtra)
+  require(shinyWidgets)
+  require(scater)
+
+  source("serverFunctions.R")
+  source("reactives.R", local = TRUE)
+
+```
+
+
+
+```{r loadRDS, include=FALSE}
+
+load(file = "/Volumes/bernd/Desktop/epc.rn.1/sessionData.RData")
+input = myparams
+
+```
+
+```{r heatmap}
+gbm_matrix <- as.matrix(exprs(gbm_log))
+genesin <- c("MALAT1, B2M, TMSB4X, EEF1A1, FTH1")
+genesin2 <- geneName2Index(genesin, featuredata)
+genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(gbm_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
+
+heatmapData <- coE_heatmapFunc(
+  featureData = featuredata, gbm_matrix = gbm_matrix,
+  projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
+)
+addColNames <- input$"coExpHeatmapModule-ColNames"
+orderColNames <- input$"coExpHeatmapModule-orderNames"
+moreOptions <- input$"coExpHeatmapModule-moreOptions"
+proje <- projections
+
+heatmapData$filename <- NA
+if (is.null(moreOptions)) moreOptions <- FALSE
+
+if (length(addColNames) > 0 & moreOptions) {
+  heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
+}
+if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
+  heatmapData$cluster_cols <- FALSE
+  heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
+}
+
+do.call(pheatmap, heatmapData)
+
+```
+
+
+```{r violinPlot}
+  featureData <- featuredata
+  geneListStr <- input$geneGrpVioIds
+  projectionVar <- input$dimension_xVioiGrp
+  minExpr <- input$coEminExpr
+
+  retVal <- geneGrp_vioFunc(
+    genesin = geneListStr,
+    projections = proje,
+    gbm = gbm,
+    featureData = featureData,
+    minExpr = minExpr,
+    dbCluster = projectionVar
+  )
+  retVal
+
+```
+
+
+
+
+
+
