@@ -23,6 +23,9 @@ library(kableExtra)
 library(shinyWidgets)
 library(scater)
 library(shinyMCE)
+library(kohonen)
+library(Rsomoclu)
+
 if (file.exists("defaultValues.R")) {
   source(file = "defaultValues.R")
 } else {

@@ -1,5 +1,5 @@
 
-myZippedReportFiles = c("output_topExpGenes.csv")
+myZippedReportFiles <- c("output_topExpGenes.csv")
 
 
 # updateInputXviolinPlot ---------
@@ -244,6 +244,15 @@ callModule(
 
 
 
+# SOM heatmap module -----
+callModule(
+  pHeatMapModule,
+  "heatmapSOM",
+  heatmapSOMReactive
+)
+
+
+
 # plotCoExpression ----
 # binarized 2D plot
 # TODO module?
@@ -299,14 +308,14 @@ output$plotCoExpression <- renderPlot({
 #   content = function(file) {
 #     featureData <- featureDataReact()
 #     log2cpm <- log2cpm()
-# 
+#
 #     if (is.null(featureData) | is.null(log2cpm) | is.null(positiveCells$positiveCells)) {
 #       return(NULL)
 #     }
-# 
+#
 #     cells <- positiveCells$positiveCells
 #     # if(DEBUG)cat(file=stderr(),cells[1:5])
-# 
+#
 #     if (length(cells) == 1) {
 #       subsetExpression <- log2cpm[, cells]
 #       subsetExpression <-
@@ -335,17 +344,17 @@ output$plotCoExpression <- renderPlot({
 #   }
 #   projections <- projections()
 #   posCellsAll <- positiveCells$positiveCellsAll # we use this variable to be able to save the global variable in this context
-# 
+#
 #   if (is.null(projections)) {
 #     return(NULL)
 #   }
-# 
-# 
+#
+#
 #   if (DEBUGSAVE) {
 #     save(file = "~/scShinyHubDebug/onOffTable.RData", list = c(ls(), ls(envir = globalenv())))
 #   }
 #   # load(file="~/scShinyHubDebug/onOffTable.RData")
-# 
+#
 #   merge <- projections
 #   if (DEBUG) {
 #     cat(
@@ -353,7 +362,7 @@ output$plotCoExpression <- renderPlot({
 #       paste("positiveCells$positiveCellsAll:---", posCellsAll, "---\n")
 #     )
 #   }
-# 
+#
 #   merge$CoExpression <- posCellsAll
 #   df <-
 #     as.data.frame(table(merge[, c("dbCluster", "CoExpression")]))

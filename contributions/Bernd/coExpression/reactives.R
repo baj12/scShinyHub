@@ -129,8 +129,8 @@ topExpGenesTable <- reactive({
   if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
   featureData <- featureDataReact()
   gbm_log <- gbm_log()
-  coEtgPerc = input$coEtgPerc
-  coEtgminExpr = input$coEtgMinExpr
+  coEtgPerc <- input$coEtgPerc
+  coEtgminExpr <- input$coEtgMinExpr
   sc <- selctedCluster()
   scCL <- sc$cluster
   # scBP = sc$brushedPs()
@@ -146,11 +146,11 @@ topExpGenesTable <- reactive({
   # we only work on genes that have been selected
   mat <- as.matrix(exprs(gbm_log))[, scCells]
   # only genes that express at least coEtgminExpr UMIs
-  mat[mat < coEtgminExpr] = 0
+  mat[mat < coEtgminExpr] <- 0
   # only genes that are expressed in coEtgPerc or more cells
-  allexpressed <-  Matrix::rowSums(mat > 0) / length(scCells) * 100 >= coEtgPerc
-  mat = mat[allexpressed, ]
-  
+  allexpressed <- Matrix::rowSums(mat > 0) / length(scCells) * 100 >= coEtgPerc
+  mat <- mat[allexpressed, ]
+
   cv <- function(x) {
     sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
   }
@@ -159,11 +159,11 @@ topExpGenesTable <- reactive({
   maxRows <- min(nrow(mat), 200)
   top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
   if (dim(mat)[1] > 0) {
-    mat <- mat[top.genesOrder, ] 
-    fd = featureData[rownames(mat),c("Associated.Gene.Name", "Description")]
-    matCV = matCV[rownames(mat)]
+    mat <- mat[top.genesOrder, ]
+    fd <- featureData[rownames(mat), c("Associated.Gene.Name", "Description")]
+    matCV <- matCV[rownames(mat)]
     fd <- cbind(fd, matCV)
-    colnames(fd) = c("gene", "description", "CV")
+    colnames(fd) <- c("gene", "description", "CV")
     outMat <- cbind(fd, mat)
     rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
     return(outMat)
@@ -383,3 +383,115 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   }
   return(p1)
 }
+
+somFunction <- function(iData, nSom, geneName) {
+  require(kohonen)
+  require(Rsomoclu)
+  if (sum(geneName %in% rownames(iData)) == 0) return(NULL)
+  res2 <- Rsomoclu.train(
+    input_data = iData,
+    nSomX = nSom, nSomY = nSom,
+    nEpoch = 10,
+    radius0 = 0,
+    radiusN = 0,
+    radiusCooling = "linear",
+    mapType = "planar",
+    gridType = "rectangular",
+    scale0 = 1,
+    scaleN = 0.01,
+    scaleCooling = "linear"
+  )
+
+  rownames(res2$globalBmus) <- rownames(iData)
+  simGenes <- rownames(res2$globalBmus)[which(res2$globalBmus[, 1] == res2$globalBmus[geneName, 1] &
+    res2$globalBmus[, 2] == res2$globalBmus[geneName, 2])]
+  return(simGenes)
+}
+
+heatmapSOMReactive <- reactive({
+  start.time <- Sys.time()
+  if (DEBUG) {
+    cat(file = stderr(), "output$somReactive\n")
+  }
+  gbm_matrix <- gbm_matrix()
+  projections <- projections()
+  genesin <- input$geneSOM
+  nSOM <- input$dimSOM
+
+  # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
+  if (is.null(gbm_matrix)) {
+    return(
+      list(
+        src = "empty.png",
+        contentType = "image/png",
+        width = 96,
+        height = 96,
+        alt = "heatmap should be here"
+      )
+    )
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)
+  }
+  # go from readable gene name to ENSG number
+  genesin <- geneName2Index(genesin, featureData)
+
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/heatmapSOMReactive.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
+
+  # subsetData <-
+  #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
+  # cells.1 <- rownames(brushedPoints(subsetData, scBP))
+
+  geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
+  if (length(geneNames) < 2) {
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification(
+        "no additional gene found. reduce size of SOM",
+        id = "heatmapWarning",
+        type = "warning",
+        duration = 20
+      )
+    }
+    return(NULL)
+  }
+  annotation <- data.frame(projections[, c("dbCluster", "sampleNames")])
+  rownames(annotation) <- rownames(projections)
+  colnames(annotation) <- c("Cluster", "sampleNames")
+
+  retVal <- list(
+    mat = gbm_matrix[geneNames, ],
+    cluster_rows = TRUE,
+    cluster_cols = TRUE,
+    scale = "row",
+    fontsize_row = 10,
+    labels_row = featureData[geneNames, "Associated.Gene.Name"],
+    show_rownames = TRUE,
+    annotation_col = annotation,
+    show_colnames = FALSE,
+    annotation_legend = TRUE,
+    # breaks = seq(minBreak, maxBreak, by = stepBreak),
+    # filename = 'test.png',
+    # filename = normalizePath(outfile),
+    color = colorRampPalette(rev(brewer.pal(
+      n = 6, name =
+        "RdBu"
+    )))(6)
+  )
+  # pheatmap(gbm_matrix[rownames(gbm_matrix)[1:10], ],
+  #          cluster_rows = TRUE,
+  #          cluster_cols = TRUE,
+  #          scale = "row")
+  # do.call(pheatmap, retVal)
+
+
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "somheatmap")
+  }
+  end.time <- Sys.time()
+  cat(file = stderr(), paste("===heatmapSOMReactive:done", difftime(end.time, start.time, units = "min"), " min\n"))
+
+  return(retVal)
+})
