@@ -113,6 +113,8 @@ dimY <- `r input$"selected-dimension_y"`
 ```{r selectd2D, echo=FALSE}
 g_id <- input$gene_id
 geneNames <- input$"selected-geneIds"
+#TODO geneNames2 is just added to have a value, need to check how this should behave.
+geneNames2 <- input$"selected-geneIds"
 clId <- input$"selected-clusters"
 dimX <- input$"selected-dimension_x"
 dimY <- input$"selected-dimension_y"
@@ -123,7 +125,7 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
-plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position)
+plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position)
 ```
 
 
@@ -161,7 +163,10 @@ dimY <- brushedPs$mapping$y
 if(!is.null(brushedPs)){
   
   # geneid <- geneName2Index(geneNames, featureData)
-  projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
+  projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
+                                               geneNames = geneNames,
+                                               featureData = featureData,
+                                               gbm = gbm, projections = projections)
   
   subsetData <- subset(projections, dbCluster %in% inpClusters)
   cells.names <- shiny::brushedPoints(subsetData, brushedPs)

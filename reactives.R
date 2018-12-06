@@ -869,6 +869,7 @@ projections <- reactive({
   })
   # add a column for gene specific information that will be filled/updated on demand
   projections$UmiCountPerGenes <- 0
+  projections$UmiCountPerGenes2 <- 0
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===projections:done",difftime(end.time, start.time, units = "min"),"\n")
@@ -1144,7 +1145,8 @@ log2cpm <- reactive({
 
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
-plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position) {
+plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, 
+                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position) {
   geneid <- geneName2Index(g_id, featureData)
   grpNs <- groupNames$namesDF
 
@@ -1162,7 +1164,11 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneN
   # validate(need(is.na(sum(expression)) != TRUE, ""))
 
   geneid <- geneName2Index(geneNames, featureData)
-  projections <- updateProjectionsWithUmiCount(dimX, dimY, geneNames, featureData, gbm, projections)
+  projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
+                                               geneNames = geneNames, 
+                                               geneNames2 = geneNames2,
+                                               featureData = featureData,
+                                               gbm = gbm, projections = projections)
 
 
   projections <- cbind(projections, t(expression))

@@ -22,7 +22,7 @@ geneName2Index <- function(g_id, featureData){
 }
 
 
-updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, featureData, gbm, projections){
+updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2=NULL, featureData, gbm, projections){
   if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes"){
     geneNames = geneName2Index(geneNames, featureData)
     if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
@@ -35,6 +35,21 @@ updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, featureData, gb
       
     }else{
       projections$UmiCountPerGenes = 0
+    }
+    
+  }
+  if (dimY == "UmiCountPerGenes2" | dimX == "UmiCountPerGenes2"){
+    geneNames = geneName2Index(geneNames2, featureData)
+    if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
+      
+      if(length(geneNames) == 1) {
+        projections$UmiCountPerGenes2 = exprs(gbm)[geneNames, ]
+      }else{
+        projections$UmiCountPerGenes2 = Matrix::colSums(exprs(gbm)[geneNames, ])
+      }
+      
+    }else{
+      projections$UmiCountPerGenes2 = 0
     }
     
   }

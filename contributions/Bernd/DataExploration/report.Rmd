@@ -83,6 +83,8 @@ dimY <- `r input$"expclusters-dimension_y"`
 
 g_id <- input$gene_id
 geneNames <- input$"expclusters-geneIds"
+#TODO geneNames2 is just added to have a value, need to check how this should behave.
+geneNames2 <- input$"expclusters-geneIds"
 clId <- input$"expclusters-clusters"
 dimX <- input$"expclusters-dimension_x"
 dimY <- input$"expclusters-dimension_y"
@@ -93,7 +95,7 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
-plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position)
+plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position)
 
 ```
 

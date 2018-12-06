@@ -79,6 +79,7 @@ clusterServer <- function(input, output, session,
       dimY <- input$dimension_y
       dimX <- input$dimension_x
       geneNames <- input$geneIds
+      geneNames2 <- input$geneIds2
       featureData <- featureDataReact()
       gbm <- gbm()
       
@@ -88,7 +89,11 @@ clusterServer <- function(input, output, session,
       }
       # load(file="~/scShinyHubDebug/clusterServerreturnValues.RData")
       if (!is.null(projections)) {
-        projections <- updateProjectionsWithUmiCount(dimX, dimY, geneNames, featureData, gbm, projections)
+        projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
+                                                     geneNames = geneNames, 
+                                                     geneNames2 = geneNames2,
+                                                     featureData = featureData,
+                                                     gbm = gbm, projections = projections)
         
         subsetData <- subset(projections, dbCluster %in% inpClusters)
         grpSubset <- grpNs[rownames(subsetData), ]
@@ -147,6 +152,7 @@ clusterServer <- function(input, output, session,
     clId <- input$clusters
     g_id <- gene_id()
     geneNames <- input$geneIds
+    geneNames2 <- input$geneIds2
     
     if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
@@ -161,7 +167,7 @@ clusterServer <- function(input, output, session,
     }
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
  
-    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position))   
+    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position))   
    })
   
   # observe({
@@ -204,6 +210,7 @@ clusterServer <- function(input, output, session,
     dimY <- input$dimension_y
     dimX <- input$dimension_x
     geneNames <- input$geneIds
+    geneNames2 <- input$geneIds2
     featureData <- featureDataReact()
     gbm <- gbm()
     if (is.null(projections)) {
@@ -218,7 +225,11 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/selectedCellNames.RData")
     
     geneid <- geneName2Index(geneNames, featureData)
-    projections <- updateProjectionsWithUmiCount(dimX, dimY, geneNames, featureData, gbm, projections)
+    projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
+                                                 geneNames = geneNames, 
+                                                 geneNames2 = geneNames2,
+                                                 featureData = featureData,
+                                                 gbm = gbm, projections = projections)
     
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
@@ -356,6 +367,7 @@ clusterServer <- function(input, output, session,
     inpClusters <- (input$clusters)
     myshowCells <- (input$showCells)
     geneNames <- input$geneIds
+    geneNames2 <- input$geneIds2
     dimY <- input$dimension_y
     dimX <- input$dimension_x
     featureData <- featureDataReact()
@@ -377,7 +389,11 @@ clusterServer <- function(input, output, session,
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection"))
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     geneid <- geneName2Index(geneNames, featureData)
-    subsetData <- updateProjectionsWithUmiCount(dimX, dimY, geneNames = geneNames, featureData, gbm, subsetData)
+    subsetData <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
+                                                geneNames = geneNames, 
+                                                geneNames2 = geneNames2,
+                                                featureData = featureData,
+                                                gbm = gbm, projections = projections)
     
     cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
     for (axis in c("x", "y")) {

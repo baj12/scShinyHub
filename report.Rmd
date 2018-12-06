@@ -293,6 +293,7 @@ for (proj in projectionFunctions) {
   colnames(projections) <- cn
 }
 projections$UmiCountPerGenes <- 0
+projections$UmiCountPerGenes2 <- 0
 
 if (DEBUG) cat(file = stderr(), "projections: done\n")
 ```
