@@ -117,7 +117,8 @@ scorpiusExpSel <- reactive({
   
   expression = as.matrix(exprs(gbm_log))
   gimp <- gene_importances(t(expression), traj$time, num_permutations = 0, num_threads = 8)
-  gene_sel <- gimp[1:50,]
+  maxRow = min(500, nrow(gimp))
+  gene_sel <- gimp[1:maxRow,]
   expr_sel <- t(expression)[,gene_sel$gene]
   return(expr_sel)
 })
