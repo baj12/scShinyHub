@@ -36,14 +36,31 @@ output: html_document
 
 ```{r loadRDS, include=FALSE}
 
-load(file = "/Volumes/bernd/Desktop/epc.rn.1/sessionData.RData")
+projectPath = "~/Desktop/"
+
+
+
+
+```
+
+```{r}
+load(file = paste0(projectPath, "/sessionData.RData"))
 input = myparams
 
 ```
 
+```{r}
+heatmapFile = 'hucellsenescence.png'
+genesin <- c("h2afx,cdkn2a,cdkn1a")
+
+```
+
+
 ```{r heatmap}
+
 gbm_matrix <- as.matrix(exprs(gbm_log))
-genesin <- c("MALAT1, B2M, TMSB4X, EEF1A1, FTH1")
+# genesin <- c("h2afx,cdkn2a,cdkn1a")
+
 genesin2 <- geneName2Index(genesin, featuredata)
 genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(gbm_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
 
@@ -54,9 +71,14 @@ heatmapData <- coE_heatmapFunc(
 addColNames <- input$"coExpHeatmapModule-ColNames"
 orderColNames <- input$"coExpHeatmapModule-orderNames"
 moreOptions <- input$"coExpHeatmapModule-moreOptions"
+
+addColNames = "sampleNames"
+orderColNames = "sampleNames"
+moreOptions = TRUE
 proje <- projections
 
-heatmapData$filename <- NA
+heatmapData$filename <- paste0(projectPath,"/", heatmapFile)
+
 if (is.null(moreOptions)) moreOptions <- FALSE
 
 if (length(addColNames) > 0 & moreOptions) {
@@ -64,7 +86,7 @@ if (length(addColNames) > 0 & moreOptions) {
 }
 if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
   heatmapData$cluster_cols <- FALSE
-  heatmapData$mat <- heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop = FALSE]
+  heatmapData$mat <- heatmapData$mat[, rownames(psych::dfOrder(proje, orderColNames)), drop = FALSE]
 }
 
 do.call(pheatmap, heatmapData)
@@ -74,7 +96,8 @@ do.call(pheatmap, heatmapData)
 
 ```{r violinPlot}
   featureData <- featuredata
-  geneListStr <- input$geneGrpVioIds
+  # geneListStr <- input$geneGrpVioIds
+  geneListStr = genesin
   projectionVar <- input$dimension_xVioiGrp
   minExpr <- input$coEminExpr
 
@@ -87,7 +110,18 @@ do.call(pheatmap, heatmapData)
     dbCluster = projectionVar
   )
   retVal
+  
+  genesin = geneListStr
+  genesin <- toupper(genesin)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ",")
 
+    map <-
+    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+  
+
+ttt=t(as.matrix(exprs(gbm[map, ])))
 ```
 
 
