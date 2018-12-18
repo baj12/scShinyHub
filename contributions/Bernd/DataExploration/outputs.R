@@ -214,7 +214,7 @@ output$panelPlot <- renderPlot({
   # load(file="~/scShinyHubDebug/panelPlot.RData")
   
   if(DEBUG)cat(file=stderr(),length(genesin))
-  par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
+  par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0., .3,.3, .3))
   rbPal <- colorRampPalette(c('#f0f0f0','red'))
   if(DEBUG)cat(file=stderr(),cl4)
   
@@ -229,7 +229,7 @@ output$panelPlot <- renderPlot({
                 rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
                 ,]
             ),breaks = 10))]
-      plot(projections[, dimx4],projections[, dimy4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+      plot(projections[, dimx4],projections[, dimy4],col=Col,pch=16,frame.plot = TRUE, ann=FALSE)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
       if(DEBUG)cat(file=stderr(),genesin[i])
     }
