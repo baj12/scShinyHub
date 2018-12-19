@@ -169,7 +169,10 @@ tabList <- list(
     )),
     br(),
     br(),
-
+    tipify(
+      checkboxInput("showPermutations", "show Permutations", FALSE),
+      "check this if you are working on the cell/gene selection to avoid certain calculations"
+    ),
     fluidRow(
       column(
         3,

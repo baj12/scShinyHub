@@ -315,13 +315,15 @@ plotCoExpressionFunc <-
   }
 
 # geneGrp_vioFunc ------
-geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1, dbCluster) {
+geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1, 
+                            dbCluster, showPermutations) {
+  require(gtools)
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
-  genesin <- strsplit(genesin, ",")
+  genesin <- strsplit(genesin, ",")[[1]]
 
   map <-
-    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin), ])
   if (DEBUG) {
     cat(file = stderr(), length(map))
   }
@@ -344,13 +346,45 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   }
 
   expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+  ylabText = "number genes from list"
+  projections = projections[,1:12]
+  if (showPermutations) {
+    perms = rep("", length(expression))
+    ylabText = "Permutations"
+    xPerm = length(genesin)
+    if(xPerm > 10){
+      xPerm = 10
+      warning("reducing number of permutations to 10")
+    }
+    for(r in 1:xPerm){
+      comb = combinations(xPerm,r,genesin)
+      for(cIdx in 1:nrow(comb)){
+        map <-
+          rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx,]), ])
+        
+        permIdx = colSums(as.matrix(exprs(gbm[map, ])) >= minExpr) == length(comb[cIdx,])
+        perms[permIdx] = paste0(comb[cIdx,], collapse = "+")
+      }
+    }
+    perms = factor(perms)
+    permsNames = levels(perms)
+    permsNum = unlist(lapply(strsplit(permsNames,"\\+"),length))
+    perms = factor(as.character(perms), levels = permsNames[order(permsNum)])
+    permsNames = str_wrap(levels(perms))
+    perms = as.integer(perms)
+    projections <- cbind(projections, coExpVal = perms)
+    
+  }else{
+    projections <- cbind(projections, coExpVal = expression)
+    permsNames = as.character(1:max(expression))
+  }
+  
+  
 
-
-
-  projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){
   p1 <-
-    ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal", fill = factor(projections[, dbCluster]))) +
+    ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal", 
+                                   fill = factor(projections[, dbCluster]))) +
     geom_violin(scale = "width") +
     stat_summary(
       fun.y = median,
@@ -366,15 +400,17 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
         size = 12,
         vjust = 0.5
       ),
-      axis.text.y = element_text(size = 12),
+      axis.text.y = element_text(size = 10),
       strip.text.x = element_text(size = 16),
-      strip.text.y = element_text(size = 14),
+      strip.text.y = element_text(size = 12),
       axis.title.x = element_text(face = "bold", size = 16),
       axis.title.y = element_text(face = "bold", size = 16),
       legend.position = "none"
     ) +
     xlab(dbCluster) +
-    ylab("number genes from list")
+    
+    scale_y_continuous(breaks = 1:length(permsNames),labels=str_wrap(permsNames)) +
+    ylab(ylabText)
   # }else{
   #   return(NULL)
   # }

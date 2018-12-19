@@ -416,6 +416,7 @@ output$geneGrp_vio_plot <- renderPlot({
   geneListStr <- input$geneGrpVioIds
   projectionVar <- input$dimension_xVioiGrp
   minExpr <- input$coEminExpr
+  showPermutations <- input$showPermutations
   upI <- updateInputXviolinPlot() # no need to check because this is done in projections
   if (is.null(projections)) {
     if (DEBUG) {
@@ -434,7 +435,8 @@ output$geneGrp_vio_plot <- renderPlot({
     gbm = gbm,
     featureData = featureData,
     minExpr = minExpr,
-    dbCluster = projectionVar
+    dbCluster = projectionVar,
+    showPermutations = showPermutations
   )
   if (DEBUG) {
     cat(file = stderr(), "output$plotCoExpression:done\n")

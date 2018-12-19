@@ -25,6 +25,7 @@ library(scater)
 library(shinyMCE)
 library(kohonen)
 library(Rsomoclu)
+library(gtools)
 
 if (file.exists("defaultValues.R")) {
   source(file = "defaultValues.R")
