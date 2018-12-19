@@ -75,7 +75,8 @@ tabList = list(
                              'or',
                              strong('MULTIPLE'),
                              'gene ids to visualize expression in all clusters'
-                           )
+                           ),
+                           tags$li("If the x-axis is a categorical value and the y-axis is UMI.counts the y-axis related to the count for that gene. Otherwise, all genes are used")
                            
                          ),
                          fluidRow(

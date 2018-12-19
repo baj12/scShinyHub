@@ -19,7 +19,7 @@ updateInputx4 = reactive({
                     choices = colnames(tsneData),
                     selected = colnames(tsneData)[1]
   )
-
+  
   # Can also set the label and select items
   updateSelectInput(session, "dimension_y4",
                     choices = colnames(tsneData),
@@ -196,6 +196,7 @@ output$panelPlot <- renderPlot({
   featureData = featureDataReact()
   # log2cpm = log2cpm()
   gbm_log = gbm_log()
+  gbm = gbm()
   projections = projections()
   if(is.null(featureData) | is.null(gbm_log) | is.null(projections)){
     return(NULL)
@@ -206,6 +207,7 @@ output$panelPlot <- renderPlot({
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ',')
   genesin<-genesin[[1]]
+  genesin = genesin[which(genesin %in% featureData$Associated.Gene.Name)]
   cl4 = input$clusters4
   dimx4 = input$dimension_x4
   dimy4 = input$dimension_y4
@@ -217,26 +219,40 @@ output$panelPlot <- renderPlot({
   par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0., .3,.3, .3))
   rbPal <- colorRampPalette(c('#f0f0f0','red'))
   if(DEBUG)cat(file=stderr(),cl4)
-  
-  if (cl4 == 'All') 
-  {
+  ylim = c(min(projections[, dimy4]), max(projections[, dimy4]))
+  if(class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count"){
+    ymax = 0
     for (i in 1:length(genesin)){
+      geneIdx = which(featureData$Associated.Gene.Name==genesin[i])
+      ymax = max(ymax, max(colSums(as.matrix(exprs(gbm)[geneIdx,, drop=FALSE]))))
+    }
+    ylim = c(0,ymax)
+  }
+  if (cl4 == 'All') {
+    for (i in 1:length(genesin)){
+      geneIdx = which(featureData$Associated.Gene.Name==genesin[i])
       Col <- rbPal(10)[
         as.numeric(
           cut(
             as.numeric(
               exprs(gbm_log)[
-                rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
+                rownames(featureData[geneIdx,])
                 ,]
             ),breaks = 10))]
-      plot(projections[, dimx4],projections[, dimy4],col=Col,pch=16,frame.plot = TRUE, ann=FALSE)
+      if(class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count"){
+        projections[, dimy4] <- colSums(as.matrix(exprs(gbm)[geneIdx,, drop=FALSE]))
+        
+      }
+      
+      plot(projections[, dimx4],projections[, dimy4],
+           col=Col,pch=16,frame.plot = TRUE, ann=FALSE, ylim = ylim)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
       if(DEBUG)cat(file=stderr(),genesin[i])
     }
-  }
-  else{
+  } else{
     for (i in 1:length(genesin)){
       
+      geneIdx = which(featureData$Associated.Gene.Name==genesin[i])
       subsetTSNE <- subset(projections, dbCluster == cl4)
       
       Col <- rbPal(10)[
@@ -244,13 +260,21 @@ output$panelPlot <- renderPlot({
           cut(
             as.numeric(
               exprs(gbm_log)[
-                rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
+                rownames(featureData[geneIdx,])
                 ,]
             ),breaks = 10))]
       
       names(Col)<-rownames(projections)
       plotCol<-Col[rownames(subsetTSNE)]
-      plot(subsetTSNE[, dimx4],subsetTSNE[, dimy4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+      if(class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count"){
+        projections[, dimy4] <- colSums(as.matrix(exprs(gbm)[geneIdx,, drop=FALSE]))
+        subsetTSNE <- subset(projections, dbCluster == cl4)
+        
+      }
+      
+      plot(subsetTSNE[, dimx4], subsetTSNE[, dimy4],
+           col=plotCol,pch=16,frame.plot = TRUE, 
+           ann=FALSE, ylim = ylim)
       title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
       if(DEBUG)cat(file=stderr(), cl4)
     }
@@ -289,7 +313,7 @@ output$tsne_plt <- renderPlotly({
   if (DEBUGSAVE) 
     save(file = "~/scShinyHubDebug/tsne_plt.RData", list = c(ls(),ls(envir = globalenv())))
   # load(file="~/scShinyHubDebug/tsne_plt.RData")
-
+  
   
   geneid = geneName2Index(g_id, featureData)  
   
