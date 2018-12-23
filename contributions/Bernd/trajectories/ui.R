@@ -36,7 +36,23 @@ tabList = list(
                                   choices = c('sample', 'tsne1', 'tsne2', 'tsne3'),
                                   selected = 'sample'
                                 ))),
-  
+                         fluidRow(column(12,
+                                         tipify(
+                                           downloadButton("downLoadTraj", "Download trajectory"),
+                                           "<h3>download trajectory to csv file</h3>"
+                                         ),fileInput(
+                                           'trajInputFile',
+                                           'Choose .csv file with trajectory informaiton',
+                                           accept = c(
+                                             '.csv',
+                                             'text/comma-separated-values',
+                                             'text/tab-separated-values',
+                                             'text/plain',
+                                             '.csv',
+                                             '.tsv'
+                                           )
+                                         )
+                         )  ),
                          fluidRow(column(12,
                            plotOutput('scropius_trajectory_plot', height = '672px') #%>% withSpinner()
                          )  ),

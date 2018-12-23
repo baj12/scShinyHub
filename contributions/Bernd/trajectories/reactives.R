@@ -70,12 +70,37 @@ drawTrajectoryHeatmap <- function(x, time, progression_group = NULL, modules = N
        )
 }
 
+scorpiusInput <- reactive({
+  inFile <- input$trajInputFile
+
+  if(DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/scorpiusInput.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/scorpiusInput.RData")
+  if(is.null(inFile)){
+    return(NULL)
+  }
+  if(!file.exists(inFile$datapath)){
+    return(NULL)
+  }
+  traj = read.csv(file = inFile$datapath)
+  if(colnames(traj) == c("path.Comp1",	"path.Comp2",	"time")){
+    return(traj)
+  }else{
+    warning("file not correct")
+    return(NULL)
+  }
+})
+
 scorpiusSpace <- reactive({
   projections = projections()
   doCalc = input$scorpiusCalc
   dimX = input$dimScorpiusX
   dimY = input$dimScorpiusY
+  scInput <- scorpiusInput()
   
+  if(! is.null(scInput)){
+    return(scInput[,c(1,2)])
+  }
   if (!doCalc | is.null(projections)){
     if(DEBUG)cat(file=stderr(), paste("scorpiusSpace:NULL\n"))
     return(NULL)
@@ -91,6 +116,11 @@ scorpiusSpace <- reactive({
 scorpiusTrajectory <- reactive({
   space = scorpiusSpace()
   doCalc = input$scorpiusCalc
+  scInput <- scorpiusInput()
+  
+  if(! is.null(scInput)){
+    return(scInput)
+  }
   if (!doCalc | is.null(space) ){
     if(DEBUG)cat(file=stderr(), paste("scorpiusTrajectory:NULL\n"))
     return(NULL)
@@ -125,8 +155,8 @@ scorpiusExpSel <- reactive({
 
 scorpiusModules <- reactive({
   gbm_log = gbm_log()
-  projections = projections()
-  space <- scorpiusSpace()
+  # projections = projections()
+  # space <- scorpiusSpace()
   traj <- scorpiusTrajectory()
   expr_sel <- scorpiusExpSel()
   
@@ -137,7 +167,7 @@ scorpiusModules <- reactive({
   # dimCol = input$dimScorpiusCol
   doCalc = input$scorpiusCalc
   
-  if (!doCalc | is.null(projections) | is.null(gbm_log)){
+  if (!doCalc | is.null(gbm_log)){
     if(DEBUG)cat(file=stderr(), paste("scorpiusModules:NULL\n"))
     return(NULL)
   }
@@ -154,7 +184,7 @@ scorpiusModules <- reactive({
   modules <- extract_modules(scale_quantile(expr_sel), traj$time, verbose = T)
   modules = as.data.frame(modules)
   fd = fData(gbm_log)
-  modules$symbol = fd[modules$feature,"symbol"]
+  modules$symbol = fd[modules$feature, "symbol"]
   rownames(modules) = modules$symbol
   return(modules)
 })

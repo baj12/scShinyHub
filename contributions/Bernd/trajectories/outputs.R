@@ -83,3 +83,15 @@ callModule(
   "scorpiusHeatmapPlotModule", 
   scorpiusHeatmapPlotReactive
 )
+
+output$downLoadTraj <- downloadHandler(
+  filename = paste0("scorpiusTraj.", Sys.Date(), ".csv"),
+  content = function(file) {
+    if (DEBUG) cat(file = stderr(), paste("downLoadTraj: \n"))
+    scTRAJ <- scorpiusTrajectory()
+    if (is.null(scTRAJ)) {
+      return(NULL)
+    }
+    write.csv(scTRAJ, file)
+  }
+)
