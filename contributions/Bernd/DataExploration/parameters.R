@@ -137,7 +137,7 @@ scater_norm <- reactive({
     genes2use = rep(FALSE, nrow(scaterReads))
     genes2use[scGeneIdxInclude] = TRUE
   }
-  if (length(scGeneIdxExclude) == 0) {
+  if (length(scGeneIdxExclude) > 0) {
     genes2use[scGeneIdxExclude] = FALSE
   }
   

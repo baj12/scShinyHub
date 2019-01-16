@@ -318,6 +318,7 @@ plotCoExpressionFunc <-
 geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1, 
                             dbCluster, showPermutations) {
   require(gtools)
+  require(stringr)
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")[[1]]
