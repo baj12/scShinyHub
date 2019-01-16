@@ -6,7 +6,18 @@ df
 
 
 ```{r}
+# you might need to log in to the 10x webpage using your default browser
 cat(file = stderr(),"test")
+dir.create("pbmc_1k_v3/outs", recursive = T)
+dir.create("pbmc_1k_v2/outs", recursive = T)
+dir.create("vdj_v1_hs_pbmc_5gex/outs", recursive = T)
+download.file("http://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_filtered_feature_bc_matrix.tar.gz", "pbmc_1k_v3/outs/pbmc_1k_v3.tgz")
+download.file("http://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v2/pbmc_1k_v2_filtered_feature_bc_matrix.tar.gz", "pbmc_1k_v2/outs/pbmc_1k_v2.tgz") 
+download.file("http://cf.10xgenomics.com/samples/cell-vdj/2.2.0/vdj_v1_hs_pbmc_5gex/vdj_v1_hs_pbmc_5gex_filtered_gene_bc_matrices.tar.gz", "vdj_v1_hs_pbmc_5gex/outs/vdj_v1_hs_pbmc_5gex.tgz")
+untar("vdj_v1_hs_pbmc_5gex/outs/vdj_v1_hs_pbmc_5gex.tgz", exdir = "vdj_v1_hs_pbmc_5gex/outs/")
+untar("pbmc_1k_v2/outs/pbmc_1k_v2.tgz", exdir = "pbmc_1k_v2/outs")
+untar("pbmc_1k_v3/outs/pbmc_1k_v3.tgz", exdir = "pbmc_1k_v3/outs")
+
 ```
 
 
@@ -84,22 +95,22 @@ getFeatureDataSummary <- function(ver = 0, dataset = "mmusculus_gene_ensembl", g
 ```
 
 ```{r mandar7.18}
-pipestance_paths <- c("~/Downloads/New Folder With Items/vdj_raw_gene_bc_matrices",
-                      "~/Downloads/New Folder With Items/v3_raw_feature_bc_matrix/outs/raw_gene_bc_matrices/",
-                      "~/Downloads/New Folder With Items/v2_raw_feature_bc_matrix/outs/raw_gene_bc_matrices/")
+pipestance_paths <- c("vdj_v1_hs_pbmc_5gex",
+                      "pbmc_1k_v3/outs/filtered_feature_bc_matrix/",
+                      "pbmc_1k_v2/outs/filtered_feature_bc_matrix/")
 sampleNames = c("VDJ", "V3", "V2")
 
 genome <- "GRCh38"
 iter = 1
 exprs.res = list()
 pipestance_path = pipestance_paths[1]
-gbm <- load_cellranger_matrix(pipestance_path,barcode_filtered = FALSE)
+gbm <- load_cellranger_matrix(pipestance_path,barcode_filtered = TRUE)
 exprs.res[[iter]] = exprs(gbm)
 colnames(exprs.res[[iter]]) = paste0(sub("(.*)-","\\1",colnames(exprs.res[[iter]])),"-",sampleNames[iter])
 
 library(Matrix)
 
-for(iter in  c(2,3)){
+for (iter in  c(2,3)){
   matrix_dir = pipestance_paths[iter]
   barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
   features.path <- paste0(matrix_dir, "features.tsv.gz")
@@ -122,8 +133,7 @@ iterMax = iter
 sum(!rownames(exprs.res[[1]]) %in% rownames(exprs.res[[2]]))
 
 gbmMat = exprs.res[[1]]
-colnames(gbmMat)
-rownames(gbmMat)
+
 for (iter in 2:iterMax) {
   newitem = exprs.res[[iter]]
   newitem = newitem[rownames(newitem) %in% rownames(gbmMat),]
@@ -164,9 +174,30 @@ gbm@pipestance_path <- pipestance_path
 gbm
 
 
-save(file = "pbmc10x.Rds", list = c("featuredata", "gbm"))
+save(file = "Examples/pbmc10x.Rds", list = c("featuredata", "gbm"))
 
 ```
 
   
-  
+```{r subSampled 10x}
+
+
+expVals = as.matrix(exprs(gbm))
+
+ncol(gbm)
+
+featuredata = featureData_summary[rownames(gbmMat),]
+
+fd = data.frame(symbol = featuredata[,"Associated.Gene.Name"], stringsAsFactors = FALSE)
+fd$id = rownames(featuredata)
+rownames(fd) = fd$id
+gbm = newGeneBCMatrix(mat = as(gbmMat, "dgTMatrix"), fd = fd, pd = pd)
+
+
+gbm@barcode_filtered <- TRUE
+gbm@subsampled <- FALSE
+gbm@pipestance_path <- pipestance_path
+gbm
+save(file = "Examples/pbmc10x_sml.Rds", list = c("featuredata", "gbm"))
+
+```
