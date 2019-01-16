@@ -1,0 +1,172 @@
+---
+title: "gbm2Rds"
+output: html_document
+---
+df
+
+
+```{r}
+cat(file = stderr(),"test")
+```
+
+
+```{r nsetup, include=FALSE}
+knitr::opts_chunk$set(
+        message = TRUE,
+        warning = TRUE,
+        include = FALSE
+)
+# rm(list=ls())
+library(cellrangerRkit)
+packageVersion("cellrangerRkit")
+library(SCORPIUS)
+library(ggplot2)
+library(dplyr)
+suppressMessages(library(biomaRt))
+
+```
+
+
+```{r}
+# function to retrieve annotation from biomart
+# used with different versions to ensure the correct ids are used.
+# version = 0 => current
+getFeatureDataSummary <- function(ver = 0, dataset = "mmusculus_gene_ensembl", gbmMat = gbmMat){
+  
+  if(ver >0){
+    ensemblOld = useEnsembl(biomart = "ensembl", version=ver, dataset = dataset)
+  }else{
+    ensemblOld = useEnsembl(biomart = "ensembl", dataset = dataset)
+    
+  }
+  
+  featureData <- tryCatch(
+    getBM(
+      attributes = c("ensembl_gene_id",
+                     "external_gene_name", 
+                     "description", 
+                     "chromosome_name", 
+                     "genomic_coding_start", 
+                     "genomic_coding_end", 
+                     "gene_biotype"),
+      filters = "ensembl_gene_id", 
+      values = rownames(gbmMat),
+      mart = ensemblOld
+    ),
+    error=function(cond) {return("biomart connection error")},
+    warning=function(cond){return("Biomart warning")}
+  )
+  
+  featureData_summary <- featureData %>% 
+    group_by(ensembl_gene_id, external_gene_name, description, chromosome_name, gene_biotype) %>% 
+    summarize(min_genomic_coding_start = min(genomic_coding_start, na.rm = TRUE),
+              max_genomic_coding_end = max(genomic_coding_end, na.rm = TRUE))
+  featureData_summary = as.data.frame(featureData_summary)
+  rownames(featureData_summary) = featureData_summary$ensembl_gene_id
+  featureData_summary = featureData_summary[,-1]
+  
+  colnames(featureData_summary) = c("Associated.Gene.Name", 
+                                    "Description", 
+                                    "Chromosome.Name",
+                                    "Gene.Biotype",
+                                    "Gene.Start..bp.",
+                                    "Gene.End..bp.")
+  featureData_summary = featureData_summary[,c(
+    "Description",
+    "Chromosome.Name",
+    "Gene.Start..bp.",
+    "Gene.End..bp.",
+    "Associated.Gene.Name", 
+    "Gene.Biotype"
+  )]
+  return(featureData_summary)
+}
+```
+
+```{r mandar7.18}
+pipestance_paths <- c("~/Downloads/New Folder With Items/vdj_raw_gene_bc_matrices",
+                      "~/Downloads/New Folder With Items/v3_raw_feature_bc_matrix/outs/raw_gene_bc_matrices/",
+                      "~/Downloads/New Folder With Items/v2_raw_feature_bc_matrix/outs/raw_gene_bc_matrices/")
+sampleNames = c("VDJ", "V3", "V2")
+
+genome <- "GRCh38"
+iter = 1
+exprs.res = list()
+pipestance_path = pipestance_paths[1]
+gbm <- load_cellranger_matrix(pipestance_path,barcode_filtered = FALSE)
+exprs.res[[iter]] = exprs(gbm)
+colnames(exprs.res[[iter]]) = paste0(sub("(.*)-","\\1",colnames(exprs.res[[iter]])),"-",sampleNames[iter])
+
+library(Matrix)
+
+for(iter in  c(2,3)){
+  matrix_dir = pipestance_paths[iter]
+  barcode.path <- paste0(matrix_dir, "barcodes.tsv.gz")
+  features.path <- paste0(matrix_dir, "features.tsv.gz")
+  matrix.path <- paste0(matrix_dir, "matrix.mtx.gz")
+  mat <- readMM(file = matrix.path)
+  feature.names = read.delim(features.path, 
+                             header = FALSE,
+                             stringsAsFactors = FALSE)
+  barcode.names = read.delim(barcode.path, 
+                             header = FALSE,
+                             stringsAsFactors = FALSE)
+  colnames(mat) = barcode.names$V1
+  colnames(mat) = paste0(sub("(.*)-","\\1",colnames(mat)),"-",sampleNames[iter])
+  rownames(mat) = feature.names$V1
+  exprs.res[[iter]] = mat
+}
+
+iterMax = iter 
+
+sum(!rownames(exprs.res[[1]]) %in% rownames(exprs.res[[2]]))
+
+gbmMat = exprs.res[[1]]
+colnames(gbmMat)
+rownames(gbmMat)
+for (iter in 2:iterMax) {
+  newitem = exprs.res[[iter]]
+  newitem = newitem[rownames(newitem) %in% rownames(gbmMat),]
+  gbmMat = gbmMat[rownames(gbmMat) %in% rownames(newitem), ]
+  gbmMat = cbind(gbmMat, newitem)
+}
+
+pd = data.frame(row.names = colnames(gbmMat), sampleNames = sub("(.*)-(.*)","\\2",colnames(gbmMat)), barcode = colnames(gbmMat))
+
+listEnsembl()$version
+currentVersion = 92
+featureData_summary = getFeatureDataSummary(ver = 0, dataset = "hsapiens_gene_ensembl", gbmMat = gbmMat)
+
+ver = 85
+while (length(rownames(gbmMat)[!rownames(gbmMat) %in% rownames(featureData_summary) ]) > 0) {
+  ver = ver - 1
+  cat(file = stderr(), paste("current version: ", ver, " N not-found: ", length(rownames(gbmMat)[!rownames(gbmMat) %in% rownames(featureData_summary) ]), "\n"))
+  featureData_summary = getFeatureDataSummary(ver = ver, dataset = "hsapiens_gene_ensembl", gbmMat = gbmMat)
+}
+
+
+# if we get hits here we are using the wrong version of biomart
+length(rownames(gbmMat)[!rownames(gbmMat) %in% rownames(featureData_summary) ])
+length(rownames(gbmMat)[!rownames(featureData_summary)  %in% rownames(gbmMat)])
+#ver = 84
+
+featuredata = featureData_summary[rownames(gbmMat),]
+
+fd = data.frame(symbol = featuredata[,"Associated.Gene.Name"], stringsAsFactors = FALSE)
+fd$id = rownames(featuredata)
+rownames(fd) = fd$id
+gbm = newGeneBCMatrix(mat = as(gbmMat, "dgTMatrix"), fd = fd, pd = pd)
+
+
+gbm@barcode_filtered <- TRUE
+gbm@subsampled <- FALSE
+gbm@pipestance_path <- pipestance_path
+gbm
+
+
+save(file = "pbmc10x.Rds", list = c("featuredata", "gbm"))
+
+```
+
+  
+  
