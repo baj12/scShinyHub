@@ -794,6 +794,13 @@ kmClustering <- reactive({
 # projections is a reactive and cannot be used in reports. Reports have to organize
 # themselves as it is done here with tsne.data.
 
+
+# Here, we store projections that are created during the session. These can be selections of cells or other values that
+# are not possible to precalculate.
+sessionProjections <- reactiveValues(
+  prjs = data.frame()
+)
+
 projections <- reactive({
   start.time <- Sys.time()
   # gbm is the fundamental variable with the raw data, which is available after loading
@@ -801,6 +808,7 @@ projections <- reactive({
   # input data being loaded
   gbm <- gbm()
   pca <- pca()
+  prjs <- (sessionProjections$prjs)
   if (!exists("gbm") | is.null(gbm) | !exists("pca") | is.null(pca)) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
@@ -829,6 +837,7 @@ projections <- reactive({
     n <- length(projectionFunctions)
     iter <- 1
     for (proj in projectionFunctions) {
+      start.time1 <- Sys.time()
       incProgress(1 / n, detail = paste("Creating ", proj[1]))
       if (DEBUG) cat(file = stderr(), paste("calculation projection:  ", proj[1], "\n"))
       assign("tmp", eval(parse(text = paste0(proj[2], "()"))))
@@ -861,6 +870,11 @@ projections <- reactive({
         } else {
           stop("error: ", proj[1], "didn't produce a result")
         }
+        if (DEBUG) {
+          end.time <- Sys.time()
+          cat(file = stderr(), "===", proj[1], ":done",difftime(end.time, start.time1, units = "min"),"\n")
+        }
+        
       }
 
       colnames(projections) <- cn
@@ -874,7 +888,9 @@ projections <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===projections:done",difftime(end.time, start.time, units = "min"),"\n")
   }
-  
+  if (ncol(prjs) > 0 & nrow(prjs) == nrow(projections)) {
+    projections <- cbind(projections,prjs)
+  }
   return(projections)
 })
 

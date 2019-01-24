@@ -348,7 +348,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
 
   expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
   ylabText = "number genes from list"
-  projections = projections[,1:12]
+  # projections = projections[,1:12]
   if (showPermutations) {
     perms = rep("", length(expression))
     ylabText = "Permutations"
@@ -383,7 +383,8 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   
 
   # if(class(projections[,dbCluster])=="factor"){
-  p1 <-
+
+    p1 <-
     ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal", 
                                    fill = factor(projections[, dbCluster]))) +
     geom_violin(scale = "width") +
