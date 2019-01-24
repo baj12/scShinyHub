@@ -185,7 +185,7 @@ scorpiusModules <- reactive({
   modules = as.data.frame(modules)
   fd = fData(gbm_log)
   modules$symbol = fd[modules$feature, "symbol"]
-  rownames(modules) = modules$symbol
+  rownames(modules) = make.unique(as.character(modules$symbol, sep = "___"))
   return(modules)
 })
 

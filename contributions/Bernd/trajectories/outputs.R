@@ -6,9 +6,13 @@ output$scropius_trajectory_plot <- renderPlot({
   dimY = input$dimScorpiusY
   dimCol = input$dimScorpiusCol
   doCalc = input$scorpiusCalc
-  
-  if(!doCalc |  is.null(projections)  ){
+  if (is.null(projections)  ){
     return(NULL)
+  }
+  if (!doCalc) {
+    require(ggplot2)
+    p1 <- ggplot(projections, aes_string(dimX,dimY, colour = dimCol)) + geom_point()
+    return(p1)
   }
   
   if(DEBUG)cat(file=stderr(), paste("scropius_trajectory_plot:\n"))

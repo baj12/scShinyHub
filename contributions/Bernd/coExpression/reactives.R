@@ -439,7 +439,7 @@ somFunction <- function(iData, nSom, geneName) {
     scaleCooling = "linear"
   )
 
-  rownames(res2$globalBmus) <- rownames(iData)
+  rownames(res2$globalBmus) <- make.unique(as.character(rownames(iData)), sep = "___")
   simGenes <- rownames(res2$globalBmus)[which(res2$globalBmus[, 1] == res2$globalBmus[geneName, 1] &
     res2$globalBmus[, 2] == res2$globalBmus[geneName, 2])]
   return(simGenes)

@@ -20,7 +20,7 @@ scaterReadsFunc <- function(gbm, fd) {
   # rownames(pheno_data) <- pheno_dat
 
   reads <- as.matrix(counts)
-  rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"])
+  rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"], sep = "___")
   rownames(reads)[is.na(rownames(reads)) ] <- "na"
   reads <- SingleCellExperiment(
     assays = list(counts = reads),
