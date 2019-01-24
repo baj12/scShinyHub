@@ -118,13 +118,15 @@ tsne <- reactive({
     save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/tsne.RData')
+  require(parallel)
+  
   retval <- tryCatch({
     run_tsne(
       pca,
       dims = tsneDim,
       perplexity = tsnePerplexity,
       theta = tsneTheta,
-      check_duplicates = FALSE
+      check_duplicates = FALSE, num_threads = detectCores()
     )
   },
   error = function(e) {
