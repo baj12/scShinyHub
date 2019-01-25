@@ -1,0 +1,173 @@
+---
+title: "cellranger report"
+author: "Bernd Jagla"
+date: "3/23/2018"
+output: html_document
+---
+
+# Cellranger output
+
+```{r bj-cellRanger-checkDEBUG, include=FALSE}
+if(!exists("DEBUG")){
+  DEBUG=TRUE
+  # DEBUG=FALSE
+}
+if(!exists("DEBUGSAVE")){
+  # DEBUGSAVE=TRUE
+  DEBUGSAVE=FALSE
+}
+
+
+```
+
+```{r bj-cellRanger-loadData, include=FALSE}
+require(shiny)
+require(shinyTree)
+require(shinyBS)
+require(plotly)
+require(shinythemes)
+require(ggplot2)
+require(DT)
+require(pheatmap)
+require(threejs)
+require(sm)
+require(RColorBrewer)
+require(mclust)
+require(reshape)
+require(cellrangerRkit)
+require(SCORPIUS)
+require(ggplot2)
+require(knitr)
+require(kableExtra)
+require(shinyWidgets)
+require(scater)
+
+# params only exsits if called from somewhere with parameters
+if (exists("params")) {
+  cat(file = stderr(), paste("params:", params$calledFromShiny,"\n"))
+  cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params) ,"\n"))
+  LOCALEXECUTION = FALSE
+  if (DEBUGSAVE) {
+    base::save(file = "~/scShinyHubDebug/tempReport-rmd.RData", list = c(ls()))
+  }
+}else{
+  # rm(list = ls())
+  source("serverFunctions.R")
+  source("reactives.R", local = TRUE)
+  uiFiles = dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  for (fp in uiFiles) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    source(fp, local = TRUE)
+  }
+  load("~/scShinyHubDebug/tempReport.RData")
+  params = myparams
+  LOCALEXECUTION = TRUE # to know that we are debugging.
+}
+
+```
+
+## heatmap
+callModule(
+  pHeatMapModule,
+  "crHeatmapPlotModule",
+  crHeatImage
+)
+
+```{r prioritized_genes, eval=TRUE, include=FALSE, warning=FALSE, error=FALSE}
+set.seed(seed = seed)
+prioritized_genes = prioritize_top_genes(gbm,
+                                         as.numeric(as.character(projections$dbCluster)),
+                                         "sseq",
+                                         logscale = FALSE, 
+                                         min_mean=0.5, 
+                                         p_cutoff=0.05,
+                                         order_by='pvalue')
+
+```
+
+
+```{r crHeatImage_func, echo=FALSE}
+require(pheatmap)
+  cat(file = stderr(), paste("crHeatImage_func\n"))
+  heatmapData <- crHeatImage_func(gbm, projections, prioritized_genes) 
+# 
+cat(file = stderr(), paste("save\n"))
+# save(file = "~/scShinyHubDebug/bj.CR.crHeatImage_func.Rdata", list = ls())
+# load(file = "~/scShinyHubDebug/bj.CR.crHeatImage_func.Rdata")
+# file.info("~/scShinyHubDebug/bj.CR.crHeatImage_func.Rdata")
+
+    addColNames <- input$'crHeatmapPlotModule-ColNames'
+    orderColNames <- input$'crHeatmapPlotModule-orderNames'
+    moreOptions <- input$'crHeatmapPlotModule-moreOptions'
+    proje <- projections
+    
+    heatmapData$filename = NA
+    if(is.null(moreOptions)) moreOptions <- FALSE
+    
+    if (length(addColNames) > 0 & moreOptions) {
+      heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+    }
+    if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
+      heatmapData$cluster_cols <- FALSE
+      heatmapData$mat = heatmapData$mat[, rownames(dfOrder(proje, orderColNames)), drop=FALSE]
+    }
+    
+    do.call(pheatmap, heatmapData)
+
+```
+
+
+## table
+
+showing only genes marked as significant (max 200 genes)
+
+```{r bj-cellRanger-table, echo=FALSE, warning=FALSE, error=FALSE}
+require("forcats")
+require("tidyverse")
+prioritized_genes <- prioritized_genes_func(gbm, projections, seed = 1)
+
+dt <- data.frame()
+for (listIter in 1:length(prioritized_genes)) {
+  prioritized_genes[[listIter]]$cluster <- listIter
+  dt <- rbind(dt, prioritized_genes[[listIter]])
+}
+rownames(dt) <- make.unique(as.character(dt$gene_name), sep = "___")
+dt$cluster <- factor(dt$cluster)
+
+# move cluster column to second position
+cnames <- colnames(dt)
+clNr <- which(cnames == "cluster")
+sigCol <- which(cnames == "significant")
+adjCol <- which(cnames == "p_adj")
+dt <- dt[, c(1, clNr, sigCol, adjCol, c(1:length(cnames))[-c(1, clNr, sigCol, adjCol)])]
+
+# save(file = "~/scShinyHubDebug/bj.cellRanger.table.Rdata", list = ls())
+# load(file = "~/scShinyHubDebug/bj.cellRanger.table.Rdata")
+
+
+
+dt = dt[dt$significant,]
+maxCol <- min(20, ncol(dt))
+maxRow <- min(200, nrow(dt))
+DT::datatable(dt[1:maxRow, 1:maxCol],
+  rownames = F, filter = "top",
+  options = list(
+    orderClasses = TRUE,
+    autoWidth = TRUE
+  )
+)
+  # cat(file = stderr(), paste("bj-cellRanger-table: done\n"))
+
+
+
+```
+maxRow for Data table: `r maxRow`
+
+```{r saveCRSig, echo=FALSE}
+# save full table in tmp folder to be included in report
+  write.csv(dt, file = paste0(input$reportTempDir, "/crSignificantGenes.csv"))
+
+```
+
+Full table can be found here: [crSignificantGenes.csv](crSignificantGenes.csv)
+
