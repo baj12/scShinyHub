@@ -455,7 +455,8 @@ heatmapSOMReactive <- reactive({
   projections <- projections()
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
-
+  featureData <- featureDataReact()
+  
   # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
   if (is.null(gbm_matrix)) {
     return(
@@ -484,6 +485,7 @@ heatmapSOMReactive <- reactive({
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 
   geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
+  output$somGenes = renderText({paste(featureData[geneNames, "Associated.Gene.Name"],collapse = ", ", sep = ",")})
   if (length(geneNames) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(
@@ -492,6 +494,9 @@ heatmapSOMReactive <- reactive({
         type = "warning",
         duration = 20
       )
+    }
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "heatmapSOMReactive")
     }
     return(NULL)
   }
@@ -526,7 +531,7 @@ heatmapSOMReactive <- reactive({
 
 
   if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "somheatmap")
+    removeNotification(id = "heatmapSOMReactive")
   }
   end.time <- Sys.time()
   cat(file = stderr(), paste("===heatmapSOMReactive:done", difftime(end.time, start.time, units = "min"), " min\n"))

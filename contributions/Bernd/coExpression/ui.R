@@ -210,7 +210,7 @@ tabList <- list(
       3,
       numericInput("dimSOM", "number of nodes per dimension",
         20,
-        min = 1, max = 100
+        min = 2, max = 100
       ),
       textInput("geneSOM", "Gene of interest", value = defaultValueSingleGene)
     )),
@@ -220,6 +220,11 @@ tabList <- list(
       offset = 1,
       pHeatMapUI("heatmapSOM") %>% withSpinner()
     )),
-    br()
+    br(),
+    fluidRow(column(
+      10,
+      offset = 1,
+      verbatimTextOutput("somGenes")
+    ))
   )
 )
