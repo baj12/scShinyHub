@@ -31,7 +31,7 @@ dca_impute <- reactive({
   
   tfile = tempfile(pattern = "dcaInput", tmpdir = tempdir(), fileext = ".csv")
   tdir = paste0(tempdir(),"/dcaresults")
-  resFile = paste0(tdir,"/mean.tsv")
+  resFile = paste0(tdir,"/mean_norm.tsv")
   write.csv(x = gbm_matrix, file = tfile)
   system(paste("dca", tfile, tdir))
   if (!file.exists(resFile)) {
