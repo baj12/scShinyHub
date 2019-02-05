@@ -1,17 +1,27 @@
 # normalization parameters
 
 # choice for the radio buttion
-myNormalizationChoices = list(dca_log = "dca_impute" #,
-                              #equalize_gbms = "equalize_gbms"
-                              )
+tryCatch(
+  {
+    system("dca")
+    myNormalizationChoices <<- list(dca_log = "dca_impute" #,
+                                  #equalize_gbms = "equalize_gbms"
+    )
+    
+    # value should be of class shiny.tag
+    myNormalizationParameters <<- list(dca_log = h4("no Parameters implemented")
+                                     #,
+                                     #equalize_gbms = h4("no Parameters implemented")
+                                     
+    )
+  },
+  warning = function(e){
+    print("\n\nwarning: dca not installed, function not available\n\n")
+    myNormalizationChoices <<- c()
+    myNormalizationParameters <<- list()
+  }
+)     
 
-# value should be of class shiny.tag
-myNormalizationParameters = list(dca_log = h4("no Parameters implemented")
-                                 #,
-                                 #equalize_gbms = h4("no Parameters implemented")
-                                 
-)
-                                 
 
 dca_impute <- reactive({
   if (DEBUG)
@@ -52,10 +62,6 @@ dca_impute <- reactive({
   
   
 })
-
-
-
-
 
 
 
