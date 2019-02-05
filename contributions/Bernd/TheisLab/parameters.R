@@ -1,17 +1,35 @@
 # normalization parameters
 
 # choice for the radio buttion
-myNormalizationChoices = list(dca_log = "dca_impute" #,
-                              #equalize_gbms = "equalize_gbms"
-                              )
+cat(file = stderr(), "parameters1\n")
+tryCatch(
+  {
+    system("dca")
+    myNormalizationChoices <<- list(dca_log = "dca_impute" #,
+                                  #equalize_gbms = "equalize_gbms"
+    )
+    
+    # value should be of class shiny.tag
+    myNormalizationParameters <<- list(dca_log = h4("no Parameters implemented")
+                                     #,
+                                     #equalize_gbms = h4("no Parameters implemented")
+                                     
+    )
+  },
+  warning = function(e){
+    print("warning")
+    myNormalizationChoices <<- c()
+    myNormalizationParameters <<- list()
+  },
+  error = function(e){
+    print("error")
+    myNormalizationChoices = c()
+    myNormalizationParameters = list()
+  }
+)     
 
-# value should be of class shiny.tag
-myNormalizationParameters = list(dca_log = h4("no Parameters implemented")
-                                 #,
-                                 #equalize_gbms = h4("no Parameters implemented")
-                                 
-)
-                                 
+cat(file = stderr(), "parameters2\n")
+
 
 dca_impute <- reactive({
   if (DEBUG)
@@ -55,6 +73,7 @@ dca_impute <- reactive({
 
 
 
+cat(file = stderr(), "parameters end\n")
 
 
 
