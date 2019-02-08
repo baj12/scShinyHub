@@ -4,7 +4,7 @@
 cat(file = stderr(), "parameters1\n")
 tryCatch(
   {
-    system("dca")
+    system("dca -h")
     myNormalizationChoices <<- list(dca_log = "dca_impute" #,
                                   #equalize_gbms = "equalize_gbms"
     )
