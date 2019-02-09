@@ -12,11 +12,15 @@ normaliztionChoices = list(raw = "rawNormalization")
 # parameterContributions = list()
 parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
 for(fp in parFiles){
+  if (DEBUG) {
+    cat(file = stderr(), paste(fp, "\n"))
+  }
+  
   myNormalizationChoices = c()
   source(fp, local = TRUE)
-  save(file = "normalizationCH.RData", list=ls())
+  # save(file = "normalizationCH.RData", list=ls())
   # load(file = "normalizationCH.RData")
-  if (length(myNormalizationChoices) > 0){
+  if (length(myNormalizationChoices) > 0) {
     for (li in 1:length(myNormalizationChoices)){
       liVal = myNormalizationChoices[[li]]
       if(length(liVal)>0){
@@ -27,6 +31,10 @@ for(fp in parFiles){
       }
     }
   }
+  if (DEBUG) {
+    cat(file = stderr(), paste("end:", fp, "\n"))
+  }
+  
 }
 
 # here we add content to the page on the rigth (main visualization window)
@@ -52,3 +60,6 @@ allTabs[[length(allTabs) + 1]] = list(
   
   )
 )
+if (DEBUG) {
+  cat(file = stderr(), paste("end: parameters.R\n"))
+}

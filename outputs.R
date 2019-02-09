@@ -208,3 +208,7 @@ callModule(tableSelectionServer, "normalizationResult", gbmLogMatrixDisplay)
 output$descriptOfWorkOutput <- renderPrint({
   input$descriptionOfWork
 })
+
+if (DEBUG) {
+  cat(file = stderr(), paste("end: outputs.R\n"))
+}
