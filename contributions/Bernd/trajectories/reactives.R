@@ -285,7 +285,7 @@ elpiGraphConstruct <- reactive({
   }
   if (DEBUGSAVE)
     base::save(file = "~/scShinyHubDebug/elpiConstruct.RData", list = c(base::ls(), base::ls(envir = globalenv())))
- load(file = "~/scShinyHubDebug/elpiConstruct.RData")
+ # load(file = "~/scShinyHubDebug/elpiConstruct.RData")
  Tree_Graph = ConstructGraph(PrintGraph = cep[[length(cep)]])
   list(Tree_Graph = Tree_Graph,
        Tree_e2e  = GetSubGraph(Net = Tree_Graph, Structure = 'end2end'),
