@@ -11,6 +11,8 @@ if(DEBUG)cat(file=stderr(), paste("parameters:", length(allTabs)," ", "\n"))
 normaliztionChoices = list(raw = "rawNormalization")
 # parameterContributions = list()
 parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
+save(file = "normalizationCH.RData", list=ls())
+# load(file = "normalizationCH.RData")
 for(fp in parFiles){
   if (DEBUG) {
     cat(file = stderr(), paste(fp, "\n"))
@@ -18,8 +20,6 @@ for(fp in parFiles){
   
   myNormalizationChoices = c()
   source(fp, local = TRUE)
-  # save(file = "normalizationCH.RData", list=ls())
-  # load(file = "normalizationCH.RData")
   if (length(myNormalizationChoices) > 0) {
     for (li in 1:length(myNormalizationChoices)){
       liVal = myNormalizationChoices[[li]]
@@ -33,6 +33,7 @@ for(fp in parFiles){
   }
   if (DEBUG) {
     cat(file = stderr(), paste("end:", fp, "\n"))
+    cat(file = stderr(), paste("end:", normaliztionChoices, "\n"))
   }
   
 }
