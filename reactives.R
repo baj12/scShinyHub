@@ -64,7 +64,7 @@ inputDataFunc <- function(inFile) {
     return(NULL)
   }
   if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
-    showNotification("gbm - fData doesn't contain id and symbol columns", duration = NULL)
+    showNotification("gbm - fData doesn't contain id and/or symbol columns", duration = NULL)
   }
   c("Associated.Gene.Name", "Gene.Biotype", "Description")
   if (sum(!c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
