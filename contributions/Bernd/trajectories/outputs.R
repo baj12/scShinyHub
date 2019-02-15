@@ -1,3 +1,5 @@
+
+
 # The output type has to be in line with the tablist item. I.e. plotOutput in this case
 output$scropius_trajectory_plot <- renderPlot({
   projections = projections()
@@ -6,9 +8,13 @@ output$scropius_trajectory_plot <- renderPlot({
   dimY = input$dimScorpiusY
   dimCol = input$dimScorpiusCol
   doCalc = input$scorpiusCalc
-  
-  if(!doCalc |  is.null(projections)  ){
+  if (is.null(projections)  ){
     return(NULL)
+  }
+  if (!doCalc) {
+    require(ggplot2)
+    p1 <- ggplot(projections, aes_string(dimX,dimY, colour = dimCol)) + geom_point()
+    return(p1)
   }
   
   if(DEBUG)cat(file=stderr(), paste("scropius_trajectory_plot:\n"))
@@ -95,3 +101,48 @@ output$downLoadTraj <- downloadHandler(
     write.csv(scTRAJ, file)
   }
 )
+
+
+# --------------------------
+# Elpi Graph
+# --------------------------
+
+output$elpi_plot <- renderPlot({
+  if (DEBUG) {
+    cat(file = stderr(), "elpi_plot\n")
+  }
+  tree_data = elpiTreeData()
+  cep = elpiGraphCompute()
+  PointLabel = elpiPointLabel()
+  if ( is.null(tree_data) | is.null(cep)) {
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    base::save(file = "~/scShinyHubDebug/elpi_plot.RData", list = c(base::ls(), base::ls(envir = globalenv())))
+  # load(file = "~/scShinyHubDebug/elpi_plot.RData")
+  require(ggrepel)
+  p <- PlotPG(X = tree_data, TargetPG = cep[[length(cep)]], GroupsLab = PointLabel, p.alpha = 0.9)
+  p[[1]] = p[[1]] + geom_label_repel(data = ddply(p[[1]]$data,~Group,summarise,meanA = mean(PCA), meanB = mean(PCB)),
+                                     aes(x = meanA, y = meanB, label = Group),
+                                     vjust = 1)
+  p
+
+})
+
+output$elpi_histo <- renderPlot({
+  if (DEBUG) {
+    cat(file = stderr(), "elpi_histo\n")
+  }
+  PointLabel = elpiPointLabel()
+  if ( is.null(PointLabel) ) {
+    return(NULL)
+  }
+  if (DEBUGSAVE)
+    base::save(file = "~/scShinyHubDebug/elpi_histo.RData", list = c(base::ls(), base::ls(envir = globalenv())))
+  barplot(table(PointLabel), las = 2, ylab="Number of points")
+
+})
+
+
+
+

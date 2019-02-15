@@ -36,7 +36,7 @@ inputTab = tabItem(tabName = "input",
                          '.tsv'
                        )
                      )))
-
+                   
 )
 
 
@@ -180,11 +180,12 @@ parFiles = dir(path = "contributions", pattern = "parameters.R", full.names = TR
 for(fp in parFiles){
   myPparameters = list()
   source(fp, local = TRUE)
-  
-  for (li in myPparameters){
-    if(length(li)>0){
-       if(DEBUG)cat(file=stderr(), paste(li$children[[1]], "\n"))
-      parameterContributions[[length(parameterContributions) + 1]] = li
+  if (length(myPparameters) > 0){
+    for (li in myPparameters){
+      if(length(li)>0){
+        if(DEBUG)cat(file=stderr(), paste(li$children[[1]], "\n"))
+        parameterContributions[[length(parameterContributions) + 1]] = li
+      }
     }
   }
 }
@@ -197,10 +198,13 @@ parameterItems  = list(
 )
 
 
-  
-  
+
+
 # # link to the content of the 
 # parametersTab  = tabItem(tabName = "normalizations",
 #                             fluidRow(div(h3('Cell selection'), align = 'center')),
 #                             br()
 # )
+if (DEBUG) {
+  cat(file = stderr(), paste("end: tabs.R\n"))
+}

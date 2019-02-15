@@ -20,7 +20,7 @@ scaterReadsFunc <- function(gbm, fd) {
   # rownames(pheno_data) <- pheno_dat
 
   reads <- as.matrix(counts)
-  rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"])
+  rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"], sep = "___")
   rownames(reads)[is.na(rownames(reads)) ] <- "na"
   reads <- SingleCellExperiment(
     assays = list(counts = reads),
@@ -118,13 +118,15 @@ tsne <- reactive({
     save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/tsne.RData')
+  require(parallel)
+  
   retval <- tryCatch({
     run_tsne(
       pca,
       dims = tsneDim,
       perplexity = tsnePerplexity,
       theta = tsneTheta,
-      check_duplicates = FALSE
+      check_duplicates = FALSE, num_threads = detectCores()
     )
   },
   error = function(e) {

@@ -348,7 +348,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
 
   expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
   ylabText = "number genes from list"
-  projections = projections[,1:12]
+  # projections = projections[,1:12]
   if (showPermutations) {
     perms = rep("", length(expression))
     ylabText = "Permutations"
@@ -383,7 +383,8 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   
 
   # if(class(projections[,dbCluster])=="factor"){
-  p1 <-
+
+    p1 <-
     ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal", 
                                    fill = factor(projections[, dbCluster]))) +
     geom_violin(scale = "width") +
@@ -439,7 +440,7 @@ somFunction <- function(iData, nSom, geneName) {
     scaleCooling = "linear"
   )
 
-  rownames(res2$globalBmus) <- rownames(iData)
+  rownames(res2$globalBmus) <- make.unique(as.character(rownames(iData)), sep = "___")
   simGenes <- rownames(res2$globalBmus)[which(res2$globalBmus[, 1] == res2$globalBmus[geneName, 1] &
     res2$globalBmus[, 2] == res2$globalBmus[geneName, 2])]
   return(simGenes)
@@ -454,7 +455,8 @@ heatmapSOMReactive <- reactive({
   projections <- projections()
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
-
+  featureData <- featureDataReact()
+  
   # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
   if (is.null(gbm_matrix)) {
     return(
@@ -483,6 +485,7 @@ heatmapSOMReactive <- reactive({
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 
   geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
+  output$somGenes = renderText({paste(featureData[geneNames, "Associated.Gene.Name"],collapse = ", ", sep = ",")})
   if (length(geneNames) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(
@@ -491,6 +494,9 @@ heatmapSOMReactive <- reactive({
         type = "warning",
         duration = 20
       )
+    }
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "heatmapSOMReactive")
     }
     return(NULL)
   }
@@ -525,7 +531,7 @@ heatmapSOMReactive <- reactive({
 
 
   if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "somheatmap")
+    removeNotification(id = "heatmapSOMReactive")
   }
   end.time <- Sys.time()
   cat(file = stderr(), paste("===heatmapSOMReactive:done", difftime(end.time, start.time, units = "min"), " min\n"))

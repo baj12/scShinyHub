@@ -26,6 +26,7 @@ library(shinyMCE)
 library(kohonen)
 library(Rsomoclu)
 library(gtools)
+library(ElPiGraph.R)
 
 if (file.exists("defaultValues.R")) {
   source(file = "defaultValues.R")
@@ -36,6 +37,7 @@ if (file.exists("defaultValues.R")) {
 
 source("serverFunctions.R")
 
+# source("parameters.R", local = TRUE)
 
 # create large example files from split
 # this is needed to overcome the size limit in GitHub

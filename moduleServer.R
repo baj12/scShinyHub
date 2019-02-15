@@ -256,11 +256,14 @@ clusterServer <- function(input, output, session,
     ns <- session$ns
     input$changeGroups # action button
     addToSelection <- addToGroupValue
+    
     if (DEBUG) {
       cat(file = stderr(), "cluster: changeGroups\n")
     }
     
+    # we isolate here because we only want to change if the button is clicked.
     isolate({
+      prjs <- sessionProjections$prjs
       brushedPs <- input$b1
       gbm <- gbm()
       inpClusters <- input$clusters
@@ -297,7 +300,22 @@ clusterServer <- function(input, output, session,
       value = grpN
     )
     
+    if (ncol(prjs) > 0) {
+      # didn't find a way to easily overwrite columns
+      for (cn in colnames(grpNs)) {
+        if (cn %in% colnames(prjs)) {
+          prjs[,cn] = grpNs[,cn]
+        } else {
+          prjs = cbind(prjs, grpNs[,cn])
+        }
+      }
+      
+      sessionProjections$prjs = prjs
+    } else {
+      sessionProjections$prjs = grpNs
+    }
     selectedGroupName <<- grpN
+    
   })
   
   # display the number of cells that belong to the group, but only from the visible ones
