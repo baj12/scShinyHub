@@ -143,6 +143,8 @@ output$dge <- DT::renderDataTable({
   top.genes <- dge()
   top.genes$Associated.Gene.Name <-
     featureData[rownames(top.genes), 'Associated.Gene.Name']
+  if ("Description" %in% colnames(featureData))
+    top.genes$Description = featureData[rownames(top.genes), 'Description']
   if (dim(top.genes)[1] > 0) {
     return(DT::datatable(top.genes,
                   options = list(
