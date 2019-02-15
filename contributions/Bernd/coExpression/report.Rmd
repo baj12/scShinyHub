@@ -317,7 +317,8 @@ retVal <- geneGrp_vioFunc(
   gbm = gbm,
   featureData = featureData,
   minExpr = minExpr,
-  dbCluster = projectionVar
+  dbCluster = projectionVar,
+  showPermutations = input$showPermutations
 )
 retVal
 ```
