@@ -3,6 +3,7 @@
 menuList =  list(
   menuItem("Trajectories", tabName = "TrajectoryList", startExpanded = FALSE,
            menuSubItem("Scorpius", tabName = "scorpiusTab")
+           , menuSubItem("ELPIGraph", tabName = "elpiGraphTab")
   )
 )
 
@@ -15,27 +16,27 @@ tabList = list(
                                          checkboxInput("scorpiusCalc", "calculate", FALSE)))
                          ,
                          fluidRow(
-                                  column(4,
-                                selectInput(
-                                  'dimScorpiusX',
-                                  label = 'Component 1',
-                                  choices = c('tsne1', 'tsne2', 'tsne3'),
-                                  selected = 'tsne1'
-                                )),
-                         column(4,
-                                selectInput(
-                                  'dimScorpiusY',
-                                  label = 'Component 2',
-                                  choices = c('tsne1', 'tsne2', 'tsne3'),
-                                  selected = 'tsne2'
-                                )),
-                         column(4,
-                                selectInput(
-                                  'dimScorpiusCol',
-                                  label = 'Color by',
-                                  choices = c('sample', 'tsne1', 'tsne2', 'tsne3'),
-                                  selected = 'sample'
-                                ))),
+                           column(4,
+                                  selectInput(
+                                    'dimScorpiusX',
+                                    label = 'Component 1',
+                                    choices = c('tsne1', 'tsne2', 'tsne3'),
+                                    selected = 'tsne1'
+                                  )),
+                           column(4,
+                                  selectInput(
+                                    'dimScorpiusY',
+                                    label = 'Component 2',
+                                    choices = c('tsne1', 'tsne2', 'tsne3'),
+                                    selected = 'tsne2'
+                                  )),
+                           column(4,
+                                  selectInput(
+                                    'dimScorpiusCol',
+                                    label = 'Color by',
+                                    choices = c('sample', 'tsne1', 'tsne2', 'tsne3'),
+                                    selected = 'sample'
+                                  ))),
                          fluidRow(column(12,
                                          tipify(
                                            downloadButton("downLoadTraj", "Download trajectory"),
@@ -54,12 +55,12 @@ tabList = list(
                                          )
                          )  ),
                          fluidRow(column(12,
-                           plotOutput('scropius_trajectory_plot', height = '672px') #%>% withSpinner()
+                                         plotOutput('scropius_trajectory_plot', height = '672px') #%>% withSpinner()
                          )  ),
                          # tags$h3("Heatmap "),
                          fluidRow(column(12,
                                          pHeatMapUI("scorpiusHeatmapPlotModule") %>% withSpinner()
-                           # imageOutput('scorpiusHeatmapPlotModule', height = '672px') #%>% withSpinner() 
+                                         # imageOutput('scorpiusHeatmapPlotModule', height = '672px') #%>% withSpinner() 
                          )),
                          tags$h3("table"),
                          fluidRow(column(
@@ -67,6 +68,61 @@ tabList = list(
                            tableSelectionUi("scorpiusTableMod")
                          ))
   )
+  ,
+  elpiTab = tabItem("elpiGraphTab",
+                    tags$h3("trajectory by ElpiGraph"),
+                    fluidRow(column(12,offset = 1,
+                                    checkboxInput("elpiCalc", "calculate", FALSE)))
+                    ,
+                    fluidRow(
+                      column(4,
+                             selectInput(
+                               'dimElpi',
+                               label = 'Dimensions to use',
+                               choices = c('elpiPCA'),
+                               selected = 'elpiPCA'
+                             ))
+                      ,
+                      column(4,
+                             selectInput(
+                               'ElpiMethod',
+                               label = 'Method to use',
+                               choices = c('computeElasticPrincipalCurve',
+                                           'computeElasticPrincipalTree',
+                                           'computeElasticPrincipalCircle'),
+                               selected = 'computeElasticPrincipalTree'
+                             )),
+                      column(4,
+                             numericInput(
+                               inputId = 'elpiNumNodes',
+                               label = 'Number of nodes',
+                               value = 60,
+                               min = 10, max = 100, step = 1
+                             )),
+                      column(4,
+                             numericInput(
+                               inputId = 'elpinReps',
+                               label = 'Number of repeats',
+                               value = 1,
+                               min = 1, max = 50, step = 1
+                             )),
+                      column(4,
+                             numericInput(
+                               inputId = 'elpiProbPoint',
+                               label = 'probability of inclusing of a single point for each computation',
+                               value = 1,
+                               min = 0.1, max = 1, step = 0.1
+                             ))),
+                    fluidRow(column(12,
+                                    plotOutput('elpi_plot', height = '672px') #%>% withSpinner()
+                    ))  ,
+                    # tags$h3("Heatmap "),
+                    fluidRow(column(12,
+                                    plotOutput('elpi_histo', height = '672px') #%>% withSpinner()
+                    ))
+                    
+  )
+  
 )
 
 # declare heavy calculations

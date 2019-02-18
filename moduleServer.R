@@ -85,7 +85,7 @@ clusterServer <- function(input, output, session,
       
       if (DEBUGSAVE) {
         cat(file = stderr(), paste("selectedCell: saving\n"))
-        save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(), ls(envir = globalenv())))
+        base::save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(), ls(envir = globalenv())))
       }
       # load(file="~/scShinyHubDebug/clusterServerreturnValues.RData")
       if (!is.null(projections)) {

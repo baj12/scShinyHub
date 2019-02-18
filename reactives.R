@@ -64,7 +64,12 @@ inputDataFunc <- function(inFile) {
     return(NULL)
   }
   if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
-    showNotification("gbm - fData doesn't contain id and symbol columns", duration = NULL)
+    showNotification("gbm - fData doesn't contain id and/or symbol columns", duration = NULL)
+  }
+  c("Associated.Gene.Name", "Gene.Biotype", "Description")
+  if (sum(!c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
+    showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)", duration = NULL)
+    
   }
   if (DEBUG) {
     cat(file = stderr(), "inputData: done\n")
@@ -471,7 +476,9 @@ gbmFunc <-
     pD <- pData(gbmNew)
     for (colN in colnames(pD)) {
       if (colN == "barcode") next()
-      pD[, colN] <- factor(as.character(pD[, colN]))
+      if(class(pD[, colN]) %in% c("character")){
+        pD[, colN] <- factor(as.character(pD[, colN]))
+      }
     }
     pData(gbmNew) <- pD
 
@@ -884,6 +891,11 @@ projections <- reactive({
   # add a column for gene specific information that will be filled/updated on demand
   projections$UmiCountPerGenes <- 0
   projections$UmiCountPerGenes2 <- 0
+  for (pdIdx in colnames(pd)) {
+    if (!pdIdx %in% colnames(projections)) {
+      projections[, pdIdx] = pd[, pdIdx]
+    }
+  }
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===projections:done",difftime(end.time, start.time, units = "min"),"\n")

@@ -205,3 +205,6 @@ parameterItems  = list(
 #                             fluidRow(div(h3('Cell selection'), align = 'center')),
 #                             br()
 # )
+if (DEBUG) {
+  cat(file = stderr(), paste("end: tabs.R\n"))
+}

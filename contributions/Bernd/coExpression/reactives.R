@@ -316,7 +316,7 @@ plotCoExpressionFunc <-
 
 # geneGrp_vioFunc ------
 geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1, 
-                            dbCluster, showPermutations) {
+                            dbCluster, showPermutations=FALSE) {
   require(gtools)
   require(stringr)
   genesin <- toupper(genesin)
