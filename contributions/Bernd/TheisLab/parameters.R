@@ -1,26 +1,39 @@
 # normalization parameters
 
 # choice for the radio buttion
+# cat(file = stderr(), "parameters1\n")
+#     myNormalizationChoices <- list(dca_log = "dca_impute" #,
+#                                   #equalize_gbms = "equalize_gbms"
+#     )
 tryCatch(
   {
-    system("dca")
-    myNormalizationChoices <<- list(dca_log = "dca_impute" #,
+    # save(file = "test.RData", list = c(ls(), ls(envir = .GlobalEnv)))
+#    load(file = "test.RData")
+    system("dca -h > /dev/null")
+    myNormalizationChoices <- list(dca_log = "dca_impute" #,
                                   #equalize_gbms = "equalize_gbms"
     )
-    
+
     # value should be of class shiny.tag
-    myNormalizationParameters <<- list(dca_log = h4("no Parameters implemented")
+    myNormalizationParameters <- list(dca_log = h4("no Parameters implemented")
                                      #,
                                      #equalize_gbms = h4("no Parameters implemented")
-                                     
+
     )
   },
   warning = function(e){
-    print("\n\nwarning: dca not installed, function not available\n\n")
+    print("warning")
+    myNormalizationChoices <<- c()
+    myNormalizationParameters <<- list()
+  },
+  error = function(e){
+    print("error")
     myNormalizationChoices <<- c()
     myNormalizationParameters <<- list()
   }
-)     
+)
+
+# cat(file = stderr(), "parameters2\n")
 
 
 dca_impute <- reactive({
@@ -65,4 +78,5 @@ dca_impute <- reactive({
 
 
 
+cat(file = stderr(), "parameters (Theislab) end\n")
 
