@@ -65,6 +65,9 @@ tableSelectionUi <- function(id) {
       verbatimTextOutput(ns("cellSelection"))
     ),
     fluidRow(
+      downloadButton(ns("download_cellNameTable"), "Download Table")
+    ),
+    fluidRow(
       h4("Cells", offset = 1),
       checkboxInput(ns("selectAll"), "Select all rows", FALSE), br(),
       column(
@@ -88,7 +91,8 @@ pHeatMapUI <- function(id) {
     ) %>% withSpinner(),
     fluidRow(
       checkboxInput(ns("moreOptions"), "show more options", FALSE),
-      uiOutput(ns("additionalOptions"))
+      uiOutput(ns("additionalOptions")),
+      downloadButton(ns("download_pHeatMapUI"), "Download PlotData")
       # checkboxInput(ns("showCells"), "show cell names", FALSE),
       #
       # verbatimTextOutput(ns('cellSelection'))

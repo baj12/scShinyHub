@@ -537,6 +537,17 @@ tableSelectionServer <- function(input, output, session,
       return(NULL)
     }
   })
+  
+  output$download_cellNameTable <- downloadHandler(
+    filename = function() {
+      paste("cellNameTable", "table.csv", sep = '_')
+    },
+    content = function(file) {
+      dataTables <- dataTab()
+      write.csv(dataTables, file)
+    }
+  )
+  
 }
 
 heatmapModuleFunc <- function(
@@ -626,6 +637,8 @@ pHeatMapModule <- function(input, output, session,
   if (DEBUG) cat(file = stderr(), paste("pHeatMapModule", session$ns("test"), "\n"))
   ns <- session$ns
   
+  outfilePH = NULL
+  
   updateInput <- reactive({
     proje <- projections()
     
@@ -703,8 +716,8 @@ pHeatMapModule <- function(input, output, session,
     if (is.null(height)) {
       height <- 96 * 7
     }
-    
-    return(list(src = normalizePath(outfile, mustWork = FALSE),
+    outfilePH <<- outfile
+    return(list(src = outfilePH,
                 contentType = 'image/png',
                 width = width,
                 height = height,
@@ -746,5 +759,47 @@ pHeatMapModule <- function(input, output, session,
       )
     )
   })
+  output$download_pHeatMapUI  <- downloadHandler(
+    filename = function() {
+      paste("pHeatMap", "data.zip", sep = '_')
+    },
+    content = function(file) {
+      heatmapData = pheatmapList()
+      addColNames <- input$ColNames
+      orderColNames <- input$orderNames
+      moreOptions <- input$moreOptions
+      groupNs <- groupNames$namesDF
+      proje <- projections()
+      save(file = "~/scShinyHubDebug/download_pHeatMapUI.RData", list = c("outfilePH", ls(), ls(envir = globalenv())))
+      dfilename = paste0(reportTempDir, "/sessionData.RData")
+      base::save(file = dfilename, list = 
+                   c("heatmapData", "addColNames", "orderColNames", "moreOptions", "proje", "groupNs"))
+
+      
+      # 2do: not sure why I cannot find the original file... 
+      # maybe there is an intermediate session created?
+      outfile <- paste0(tempdir(), "/heatmap", ns("debug"),base::sample(1:10000, 1), ".png")
+      outfile = normalizePath(outfile, mustWork = FALSE)
+      heatmapData$filename = outfile
+      
+      if (length(addColNames) > 0 & moreOptions) {
+        heatmapData$annotation_col = proje[rownames(heatmapData$annotation_col),addColNames, drop=FALSE]
+      }
+      if (sum(orderColNames %in% colnames(proje)) > 0 & moreOptions) {
+        heatmapData$cluster_cols <- FALSE
+        colN <- rownames(psych::dfOrder(proje, orderColNames))
+        colN <- colN[colN %in% colnames(heatmapData$mat)]
+        heatmapData$mat = heatmapData$mat[, colN, drop=FALSE]
+      }
+      
+      do.call(pheatmap, heatmapData)
+      
+      
+            zippedReportFiles <- c(dfilename,
+                                   outfile)
+      zip(file, zippedReportFiles, flags = "-9Xj")
+    }
+  )
+  
   
 }
