@@ -110,7 +110,7 @@ tabList = list(
                              numericInput(
                                inputId = 'elpiProbPoint',
                                label = 'probability of inclusing of a single point for each computation',
-                               value = 1,
+                               value = 0.6,
                                min = 0.1, max = 1, step = 0.1
                              ))),
                     fluidRow(column(12,
