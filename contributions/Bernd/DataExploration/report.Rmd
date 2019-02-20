@@ -164,7 +164,18 @@ input$dimension_x4 : `r input$dimension_x4`
 
 input$dimension_y4 : `r input$dimension_y4`
 
-```{r bj-DE-panelPlot, eval=TRUE, echo=FALSE}
+```{r bj-DE-panelPlot, eval=FALSE, echo=FALSE}
+
+#@DO fix
+# output$panelPlot
+# Quitting from lines 164-211 (/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmpw4FHir/filee53f2f5d5938.Rmd) 
+# Quitting from lines NA-260 (/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmpw4FHir/filee53f2f5d5938.Rmd) 
+# 
+# 
+# Warning: Error in seq.int: 'from' must be a finite number
+#   [No stack trace available]
+
+
 if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
 
 genesin <- input$panelplotids

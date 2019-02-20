@@ -1,5 +1,5 @@
 ---
-title: "cellranger report"
+title: "theis report"
 author: "Bernd Jagla"
 date: "3/23/2018"
 output: html_document
@@ -7,7 +7,7 @@ output: html_document
 
 # Cellranger output
 
-```{r bj-cellRanger-checkDEBUG, include=FALSE}
+```{r bj-theis-checkDEBUG, include=FALSE}
 if(!exists("DEBUG")){
   DEBUG=TRUE
   # DEBUG=FALSE
@@ -20,7 +20,7 @@ if(!exists("DEBUGSAVE")){
 
 ```
 
-```{r bj-cellRanger-loadData, include=FALSE}
+```{r bj-theis-loadData, include=FALSE}
 require(shiny)
 require(shinyTree)
 require(shinyBS)
@@ -73,7 +73,7 @@ callModule(
   crHeatImage
 )
 
-```{r prioritized_genes, eval=TRUE, include=FALSE, warning=FALSE, error=FALSE}
+```{r theis, eval=TRUE, include=FALSE, warning=FALSE, error=FALSE}
 set.seed(seed = seed)
 prioritized_genes = prioritize_top_genes(gbm,
                                          as.numeric(as.character(projections$dbCluster)),
@@ -86,7 +86,7 @@ prioritized_genes = prioritize_top_genes(gbm,
 ```
 
 
-```{r crHeatImage_func, echo=FALSE}
+```{r theis_func, echo=FALSE}
 require(pheatmap)
   cat(file = stderr(), paste("crHeatImage_func\n"))
   heatmapData <- crHeatImage_func(gbm, projections, prioritized_genes) 
@@ -121,7 +121,7 @@ cat(file = stderr(), paste("save\n"))
 
 showing only genes marked as significant (max 200 genes)
 
-```{r bj-cellRanger-table, echo=FALSE, warning=FALSE, error=FALSE}
+```{r bj-theis-table, echo=FALSE, warning=FALSE, error=FALSE}
 require("forcats")
 require("tidyverse")
 prioritized_genes <- prioritized_genes_func(gbm, projections, seed = 1)
@@ -163,7 +163,7 @@ DT::datatable(dt[1:maxRow, 1:maxCol],
 ```
 maxRow for Data table: `r maxRow`
 
-```{r saveCRSig, echo=FALSE}
+```{r savetheis, echo=FALSE}
 # save full table in tmp folder to be included in report
   write.csv(dt, file = paste0(input$reportTempDir, "/crSignificantGenes.csv"))
 
