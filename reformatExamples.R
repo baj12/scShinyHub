@@ -22,13 +22,13 @@ infRows = unique(which(is.infinite(mat),arr.ind = TRUE)[,1])
 if(length(infRows)>0){
   mat = mat[-infRows,] 
 }
+
+mat = mat[rownames(mat) %in% rownames(featuredata),]
 fd=featuredata[rownames(mat),]
 gbm = newGeneBCMatrix(mat = as(mat, "dgTMatrix"), fd=fd, pd=pd)
 fData(gbm)$symbol = fData(gbm)$Associated.Gene.Name  
 fData(gbm)$id = rownames(fData(gbm))
-gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
-save(file = "Examples/PBMC-Apheresis.new.Rds", list = c("featuredata", "tsne.data", "log2cpm", "gbm", "gbm_log"))
+save(file = "Examples/PBMC-Apheresis.new.Rds", list = c("featuredata",  "gbm"))
 
 #################################
 rm(list=ls())

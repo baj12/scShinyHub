@@ -39,18 +39,18 @@ source("serverFunctions.R")
 
 # source("parameters.R", local = TRUE)
 
-# create large example files from split
-# this is needed to overcome the size limit in GitHub
-if (!file.exists("Examples/PBMC-Apheresis.new.Rds")) {
-  xaaName <- "Examples/PBMC.xaa"
-  xabName <- "Examples/PBMC.xab"
-  contents <- readBin(xaaName, "raw", file.info(xaaName)$size)
-  contents2 <- readBin(xabName, "raw", file.info(xabName)$size)
-  outFile <- file("Examples/PBMC-Apheresis.new.Rds", "ab")
-  writeBin(contents, outFile)
-  writeBin(contents2, outFile)
-  close(outFile)
-}
+# # create large example files from split
+# # this is needed to overcome the size limit in GitHub
+# if (!file.exists("Examples/PBMC-Apheresis.new.Rds")) {
+#   xaaName <- "Examples/PBMC.xaa"
+#   xabName <- "Examples/PBMC.xab"
+#   contents <- readBin(xaaName, "raw", file.info(xaaName)$size)
+#   contents2 <- readBin(xabName, "raw", file.info(xabName)$size)
+#   outFile <- file("Examples/PBMC-Apheresis.new.Rds", "ab")
+#   writeBin(contents, outFile)
+#   writeBin(contents2, outFile)
+#   close(outFile)
+# }
 
 # needs to be an option
 seed <- 2
