@@ -143,7 +143,7 @@ topExpGenesTable <- reactive({
     save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
-  # we only work on genes that have been selected
+  # we only work on cells that have been selected
   mat <- as.matrix(exprs(gbm_log))[, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0

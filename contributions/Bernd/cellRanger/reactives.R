@@ -158,7 +158,7 @@ crHeatImage <- reactive({
 prioritized_genes_func <- function(gbm, projections, seed) {
   set.seed(seed = seed)
   retVal <- tryCatch({
-    prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
+    cellrangerRkit::prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
       logscale = FALSE,
       min_mean = 0.5,
       p_cutoff = 0.05,
