@@ -234,6 +234,7 @@ if(!is.null(brushedPs)){
   # top.genes <- as.data.frame(exprs(gbm_log))
   maxRows <- min(nrow(mat), 200)
   top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
+  # 2do dim is not correct produces problmes
   if (dim(mat)[1] > 0) {
     mat <- mat[top.genesOrder, ]
     fd <- featureData[rownames(mat), c("Associated.Gene.Name", "Description")]
