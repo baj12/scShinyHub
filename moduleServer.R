@@ -127,7 +127,8 @@ clusterServer <- function(input, output, session,
         ns("clusters"),
         label = "Cluster",
         choices = c(0:noOfClusters),
-        selected = 0,
+        # selected = input$clusters, # not working because of stack, too slow and possible to create infinite loop
+        selected = c(0:noOfClusters),
         multiple = TRUE
       )
     }
