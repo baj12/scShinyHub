@@ -288,12 +288,13 @@ elpiGraphConstruct <- reactive({
  # load(file = "~/scShinyHubDebug/elpiConstruct.RData")
  Tree_Graph = ConstructGraph(PrintGraph = cep[[length(cep)]])
  Tree_Brches = GetSubGraph(Net = Tree_Graph, Structure = 'branches')
+ PartStruct = PartitionData(X = tree_data, NodePositions = cep[[length(cep)]]$NodePositions)
  
   list(Tree_Graph = Tree_Graph,
        Tree_e2e  = GetSubGraph(Net = Tree_Graph, Structure = 'end2end'),
        Tree_Brches = Tree_Brches,
        Tree_BrBrPt = GetSubGraph(Net = Tree_Graph, Structure = 'branches&bpoints'),
-       PartStruct = PartitionData(X = tree_data, NodePositions = cep[[length(cep)]]$NodePositions),
+       PartStruct = PartStruct,
        PtInBr = lapply(Tree_Brches, function(x){which(PartStruct$Partition %in% x)})
   )
 })
