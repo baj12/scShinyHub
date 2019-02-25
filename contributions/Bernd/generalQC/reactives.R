@@ -73,6 +73,9 @@ sampleHistFunc <- function(samples) {
 }
 
 inputTSNESample <- reactive({
+  on.exit(
+    removeNotification(id = "inputTSNESample")
+  )
   if (DEBUG) cat(file = stderr(), "inputTSNESample\n")
   projections <- projections()
   if (is.null(projections)) {
@@ -87,15 +90,15 @@ inputTSNESample <- reactive({
   }
   # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
 
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "inputTSNESample")
-  }
   return(projections)
 })
 
 # TODO separate  function from reactive : done? run_tsne is already the function.
 # Maybe we need a normalized name like tsneFunc?
 tsne <- reactive({
+  on.exit(
+    removeNotification(id = "tsne")
+  )
   if (DEBUG) {
     cat(file = stderr(), "tsne\n")
   }
@@ -141,9 +144,6 @@ tsne <- reactive({
   )
   if (DEBUG) {
     cat(file = stderr(), "tsne: done\n")
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "tsne")
   }
   return(retval)
 })
@@ -215,6 +215,9 @@ tsne5 <- reactive({
 
 
 tsne.data <- reactive({
+  on.exit(
+    removeNotification(id = "tsne.data")
+  )
   if (DEBUG) {
     cat(file = stderr(), "tsne.data\n")
   }
@@ -235,10 +238,7 @@ tsne.data <- reactive({
   tsne.data <- data.frame(tsne$Y)
   colnames(tsne.data) <- paste0("tsne", c(1:ncol(tsne.data)))
 
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "tsne.data")
-  }
-  if (DEBUG) {
+   if (DEBUG) {
     cat(file = stderr(), "tsne.data: done\n")
   }
   return(tsne.data)

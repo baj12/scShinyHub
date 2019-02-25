@@ -1,6 +1,9 @@
 # heatmapFunc ---------------------------------
 # used by bot selection and all
 coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells) {
+  on.exit(
+    removeNotification(id = "heatmap")
+  )
   #  create parameters used for pheatmap module
   genesin <- geneName2Index(genesin, featureData)
   expression <- gbm_matrix[genesin, cells]
@@ -65,9 +68,6 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
         "RdBu"
     )))(6)
   )
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "heatmap")
-  }
   retVal
 }
 
@@ -75,6 +75,9 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
 # heatmapSelectedReactive ----
 # reactive function for selected heatmap
 heatmapSelectedReactive <- reactive({
+  on.exit(
+    removeNotification(id = "selectedHeatmap")
+  )
   if (DEBUG) {
     cat(file = stderr(), "output$selectedHeatmap\n")
   }
@@ -119,9 +122,6 @@ heatmapSelectedReactive <- reactive({
   cells.1 <- scCells
   retval <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
 
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "selectedHeatmap")
-  }
   return(retval)
 })
 
@@ -328,10 +328,6 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   if (DEBUG) {
     cat(file = stderr(), length(map))
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "heatmapWarning")
-    removeNotification(id = "heatmapNotFound")
-  }
   if (length(map) == 0) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(
@@ -447,6 +443,10 @@ somFunction <- function(iData, nSom, geneName) {
 }
 
 heatmapSOMReactive <- reactive({
+  on.exit(
+    removeNotification(id = "heatmapSOMReactive")
+  )
+  
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "output$somReactive\n")
@@ -495,9 +495,6 @@ heatmapSOMReactive <- reactive({
         duration = 20
       )
     }
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "heatmapSOMReactive")
-    }
     return(NULL)
   }
   annotation <- data.frame(projections[, c("dbCluster", "sampleNames")])
@@ -530,9 +527,6 @@ heatmapSOMReactive <- reactive({
   # do.call(pheatmap, retVal)
 
 
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "heatmapSOMReactive")
-  }
   end.time <- Sys.time()
   cat(file = stderr(), paste("===heatmapSOMReactive:done", difftime(end.time, start.time, units = "min"), " min\n"))
 

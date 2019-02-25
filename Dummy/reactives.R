@@ -8,6 +8,10 @@ DummyFunc <- function(gbm_log){
 # here we define reactive values/variables
 # e.g.
 DummyReactive = reactive({
+  on.exit(
+    removeNotification(id = "DummyFunc")
+  )
+  
   # some debugging messages
   if(DEBUG)cat(file=stderr(), "pca\n")
   # call dependancies (reactives)
@@ -32,9 +36,6 @@ DummyReactive = reactive({
     return(NULL)
   }
   if(DEBUG)cat(file=stderr(), "inputData: done\n")
-  if(!is.null(getDefaultReactiveDomain())){
-    removeNotification( id="DummyFunc")
-  }
   return(retVal)
 })
 

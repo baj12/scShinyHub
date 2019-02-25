@@ -63,6 +63,9 @@ gbmPheatmap <- function(gbm, genes_to_plot, cells_to_plot, n_genes = 5, colour =
 
 
 crHeatImage_func <- function(gbm, projections, prioritized_genes) {
+  on.exit(
+    removeNotification(id = "crHeatMap")
+  )
   example_K <- length(levels(projections$dbCluster))
   # max is 30 for number of clusters
   if (example_K > 12) {
@@ -114,22 +117,19 @@ crHeatImage_func <- function(gbm, projections, prioritized_genes) {
   },
   error = function(cond) {
     cat(file = stderr(), "crHeatImage: problem, in gbm_pheatmap?\n")
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "crHeatMap")
-    }
     return(NULL)
   },
   warning = function(cond) {
     cat(file = stderr(), "crHeatImage: problem, in gbm_pheatmap?\n")
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "crHeatMap")
-    }
     return(NULL)
   }
   )
 }
 
 crHeatImage <- reactive({
+  on.exit(
+    removeNotification(id = "crHeatMap")
+  )
   if (DEBUG) cat(file = stderr(), "output$crHeatImage\n")
   gbm <- gbm()
   # projections = projections()
@@ -147,15 +147,15 @@ crHeatImage <- reactive({
   }
   # load(file='~/scShinyHubDebug/crHeatImage.RData')
   retVal <- crHeatImage_func(gbm, projections, prioritized_genes)
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "crHeatMap")
-  }
 
   return(retVal)
 })
 
 
 prioritized_genes_func <- function(gbm, projections, seed) {
+  on.exit(
+    removeNotification(id = "crpriotGenes")
+  )
   set.seed(seed = seed)
   retVal <- tryCatch({
     cellrangerRkit::prioritize_top_genes(gbm, as.numeric(as.character(projections$dbCluster)), "sseq",
@@ -167,18 +167,12 @@ prioritized_genes_func <- function(gbm, projections, seed) {
   },
   error = function(cond) {
     cat(file = stderr(), "prioritized_genes.Rdata: problem, are id and sample column persent?\n")
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "crpriotGenes")
-    }
     return(NULL)
   },
   warning = function(cond) {
     return("prioritize warning")
   }
   )
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "crpriotGenes")
-  }
 
   return(retVal)
 }

@@ -63,22 +63,32 @@ inputDataFunc <- function(inFile) {
   }
   # some checks
   if (sum(is.infinite(as.matrix(exprs(gbm)))) > 0) {
-    showNotification("gbm contains infinite values", 
-                     type = "error")
+    showNotification("gbm contains infinite values",
+      type = "error"
+    )
     return(NULL)
   }
   if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
-    showNotification("gbm - fData doesn't contain id and/or symbol columns", 
-                     duration = NULL, type = "error")
+    showNotification("gbm - fData doesn't contain id and/or symbol columns",
+      duration = NULL, type = "error"
+    )
   }
-  c("Associated.Gene.Name", "Gene.Biotype", "Description")
-  if (sum(!c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
+
+  if (!sum(c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
     showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
-                     duration = NULL, type = "error")
+      duration = NULL, type = "error"
+    )
+    if (!"Gene.Biotype" %in% colnames(featuredata)) {
+      featuredata$"Gene.Biotype" <- "not given"
+    }
+    if (!"Description" %in% colnames(featuredata)) {
+      featuredata$"Description" <- "not given"
+    }
+    dataTables$featuredata <- featuredata
     
   }
   # if (is.null(fData(dataTables$gbm)$symbol)){
-  #   
+  #
   # }
   if (DEBUG) {
     cat(file = stderr(), "inputData: done\n")
@@ -108,7 +118,7 @@ medianENSGfunc <- function(gbm) {
 
 medianENSG <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "medianENSG\n")
   }
@@ -125,7 +135,7 @@ medianENSG <- reactive({
   retVal <- medianENSGfunc(gbm)
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), paste("===medianENSG:done",difftime(end.time, start.time, units = "min"),"\n"))
+    cat(file = stderr(), paste("===medianENSG:done", difftime(end.time, start.time, units = "min"), "\n"))
   }
   return(retVal)
 })
@@ -137,7 +147,7 @@ medianUMIfunc <- function(gbm) {
 
 medianUMI <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "medianUMI\n")
   }
@@ -155,7 +165,7 @@ medianUMI <- reactive({
   retVal <- medianUMIfunc(gbm)
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===medianUMI:done\n",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===medianUMI:done\n", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -248,6 +258,9 @@ useCellsFunc <-
 # works on cells only
 # internal, should not be used by plug-ins
 useCells <- reactive({
+  on.exit(
+    removeNotification(id = "useCells")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "useCells\n")
@@ -276,14 +289,11 @@ useCells <- reactive({
     keepCells,
     cellKeepOnly
   )
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "useCells")
-  }   
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===useCells:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===useCells:done", difftime(end.time, start.time, units = "min"), "\n")
   }
-  
+
   return(retVal)
 })
 
@@ -304,7 +314,7 @@ featureDataReact <- reactive({
   useGenes <- rownames(dataTables$featuredata) %in% rownames(gbm)
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===featureData:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===featureData:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(dataTables$featuredata[useGenes, ])
 })
@@ -361,6 +371,9 @@ useGenesFunc <-
 
 # collects information from all places where genes being removed or specified
 useGenes <- reactive({
+  on.exit(
+    removeNotification(id = "useGenes")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "useGenes\n")
@@ -384,12 +397,9 @@ useGenes <- reactive({
     showNotification("which genes to use", id = "useGenes", duration = NULL)
   }
   retVal <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "useGenes")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===useGenes: done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===useGenes: done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -482,7 +492,7 @@ gbmFunc <-
     pD <- pData(gbmNew)
     for (colN in colnames(pD)) {
       if (colN == "barcode") next()
-      if(class(pD[, colN]) %in% c("character")){
+      if (class(pD[, colN]) %in% c("character")) {
         pD[, colN] <- factor(as.character(pD[, colN]))
       }
     }
@@ -495,6 +505,9 @@ gbmFunc <-
 # apply filters that depend on genes & cells
 # it is here that useCells and useGenes are combined and applied to select for
 gbm <- reactive({
+  on.exit(
+    removeNotification(id = "gbm")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "gbm\n")
@@ -528,12 +541,9 @@ gbm <- reactive({
     minG = minG,
     maxG = maxG
   )
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "gbm")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===gbm:DONE",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===gbm:DONE", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -541,7 +551,7 @@ gbm <- reactive({
 # takes a lot of memory and should be avoided.
 gbm_matrix <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "gbm_matrix\n")
   }
@@ -558,8 +568,8 @@ gbm_matrix <- reactive({
   retVal <- as.matrix(exprs(gbm))
   if (DEBUG) {
     end.time <- Sys.time()
-    
-    cat(file = stderr(), "===gbm_matrix:done",difftime(end.time, start.time, units = "min"),"\n")
+
+    cat(file = stderr(), "===gbm_matrix:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -575,6 +585,9 @@ rawNormalization <- reactive({
 
 # individual values
 gbm_log <- reactive({
+  on.exit(
+    removeNotification(id = "gbm_log")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "gbm_log\n")
@@ -603,19 +616,19 @@ gbm_log <- reactive({
 
   # gbm rownames are ENSG numbers
   # dataTables$gbm_log[useGenes, useCells]
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "gbm_log")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===gbm_log:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===gbm_log:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(gbm_log)
 })
 
 gbmLogMatrix <- reactive({
+  on.exit(
+    removeNotification(id = "gbmLogMatrix")
+  )
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "gbmLogMatrix\n")
   }
@@ -641,12 +654,9 @@ gbmLogMatrix <- reactive({
   # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
 
   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "gbmLogMatrix")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===gbmLogMatrix:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===gbmLogMatrix:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -655,6 +665,9 @@ gbmLogMatrix <- reactive({
 # TODO
 # we should probably just rename the rows and then have an option to tableSelectionServer that shows (or not) rownames
 gbmLogMatrixDisplay <- reactive({
+  on.exit(
+    removeNotification(id = "gbmLogMatrixDisplay")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "gbmLogMatrixDisplay\n")
@@ -683,12 +696,9 @@ gbmLogMatrixDisplay <- reactive({
   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
   rownames(retVal) <- make.names(fData(gbmLog)$symbol, unique = TRUE)
 
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "gbmLogMatrixDisplay")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===gbmLogMatrixDisplay:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===gbmLogMatrixDisplay:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -716,8 +726,11 @@ pcaFunc <- function(gbm_log) {
 }
 
 pca <- reactive({
+  on.exit(
+    removeNotification(id = "pca")
+  )
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "pca\n")
   }
@@ -732,12 +745,9 @@ pca <- reactive({
     showNotification("pca", id = "pca", duration = NULL)
   }
   retVal <- pcaFunc(gbm_log)
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "pca")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===pca:donedone",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===pca:donedone", difftime(end.time, start.time, units = "min"), "\n")
   }
 
   return(retVal)
@@ -760,6 +770,9 @@ kmClusteringFunc <- function(pca, seed, kNr = 10) {
 }
 
 kmClustering <- reactive({
+  on.exit(
+    removeNotification(id = "kmClustering")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "kmClustering\n")
@@ -786,12 +799,9 @@ kmClustering <- reactive({
     seed <- 1
   }
   retVal <- kmClusteringFunc(pca, seed = seed, kNr = kNr)
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "kmClustering")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===kmClustering:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===kmClustering:done", difftime(end.time, start.time, units = "min"), "\n")
   }
 
   return(retVal)
@@ -885,9 +895,8 @@ projections <- reactive({
         }
         if (DEBUG) {
           end.time <- Sys.time()
-          cat(file = stderr(), "===", proj[1], ":done",difftime(end.time, start.time1, units = "min"),"\n")
+          cat(file = stderr(), "===", proj[1], ":done", difftime(end.time, start.time1, units = "min"), "\n")
         }
-        
       }
 
       colnames(projections) <- cn
@@ -899,15 +908,15 @@ projections <- reactive({
   projections$UmiCountPerGenes2 <- 0
   for (pdIdx in colnames(pd)) {
     if (!pdIdx %in% colnames(projections)) {
-      projections[, pdIdx] = pd[, pdIdx]
+      projections[, pdIdx] <- pd[, pdIdx]
     }
   }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===projections:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===projections:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   if (ncol(prjs) > 0 & nrow(prjs) == nrow(projections)) {
-    projections <- cbind(projections,prjs)
+    projections <- cbind(projections, prjs)
   }
   return(projections)
 })
@@ -958,7 +967,7 @@ initializeGroupNames <- reactive({
 
 dbCluster <- reactive({
   start.time <- Sys.time()
-  
+
   kNr <- input$kNr
   # kNr = 10
   if (DEBUG) {
@@ -978,19 +987,19 @@ dbCluster <- reactive({
   }
 
   dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
-  
-   if (DEBUG) {
+
+  if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===dbCluster:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===dbCluster:done", difftime(end.time, start.time, units = "min"), "\n")
   }
-  
+
   return(dbCluster)
 })
 
 # sample --------
 sample <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "sample\n")
   }
@@ -1024,7 +1033,7 @@ sample <- reactive({
   }
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===sample:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===sample:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   retVal
   # return(sample)
@@ -1033,7 +1042,7 @@ sample <- reactive({
 # geneCount --------
 geneCount <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "geneCount\n")
   }
@@ -1048,14 +1057,14 @@ geneCount <- reactive({
   retVal <- colSums(as.matrix(exprs(gbm)) > 0)
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===geneCount:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
 
 umiCount <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "umiCount\n")
   }
@@ -1070,7 +1079,7 @@ umiCount <- reactive({
   retVal <- colSums(as.matrix(exprs(gbm)))
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===umiCount:done",difftime(end.time, start.time, units = "min"),"\n")
+    cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -1110,6 +1119,9 @@ sampleInfo <- reactive({
 
 # table of input cells with sample information
 inputSample <- reactive({
+  on.exit(
+    removeNotification(id = "inputSample")
+  )
   if (DEBUG) {
     cat(file = stderr(), "inputSample\n")
   }
@@ -1134,9 +1146,6 @@ inputSample <- reactive({
 
   if (DEBUG) {
     cat(file = stderr(), "inputSample: done\n")
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "inputSample")
   }
   if (dim(cellIds)[1] > 1) {
     return(cellIds)
@@ -1179,7 +1188,7 @@ log2cpm <- reactive({
 
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
-plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, 
+plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position) {
   geneid <- geneName2Index(g_id, featureData)
   grpNs <- groupNames$namesDF
@@ -1187,7 +1196,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   # if (length(geneid) == 1) {
   #   expression <- exprs(gbm_log)[geneid, ,drop=FALSE]
   # } else {
-  expression <- Matrix::colSums(exprs(gbm_log)[geneid, ,drop=FALSE])
+  expression <- Matrix::colSums(exprs(gbm_log)[geneid, , drop = FALSE])
   # }
   validate(need(is.na(sum(expression)) != TRUE, ""))
   # if (length(geneid) == 1) {
@@ -1198,11 +1207,13 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   # validate(need(is.na(sum(expression)) != TRUE, ""))
 
   geneid <- geneName2Index(geneNames, featureData)
-  projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
-                                               geneNames = geneNames, 
-                                               geneNames2 = geneNames2,
-                                               featureData = featureData,
-                                               gbm = gbm, projections = projections)
+  projections <- updateProjectionsWithUmiCount(
+    dimX = dimX, dimY = dimY,
+    geneNames = geneNames,
+    geneNames2 = geneNames2,
+    featureData = featureData,
+    gbm = gbm, projections = projections
+  )
 
 
   projections <- cbind(projections, t(expression))

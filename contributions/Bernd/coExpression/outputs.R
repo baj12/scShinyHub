@@ -49,6 +49,9 @@ updateInputXviolinPlot <- reactive({
 # reactive for module pHeatMapModule
 # for all clusters menu item
 heatmapReactive <- reactive({
+  on.exit(
+    removeNotification(id = "heatmap")
+  )
   if (DEBUG) cat(file = stderr(), "output$heatmap\n")
   featureData <- featureDataReact()
   gbm_log <- gbm_log()
@@ -77,9 +80,6 @@ heatmapReactive <- reactive({
     projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
   )
 
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "heatmap")
-  }
   return(retval)
 })
 
