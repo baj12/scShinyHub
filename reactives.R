@@ -20,6 +20,9 @@
 # should only hold original data
 # internal, should not be used by plug-ins
 inputDataFunc <- function(inFile) {
+  on.exit(
+    removeNotification(id = "inputDataFunc")
+  )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "DEBUG:inputData\n")
@@ -55,27 +58,30 @@ inputDataFunc <- function(inFile) {
   dataTables$featuredata <- featuredata[rnames, ]
 
   if (is.null(gbm$barcode)) {
-    showNotification("gbm doesn't contain barcode column")
+    showNotification("gbm doesn't contain barcode column", type = "error")
     return(NULL)
   }
   # some checks
   if (sum(is.infinite(as.matrix(exprs(gbm)))) > 0) {
-    showNotification("gbm contains infinite values")
+    showNotification("gbm contains infinite values", 
+                     type = "error")
     return(NULL)
   }
   if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
-    showNotification("gbm - fData doesn't contain id and/or symbol columns", duration = NULL)
+    showNotification("gbm - fData doesn't contain id and/or symbol columns", 
+                     duration = NULL, type = "error")
   }
   c("Associated.Gene.Name", "Gene.Biotype", "Description")
   if (sum(!c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
-    showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)", duration = NULL)
+    showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
+                     duration = NULL, type = "error")
     
   }
+  # if (is.null(fData(dataTables$gbm)$symbol)){
+  #   
+  # }
   if (DEBUG) {
     cat(file = stderr(), "inputData: done\n")
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "inputDataFunc")
   }
   end.time <- Sys.time()
   cat(file = stderr(), paste("===load data:done", difftime(end.time, start.time, units = "min"), " min\n"))
