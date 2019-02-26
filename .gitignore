@@ -9,3 +9,8 @@ README.html
 */*.html
 *.html
 *.Rproj
+contributions/*
+!contributions/coExpression
+!contributions/DataExploration
+!contributions/generalQC
+!contributions/subClusterAnalysis
