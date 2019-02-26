@@ -26,16 +26,16 @@ library(shinyMCE)
 library(kohonen)
 library(Rsomoclu)
 library(gtools)
-library(ElPiGraph.R)
+# library(ElPiGraph.R)
 
 if (file.exists("defaultValues.R")) {
-  source(file = "defaultValues.R")
+  base::source(file = "defaultValues.R")
 } else {
-  warning("no defaultsValues.R file")
-  stop("stop")
+  base::warning("no defaultsValues.R file")
+  base::stop("stop")
 }
 
-source("serverFunctions.R")
+base::source("serverFunctions.R")
 
 # source("parameters.R", local = TRUE)
 
@@ -55,19 +55,19 @@ source("serverFunctions.R")
 # needs to be an option
 seed <- 2
 
-enableBookmarking(store = "server")
+# enableBookmarking(store = "server")
 
 # global variable with directory where to store files to be included in reports
-reportTempDir <<- tempdir()
+reportTempDir <<- base::tempdir()
 
 shinyServer(function(input, output, session) {
 
   # TODO-BJ create a UI element for seed
-  set.seed(seed)
+  base::set.seed(seed)
   # check that directory is availabl, otherwise create it
   if (DEBUG) {
     if (!dir.exists("~/scShinyHubDebug")) {
-      dir.create("~/scShinyHubDebug")
+      base::dir.create("~/scShinyHubDebug")
     }
     # TODO ??? clean directory??
   }
@@ -75,15 +75,15 @@ shinyServer(function(input, output, session) {
   # files to be included in report
   # developers can add in outputs.R a variable called "myZippedReportFiles"
   zippedReportFiles <- c("report.html", "sessionData.RData", "normalizedCounts.csv", "variables.used.txt", "inputUsed.RData")
-  reportTempDir <- tempdir()
+  reportTempDir <- base::tempdir()
 
-  options(shiny.maxRequestSize = 2000 * 1024^2)
+  base::options(shiny.maxRequestSize = 2000 * 1024^2)
 
   # TODO check if file exists
   # TODO have this as an option to load other files
-  load(file = "geneLists.RData")
+  base::load(file = "geneLists.RData")
 
-  if (DEBUG) cat(file = stderr(), "ShinyServer running\n")
+  if (DEBUG) base::cat(file = stderr(), "ShinyServer running\n")
 
   # base calculations that are quite expensive to calculate
   # display name, reactive name to be executed
@@ -106,47 +106,47 @@ shinyServer(function(input, output, session) {
   # ------------------------------------------------------------------------------------------------------------
   # load global reactives, modules, etc
   # why not import them  earlier? I rember that there was an issue. could be documented
-  source("reactives.R", local = TRUE)
-  source("outputs.R", local = TRUE)
-  source("modulesUI.R", local = TRUE)
-  source("moduleServer.R", local = TRUE)
+  base::source("reactives.R", local = TRUE)
+  base::source("outputs.R", local = TRUE)
+  base::source("modulesUI.R", local = TRUE)
+  base::source("moduleServer.R", local = TRUE)
 
   # ------------------------------------------------------------------------------------------------------------
   # bookmarking
-  setBookmarkExclude(c("bookmark1"))
-  observeEvent(input$bookmark1, {
-    if (DEBUG) cat(file = stderr(), paste("bookmarking: \n"))
-    if (DEBUG) cat(file = stderr(), paste(names(input), collapse = "\n"))
-
-    session$doBookmark()
-    if (DEBUG) cat(file = stderr(), paste("bookmarking: DONE\n"))
-  })
+  # setBookmarkExclude(c("bookmark1"))
+  # observeEvent(input$bookmark1, {
+  #   if (DEBUG) cat(file = stderr(), paste("bookmarking: \n"))
+  #   if (DEBUG) cat(file = stderr(), paste(names(input), collapse = "\n"))
+  # 
+  #   session$doBookmark()
+  #   if (DEBUG) cat(file = stderr(), paste("bookmarking: DONE\n"))
+  # })
   # Need to exclude the buttons from themselves being bookmarked
 
   # ------------------------------------------------------------------------------------------------------------
   # load contribution reactives
   # parse all reactives.R files under contributions to include in application
-  uiFiles <- dir(
+  uiFiles <- base::dir(
     path = "contributions", pattern = "reactives.R",
     full.names = TRUE, recursive = TRUE
   )
   for (fp in uiFiles) {
-    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    if (DEBUG) base::cat(file = stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations <- NULL
     myProjections <- NULL
-    source(fp, local = TRUE)
+    base::source(fp, local = TRUE)
     heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <- appendHeavyCalculations(myProjections, projectionFunctions)
   }
   # load contribution outputs
   # parse all outputs.R files under contributions to include in application
-  uiFiles <- dir(path = "contributions", pattern = "outputs.R", full.names = TRUE, recursive = TRUE)
+  uiFiles <- base::dir(path = "contributions", pattern = "outputs.R", full.names = TRUE, recursive = TRUE)
   for (fp in uiFiles) {
     if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations <- NULL
     myProjections <- NULL
     myZippedReportFiles <- c()
-    source(fp, local = TRUE)
+    base::source(fp, local = TRUE)
     heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
     zippedReportFiles <- c(zippedReportFiles, myZippedReportFiles)
@@ -160,23 +160,23 @@ shinyServer(function(input, output, session) {
 
   # ------------------------------------------------------------------------------------------------------------
   # handling expensive calcualtions
-  forceCalc <- observe({
+  forceCalc <- shiny::observe({
     input$goCalc
-    start.time <- Sys.time()
+    start.time <- base::Sys.time()
     isolate({
-      if (DEBUG) cat(file = stderr(), "forceCalc\n")
+      if (DEBUG) base::cat(file = stderr(), "forceCalc\n")
       # list of output variable and function name
 
       withProgress(message = "Performing heavy calculations", value = 0, {
         n <- length(heavyCalculations)
         for (calc in heavyCalculations) {
-          incProgress(1 / n, detail = paste("Creating ", calc[1]))
-          if (DEBUG) cat(file = stderr(), paste("forceCalc ", calc[1], "\n"))
-          assign(calc[1], eval(parse(text = paste0(calc[2], "()"))))
+          shiny::incProgress(1 / n, detail = base::paste("Creating ", calc[1]))
+          if (DEBUG) cat(file = stderr(), base::paste("forceCalc ", calc[1], "\n"))
+          assign(calc[1], eval(parse(text = base::paste0(calc[2], "()"))))
         }
       })
     })
-    end.time <- Sys.time()
+    end.time <- base::Sys.time()
     # tfmt <- "%Hh %Mm %Ss"
     # t1 <- strptime(end.time - start.time, format=tfmt)
     cat(file = stderr(), paste("this took: ", difftime(end.time, start.time, units = "min"), " min\n"))

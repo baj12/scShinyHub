@@ -12,10 +12,10 @@ menuList =  list(
 source("modulesUI.R")
 # list of tab Items
 tabList = list(
-  expressionTab = tabItem("expression",
-                          fluidRow(div(
-                            p(strong('\tInformation:')),
-                            tags$ul(
+  expressionTab = shinydashboard::tabItem("expression",
+                          shiny::fluidRow(div(
+                            htmltools::p(strong('\tInformation:')),
+                            htmltools::tags$ul(
                               tags$li(
                                 strong('Clustering'),
                                 ':Clustering was performed with t-SNE followed by identification using DBSCAN'
