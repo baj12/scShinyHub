@@ -21,7 +21,9 @@
 # internal, should not be used by plug-ins
 inputDataFunc <- function(inFile) {
   on.exit(
-    removeNotification(id = "inputDataFunc")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "inputDataFunc")
+    }
   )
   start.time <- Sys.time()
   if (DEBUG) {
@@ -62,22 +64,29 @@ inputDataFunc <- function(inFile) {
     return(NULL)
   }
   # some checks
+
   if (sum(is.infinite(as.matrix(exprs(gbm)))) > 0) {
-    showNotification("gbm contains infinite values",
-      type = "error"
-    )
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("gbm contains infinite values",
+        type = "error"
+      )
+    }
     return(NULL)
   }
   if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
-    showNotification("gbm - fData doesn't contain id and/or symbol columns",
-      duration = NULL, type = "error"
-    )
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("gbm - fData doesn't contain id and/or symbol columns",
+        duration = NULL, type = "error"
+      )
+    }
   }
 
   if (!sum(c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
-    showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
-      duration = NULL, type = "error"
-    )
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
+        duration = NULL, type = "error"
+      )
+    }
     if (!"Gene.Biotype" %in% colnames(featuredata)) {
       featuredata$"Gene.Biotype" <- "not given"
     }

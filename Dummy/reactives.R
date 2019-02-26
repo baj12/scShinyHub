@@ -9,7 +9,8 @@ DummyFunc <- function(gbm_log) {
 # e.g.
 DummyReactive <- reactive({
   on.exit(
-    removeNotification(id = "DummyFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "DummyFunc")
   )
 
   # some debugging messages

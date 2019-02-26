@@ -262,7 +262,7 @@ shinyServer(function(input, output, session) {
         file.copy(fp, tmpFile, overwrite = TRUE)
         reactiveFiles <- paste0(reactiveFiles, "source(\"", tmpFile, "\")\n", collapse = "\n")
       }
-      # otherwise reactie might overwrite projections...
+      # otherwise reactive might overwrite projections...
       reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, "\")\n", collapse = "\n")
       # encapsulte the load files in an R block
       reactiveFiles <- paste0("\n\n```{r load-reactives, include=FALSE}\n", reactiveFiles, "\n```\n\n")
@@ -344,7 +344,7 @@ shinyServer(function(input, output, session) {
       tDir <- paste0(tDir, "/")
       base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
       write.csv(as.matrix(exprs(gbm_log)), file = paste0(reportTempDir, "/normalizedCounts.csv"))
-      base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("gbm", "featureData"))
+      base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("gbm", "featureData", "projections"))
       zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
       zip(file, zippedReportFiles, flags = "-9Xj")
       if (!is.null(getDefaultReactiveDomain())) {

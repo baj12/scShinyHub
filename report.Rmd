@@ -44,10 +44,10 @@ require(ggplot2)
 require(knitr)
 require(kableExtra)
 require(shinyWidgets)
-require(scater)
+# require(scater)
 
 # params only exsits if called from somewhere with parameters
-if (exists("params")) {
+if (exists("params") & is.list(params)) {
   cat(file = stderr(), paste("params:", params$calledFromShiny, "\n"))
   cat(file = stderr(), paste("params exists:", "calledFromShiny" %in% names(params), "\n"))
   LOCALEXECUTION <- FALSE
@@ -63,7 +63,7 @@ if (exists("params")) {
     if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
     source(fp, local = TRUE)
   }
-  load("~/scShinyHubDebug/tempReport.RData")
+  cp = load("~/scShinyHubDebug/tempReport.RData")
   params <- myparams
   LOCALEXECUTION <- TRUE # to know that we are debugging.
 }
@@ -74,16 +74,17 @@ __LOAD_REACTIVES__
 
 # parameters
 
-```{r setup, include=FALSE, warning=FALSE}
+```{r setup, include=TRUE, echo=FALSE, warning=FALSE}
 input <- params
-print(str(input$file1))
+print(str(input$file1$name))
 
 if (file.exists(input$file1$datapath)) {
   load(input$file1$datapath)
 } else {
   cat(file = stderr(), paste("Error input file not existing\n"))
 }
-print(ls())
+# print(ls())
+# will be printed on console, for debugging purposes only
 cat(file = stderr(), paste("env:", ls(), "\n"))
 cat(file = stderr(), paste("input:", names(input), input, "\n"))
 # cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
@@ -128,6 +129,9 @@ if (is.null(input$clusters4)) {
 ```{r inputData, echo=FALSE}
 # if ( !exists("dataTables")) {# needed when working with ~/scShinyHubDebug/reports.Data
 cat(file = stderr(), paste("loading dataTables\n"))
+# in case the file is not in the root directory is has to be manually loaded during debugging
+# input$file1 = data.frame("datapath" = dir(path = "~/Rstudio/scShinyHubData/", pattern="anna1805.sp.Rds", full.names = T), stringsAsFactors = F)
+# inFile = input$file1
 dataTables <- inputDataFunc(input$file1)
 # }
 ```
@@ -201,6 +205,12 @@ if (DEBUG) cat(file = stderr(), "gbm_log\n")
 
 
 normMethod <- input$normalizationRadioButton
+# can only be done in reactive context...
+# thus, here the minimal version for debugging
+    # use_genes <- get_nonzero_genes(gbm)
+    # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
+    # gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
+
 gbm_log <- do.call(normMethod, args = list())
 if (DEBUG) cat(file = stderr(), "gbm_log:Done\n")
 ```
@@ -211,9 +221,6 @@ if (DEBUG) cat(file = stderr(), "gbm_log:Done\n")
 gbm_matrix <- as.matrix(exprs(gbm))
 ```
 
-```{r gbmLogMatrix, include=FALSE}
-as.data.frame(as.matrix(exprs(gbm_log)))
-```
 
 ```{r rawNormalization, include=FALSE}
 rawNormalization <- gbm
@@ -232,14 +239,17 @@ if (DEBUG) cat(file = stderr(), "pca\n")
 
 pca <- pcaFunc(gbm_log)
 ```
+Creating  `r input$kNr` clusters.
 
 ```{r kmClustering, eval=TRUE, echo=FALSE}
 if (DEBUG) cat(file = stderr(), "kmClustering\n")
 seed <- 1
-kmClustering <- kmClusteringFunc(pca, seed)
+kmClustering <- kmClusteringFunc(pca, seed, kNr = input$kNr)
 
 if (DEBUG) cat(file = stderr(), "kmClustering:done\n")
 ```
+
+Creating `r input$tsneDim` tSNE clusters.
 
 ```{r tsne, eval=TRUE, echo=FALSE}
 if (DEBUG) cat(file = stderr(), "tsne\n")
@@ -259,6 +269,11 @@ if (DEBUG) cat(file = stderr(), "tsne: done\n")
 
 
 ```{r projections, eval=FALSE, include=FALSE}
+# TODO not working with current projection model and debugging.
+# the correct projections are used via saving/loading of variables during report creation in server.R
+#     base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
+#     reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, "\")\n", collapse = "\n")
+
 if (DEBUG) cat(file = stderr(), "projections\n")
 clustering <- kmClustering
 projections <- data.frame(tsne$Y)
@@ -319,7 +334,7 @@ if (DEBUG) cat(file = stderr(), "log2cpm:Done\n")
 ```
 
 
-```{r summaryStats, eval=TRUE, include=FALSE}
+```{r summaryStats, eval=TRUE, include=TRUE}
 
 
 line1 <- paste("No. of cells:", dim(log2cpm)[2], sep = "\t")

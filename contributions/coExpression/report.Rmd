@@ -211,6 +211,7 @@ if(!is.null(brushedPs)){
 if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
 coEtgPerc <- input$coEtgPerc
 coEtgminExpr <- input$coEtgMinExpr
+outMat <- NULL
 if(!is.null(brushedPs)){
   
   scCells <- cells.1
@@ -235,6 +236,7 @@ if(!is.null(brushedPs)){
   maxRows <- min(nrow(mat), 200)
   top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
   # 2do dim is not correct produces problmes
+  
   if (dim(mat)[1] > 0) {
     mat <- mat[top.genesOrder, ]
     fd <- featureData[rownames(mat), c("Associated.Gene.Name", "Description")]
