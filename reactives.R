@@ -1084,8 +1084,7 @@ log2cpm <- reactive({
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneNames, dimX, dimY, clId, grpN, legend.position) {
   geneid <- geneName2Index(g_id, featureData)
   grpNs <- groupNames$namesDF
-<<<<<<< HEAD
-  
+
   # if (length(geneid) == 1) {
   #   expression <- exprs(gbm_log)[geneid, ,drop=FALSE]
   # } else {
@@ -1093,17 +1092,6 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData, geneN
   # }
   validate(need(is.na(sum(expression)) != TRUE, ""))
   
-=======
-
-  if (length(geneid) == 1) {
-    expression <- exprs(gbm_log)[geneid, ]
-  } else {
-    expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
-  }
-  validate(need(is.na(sum(expression)) != TRUE, ""))
-
-  geneid <- geneName2Index(geneNames, featureData)
->>>>>>> a6ffa5e8b29a33f6971edf49d4f549ff6eee2f96
   projections <- updateProjectionsWithUmiCount(dimY, dimX, geneNames, featureData, gbm, projections)
 
 
