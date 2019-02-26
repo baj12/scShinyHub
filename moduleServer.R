@@ -807,5 +807,3 @@ pHeatMapModule <- function(input, output, session,
     }
   )
 }
-  
-  

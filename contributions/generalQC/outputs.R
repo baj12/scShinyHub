@@ -1,59 +1,60 @@
 
 
-myZippedReportFiles = c("gqcProjections.csv")
+myZippedReportFiles <- c("gqcProjections.csv")
 
 
 update3DInput <- reactive({
   tsneData <- projections()
-  
+
   # Can use character(0) to remove all choices
-  if (is.null(tsneData)){
+  if (is.null(tsneData)) {
     return(NULL)
   }
-  
+
   # Can also set the label and select items
   updateSelectInput(session, "dim3D_x",
-                    choices = colnames(tsneData),
-                    selected = colnames(tsneData)[1]
+    choices = colnames(tsneData),
+    selected = colnames(tsneData)[1]
   )
-  
+
   updateSelectInput(session, "dim3D_y",
-                    choices = colnames(tsneData),
-                    selected = colnames(tsneData)[2]
+    choices = colnames(tsneData),
+    selected = colnames(tsneData)[2]
   )
   updateSelectInput(session, "dim3D_z",
-                    choices = colnames(tsneData),
-                    selected = colnames(tsneData)[3]
+    choices = colnames(tsneData),
+    selected = colnames(tsneData)[3]
   )
   updateSelectInput(session, "col3D",
-                    choices = colnames(tsneData),
-                    selected = colnames(tsneData)[3]
+    choices = colnames(tsneData),
+    selected = colnames(tsneData)[3]
   )
 })
 
 
 output$tsne_main <- renderPlotly({
   upI <- update3DInput()
-  if(DEBUG)cat(file=stderr(), "output$tsne_main\n")
-  projections = projections()
-  if(is.null(projections)){
-    if(DEBUG)cat(file=stderr(), "output$tsne_main:NULL\n")
+  if (DEBUG) cat(file = stderr(), "output$tsne_main\n")
+  projections <- projections()
+  if (is.null(projections)) {
+    if (DEBUG) cat(file = stderr(), "output$tsne_main:NULL\n")
     return(NULL)
   }
-  dimX = input$dim3D_x
-  dimY = input$dim3D_y
-  dimZ = input$dim3D_z
-  dimCol = input$col3D
-  
-  
-  if (DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(),ls(envir = globalenv())))
+  dimX <- input$dim3D_x
+  dimY <- input$dim3D_y
+  dimZ <- input$dim3D_z
+  dimCol <- input$col3D
+
+
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(), ls(envir = globalenv())))
+  }
   # load(file="~/scShinyHubDebug/tsne_main.RData")
-  
+
   projections <- as.data.frame(projections)
-  #cat(stderr(),colnames(projections)[1:5])
+  # cat(stderr(),colnames(projections)[1:5])
   projections$dbCluster <- as.factor(projections$dbCluster)
-  
+
   p <-
     plot_ly(
       projections,
@@ -61,10 +62,10 @@ output$tsne_main <- renderPlotly({
       y = formula(paste("~ ", dimY)),
       z = formula(paste("~ ", dimZ)),
       type = "scatter3d",
-      color =  formula(paste("~ ", dimCol)),
+      color = formula(paste("~ ", dimCol)),
       hoverinfo = "text",
-      text = paste('Cluster:', as.numeric(as.character(projections$dbCluster))),
-      mode = 'markers',
+      text = paste("Cluster:", as.numeric(as.character(projections$dbCluster))),
+      mode = "markers",
       marker =
         list(
           line = list(width = 0),
@@ -73,44 +74,44 @@ output$tsne_main <- renderPlotly({
         )
     )
   # layout(p)
-  if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
+  if (DEBUG) cat(file = stderr(), "output$tsne_main: done\n")
   return(layout(p))
-  
-  
 })
-source("moduleServer.R", local=TRUE)
-source("reactives.R", local=TRUE)
+source("moduleServer.R", local = TRUE)
+source("reactives.R", local = TRUE)
 
 
-r<-callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)
+r <- callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)
 
 
 output$plotUmiHist <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output_plotUmiHist\n")
-  gbm = gbm()
-  if(is.null(gbm))
+  if (DEBUG) cat(file = stderr(), "output_plotUmiHist\n")
+  gbm <- gbm()
+  if (is.null(gbm)) {
     return(NULL)
+  }
   hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main = "histogram of number of UMIs per cell")
 })
 
 output$plotSampleHist <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output_sampleHist\n")
-  sampleInf = sampleInfo()
-  if(is.null(sampleInf))
+  if (DEBUG) cat(file = stderr(), "output_sampleHist\n")
+  sampleInf <- sampleInfo()
+  if (is.null(sampleInf)) {
     return(NULL)
-  if(DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/sampleHist.RData", list = c(ls(),ls(envir = globalenv())))
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/sampleHist.RData", list = c(ls(), ls(envir = globalenv())))
+  }
   # load(file = "~/scShinyHubDebug/sampleHist.RData")
   sampleHistFunc(sampleInf)
 })
 
 output$variancePCA <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output$variancePCA\n")
+  if (DEBUG) cat(file = stderr(), "output$variancePCA\n")
   h2("hello")
-  pca = pca()
-  if(is.null(pca))
+  pca <- pca()
+  if (is.null(pca)) {
     return(NULL)
-  barplot(pca$var_pcs, main="Variance captured by first PCs")
+  }
+  barplot(pca$var_pcs, main = "Variance captured by first PCs")
 })
-
-

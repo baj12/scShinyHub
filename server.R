@@ -15,13 +15,13 @@ library(sm)
 library(RColorBrewer)
 library(mclust)
 library(reshape)
-library(cellrangerRkit)
-library(SCORPIUS)
+# library(cellrangerRkit)
+# library(SCORPIUS)
 library(ggplot2)
 library(knitr)
 library(kableExtra)
 library(shinyWidgets)
-library(scater)
+# library(scater)
 library(shinyMCE)
 library(kohonen)
 library(Rsomoclu)
@@ -117,7 +117,7 @@ shinyServer(function(input, output, session) {
   # observeEvent(input$bookmark1, {
   #   if (DEBUG) cat(file = stderr(), paste("bookmarking: \n"))
   #   if (DEBUG) cat(file = stderr(), paste(names(input), collapse = "\n"))
-  # 
+  #
   #   session$doBookmark()
   #   if (DEBUG) cat(file = stderr(), paste("bookmarking: DONE\n"))
   # })
@@ -213,7 +213,7 @@ shinyServer(function(input, output, session) {
 
       save(file = file, list = c("featuredata", "gbm"))
       if (DEBUG) cat(file = stderr(), paste("RDSsave:done \n"))
-      
+
       # write.csv(as.matrix(exprs(gbm)), file)
     }
   )
@@ -352,9 +352,8 @@ shinyServer(function(input, output, session) {
       }
       if (DEBUG) {
         end.time <- Sys.time()
-        cat(file = stderr(), "===Report:done",difftime(end.time, start.time, units = "min"),"\n")
+        cat(file = stderr(), "===Report:done", difftime(end.time, start.time, units = "min"), "\n")
       }
-      
     }
   )
 }) # END SERVER

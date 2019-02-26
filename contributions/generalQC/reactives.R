@@ -62,8 +62,10 @@ scaterReads <- reactive({
 
 sampleHistFunc <- function(samples) {
   counts <- table(samples)
-  barplot(counts, main="histogram of number of cell per sample", 
-          xlab="Samples")
+  barplot(counts,
+    main = "histogram of number of cell per sample",
+    xlab = "Samples"
+  )
   # x <- hist(as.integer(as.factor(samples)),
   #   main = "histogram of number of cell per sample",
   #   labels = levels(as.factor(samples)),
@@ -122,7 +124,7 @@ tsne <- reactive({
   }
   # load(file='~/scShinyHubDebug/tsne.RData')
   require(parallel)
-  
+
   retval <- tryCatch({
     run_tsne(
       pca,
@@ -238,7 +240,7 @@ tsne.data <- reactive({
   tsne.data <- data.frame(tsne$Y)
   colnames(tsne.data) <- paste0("tsne", c(1:ncol(tsne.data)))
 
-   if (DEBUG) {
+  if (DEBUG) {
     cat(file = stderr(), "tsne.data: done\n")
   }
   return(tsne.data)

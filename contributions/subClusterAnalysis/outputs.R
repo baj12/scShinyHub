@@ -1,5 +1,5 @@
 
-myZippedReportFiles = c("DGE.csv")
+myZippedReportFiles <- c("DGE.csv")
 
 
 updateInputx1 <- reactive({
@@ -7,60 +7,65 @@ updateInputx1 <- reactive({
   # we combine the group names with the projections to add ability to select groups
   gn <- groupNames$namesDF
   # Can use character(0) to remove all choices
-  if (is.null(projections)){
+  if (is.null(projections)) {
     return(NULL)
   }
-  if(DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/updateInputx1.RData", list = c(ls(),ls(envir = globalenv())))
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/updateInputx1.RData", list = c(ls(), ls(envir = globalenv())))
+  }
   # load(file="~/scShinyHubDebug/updateInputx1.RData")
-  if (length(gn) > 0){
-    projections = cbind(projections, gn[rownames(projections),]*1)
+  if (length(gn) > 0) {
+    projections <- cbind(projections, gn[rownames(projections), ] * 1)
   }
   # Can also set the label and select items
   updateSelectInput(session, "dimension_x1",
-                    choices = colnames(projections),
-                    selected = colnames(projections)[1]
+    choices = colnames(projections),
+    selected = colnames(projections)[1]
   )
-  
+
   updateSelectInput(session, "dimension_y1",
-                    choices = colnames(projections),
-                    selected = colnames(projections)[2]
+    choices = colnames(projections),
+    selected = colnames(projections)[2]
   )
 })
 
 
 
-# TODO module?  
+# TODO module?
 output$dge_plot1 <- renderPlot({
-  projections = projections()
+  projections <- projections()
   up1 <- updateInputx1()
-  x1 = input$dimension_x1
-  y1 = input$dimension_y1
-  c1 = input$clusters1
+  x1 <- input$dimension_x1
+  y1 <- input$dimension_y1
+  c1 <- input$clusters1
   gn <- groupNames$namesDF
-  if( is.null(projections) | length(c1)==0 | length(x1)==0 | length(y1)==0 ){
+  if (is.null(projections) | length(c1) == 0 | length(x1) == 0 | length(y1) == 0) {
     return(NULL)
   }
-  
-  if(DEBUG)cat(file=stderr(), paste("dge_plot1: x1: ", x1,"\n"))
-  if(DEBUG)cat(file=stderr(), paste("dge_plot1: y1: ", y1,"\n"))
-  if(DEBUG)cat(file=stderr(), paste("dge_plot1: c1: ", c1,"\n"))
-  if(DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/dge_plot1.RData", list = c(ls(),ls(envir = globalenv())))
+
+  if (DEBUG) cat(file = stderr(), paste("dge_plot1: x1: ", x1, "\n"))
+  if (DEBUG) cat(file = stderr(), paste("dge_plot1: y1: ", y1, "\n"))
+  if (DEBUG) cat(file = stderr(), paste("dge_plot1: c1: ", c1, "\n"))
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/dge_plot1.RData", list = c(ls(), ls(envir = globalenv())))
+  }
   # load(file="~/scShinyHubDebug/dge_plot1.RData")
-  
-  if (length(gn) > 0){
-    projections = cbind(projections, gn[rownames(projections),]*1)
+
+  if (length(gn) > 0) {
+    projections <- cbind(projections, gn[rownames(projections), ] * 1)
   }
   subsetData <- subset(projections, dbCluster %in% c1)
   p1 <-
     ggplot(subsetData,
-           aes_string(x = x1, y = y1),
-           colour = "dbCluster") +
+      aes_string(x = x1, y = y1),
+      colour = "dbCluster"
+    ) +
     geom_point(aes(colour = dbCluster)) +
-    geom_point(shape = 1,
-               size = 4,
-               aes(colour = dbCluster)) +
+    geom_point(
+      shape = 1,
+      size = 4,
+      aes(colour = dbCluster)
+    ) +
     theme_bw() +
     theme(
       axis.text.x = element_text(
@@ -77,37 +82,40 @@ output$dge_plot1 <- renderPlot({
     ) +
     ggtitle(c1)
   p1
-  
 })
 # SUBCLUSTER DGE PLOT2 ------------------------------------------------------------------
 
-# TODO move to were it belongs  
-# TODO module?  
+# TODO move to were it belongs
+# TODO module?
 output$dge_plot2 <- renderPlot({
-  if(DEBUG)cat(file=stderr(), "output$dge_plot2\n")
-  projections = projections()
+  if (DEBUG) cat(file = stderr(), "output$dge_plot2\n")
+  projections <- projections()
   gn <- groupNames$namesDF
   inpCl1 <- input$clusters1
-  
-  if( is.null(projections) ){
+
+  if (is.null(projections)) {
     return(NULL)
   }
-  if(DEBUGSAVE) 
+  if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/dge_plot2.RData", list = c(ls(envir = globalenv(), ls())))
-  # load(file="~/scShinyHubDebug/dge_plot2.RData")
-  if (length(gn) > 0){
-    projections = cbind(projections, gn[rownames(projections),]*1)
   }
-  
+  # load(file="~/scShinyHubDebug/dge_plot2.RData")
+  if (length(gn) > 0) {
+    projections <- cbind(projections, gn[rownames(projections), ] * 1)
+  }
+
   subsetData <- subset(projections, dbCluster %in% inpCl1)
   p1 <-
     ggplot(subsetData,
-           aes_string(x = input$dimension_x1, y = input$dimension_y1),
-           color = "dbCluster") +
+      aes_string(x = input$dimension_x1, y = input$dimension_y1),
+      color = "dbCluster"
+    ) +
     geom_point(aes(colour = dbCluster)) +
-    geom_point(shape = 1,
-               size = 4,
-               aes(colour = dbCluster)) +
+    geom_point(
+      shape = 1,
+      size = 4,
+      aes(colour = dbCluster)
+    ) +
     theme_bw() +
     theme(
       axis.text.x = element_text(
@@ -130,30 +138,32 @@ output$dge_plot2 <- renderPlot({
 
 
 output$dge <- DT::renderDataTable({
-  if(DEBUG)cat(file=stderr(), "output$dge\n")
-  featureData = featureDataReact()
-  if(is.null(featureData)){
+  if (DEBUG) cat(file = stderr(), "output$dge\n")
+  featureData <- featureDataReact()
+  if (is.null(featureData)) {
     return(NULL)
   }
-  if(DEBUGSAVE) 
+  if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/output_dge.RData", list = c(ls(envir = globalenv(), ls())))
+  }
   # load(file="~/scShinyHubDebug/output_dge.RData")
-  
+
   # isolate({
   top.genes <- dge()
   top.genes$Associated.Gene.Name <-
-    featureData[rownames(top.genes), 'Associated.Gene.Name']
-  if ("Description" %in% colnames(featureData))
-    top.genes$Description = featureData[rownames(top.genes), 'Description']
+    featureData[rownames(top.genes), "Associated.Gene.Name"]
+  if ("Description" %in% colnames(featureData)) {
+    top.genes$Description <- featureData[rownames(top.genes), "Description"]
+  }
   if (dim(top.genes)[1] > 0) {
     return(DT::datatable(top.genes,
-                  options = list(
-                    orderClasses = TRUE,
-                    lengthMenu = c(10, 30, 50),
-                    pageLength = 10
-                  ))
-           )
-  }else{
+      options = list(
+        orderClasses = TRUE,
+        lengthMenu = c(10, 30, 50),
+        pageLength = 10
+      )
+    ))
+  } else {
     return(NULL)
   }
   # })
@@ -161,10 +171,10 @@ output$dge <- DT::renderDataTable({
 
 
 
-# TODO module download?  
+# TODO module download?
 output$download_dge_table <- downloadHandler(
   filename = function() {
-    paste("SubCluster", "DGE_table.csv", sep = '_')
+    paste("SubCluster", "DGE_table.csv", sep = "_")
   },
   content = function(file) {
     write.csv(selectedDge$dgeTable, file)
@@ -175,23 +185,23 @@ output$download_dge_table <- downloadHandler(
 # TODO as module
 # sub cluster analysis ( used for 2 panels )
 output$clusters1 <- renderUI({
-  if(DEBUG)cat(file=stderr(), "output$clusters1\n")
-  if(DEBUGSAVE) 
+  if (DEBUG) cat(file = stderr(), "output$clusters1\n")
+  if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/clusters1_dge.RData", list = c(ls(envir = globalenv(), ls())))
+  }
   # load(file="~/scShinyHubDebug/clusters1_dge.RData")
-  projections = projections()
+  projections <- projections()
   up1 <- updateInputx1()
-  if(is.null(projections)){
+  if (is.null(projections)) {
     HTML("Please load data first")
-  }else{
+  } else {
     noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
     selectizeInput(
       "clusters1",
       label = "Cluster",
       choices = c(0:noOfClusters),
-      selected = 0, 
+      selected = 0,
       multiple = TRUE
     )
   }
 })
-

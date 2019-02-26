@@ -3,8 +3,7 @@ source("moduleServer.R", local = TRUE)
 source("reactives.R", local = TRUE)
 
 
-# normalizationRadioButtonValue --------------------------------
-# Parameters / normalization
+# normalizationRadioButtonValue -------------------------------- Parameters / normalization
 output$normalizationRadioButtonValue <- renderPrint({
   input$normalizationRadioButton
 })
@@ -15,27 +14,16 @@ for (fp in parFiles) {
   myNormalizationParameters <- list()
   source(fp, local = TRUE)
   if (DEBUGSAVE) {
-    save(
-      file = "~/scShinyHubDebug/normalizationsParameters.RData",
-      list = c("normaliztionParameters", ls(), ls(envir = globalenv()))
-    )
+    save(file = "~/scShinyHubDebug/normalizationsParameters.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
   }
-  # load(file = "~/scShinyHubDebug/normalizationsParameters.RData")
-  if (length(myNormalizationParameters) > 0){
+  # load(file = '~/scShinyHubDebug/normalizationsParameters.RData')
+  if (length(myNormalizationParameters) > 0) {
     for (li in 1:length(myNormalizationParameters)) {
       lVal <- myNormalizationParameters[[li]]
       if (length(lVal) > 0) {
         if (DEBUG) {
-          cat(file = stderr(), paste(
-            "normalization Choice: ",
-            names(myNormalizationParameters)[li], " ",
-            lVal, "\n"
-          ))
-          cat(file = stderr(), paste(
-            "class: ",
-            class(myNormalizationParameters[[li]]), " ",
-            lVal, "\n"
-          ))
+          cat(file = stderr(), paste("normalization Choice: ", names(myNormalizationParameters)[li], " ", lVal, "\n"))
+          cat(file = stderr(), paste("class: ", class(myNormalizationParameters[[li]]), " ", lVal, "\n"))
         }
         oldNames <- names(normaliztionParameters)
         normaliztionParameters[[length(normaliztionParameters) + 1]] <- lVal
@@ -51,45 +39,48 @@ output$normalizationsParametersDynamic <- renderUI({
     return(NULL)
   }
   selectedChoice <- input$normalizationRadioButton
-  
+
   if (DEBUG) {
     cat(file = stderr(), paste(class(normaliztionParameters)), "\n")
     cat(file = stderr(), paste(length(normaliztionParameters)), "\n")
     for (li in normaliztionParameters) {
       if (length(li) > 0) {
-        if (DEBUG) cat(file = stderr(), paste("normaliztionParameters: ", li, "\n"))
-        if (DEBUG) cat(file = stderr(), paste("normaliztionParameters: ", names(li), "\n"))
+        if (DEBUG) {
+          cat(file = stderr(), paste("normaliztionParameters: ", li, "\n"))
+        }
+        if (DEBUG) {
+          cat(file = stderr(), paste("normaliztionParameters: ", names(li), "\n"))
+        }
       }
     }
   }
   if (DEBUGSAVE) {
-    save(
-      file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData",
-      list = c("normaliztionParameters", ls(), ls(envir = globalenv()))
-    )
+    save(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
   }
-  # load(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData")
-  do.call("switch", args = c(
-    selectedChoice,
-    normaliztionParameters,
-    h3("no parameters provided")
-  ))
+  # load(file = '~/scShinyHubDebug/normalizationsParametersDynamic.RData')
+  do.call("switch", args = c(selectedChoice, normaliztionParameters, h3("no parameters provided")))
 })
 
 
 # summaryStatsSideBar -----------------------------
 output$summaryStatsSideBar <- renderUI({
-  if (DEBUG) cat(file = stderr(), "output$summaryStatsSideBar\n")
+  if (DEBUG) {
+    cat(file = stderr(), "output$summaryStatsSideBar\n")
+  }
   gbm <- gbm_matrix()
   if (is.null(gbm)) {
-    if (DEBUG) cat(file = stderr(), "output$summaryStatsSideBar:NULL\n")
+    if (DEBUG) {
+      cat(file = stderr(), "output$summaryStatsSideBar:NULL\n")
+    }
     return(NULL)
   }
   if (input$noStats) {
-    if (DEBUG) cat(file = stderr(), "output$summaryStatsSideBar:off\n")
+    if (DEBUG) {
+      cat(file = stderr(), "output$summaryStatsSideBar:off\n")
+    }
     return(NULL)
   }
-  
+
   line1 <- paste("No. of cells: ", dim(gbm)[2], sep = "\t")
   line2 <- paste("No. of genes: ", dim(gbm)[1], sep = "\t")
   line3 <- paste("Median UMIs per cell: ", medianUMI(), sep = "\t")
@@ -97,40 +88,33 @@ output$summaryStatsSideBar <- renderUI({
   line5 <- paste("Total number of reads: ", sum(gbm))
   line6 <- paste("Memory used:", getMemoryUsed())
   line7 <- paste("Normalization used:", input$normalizationRadioButton)
-  HTML(
-    paste0(
-      "Summary statistics of this dataset:", "<br/>", "<br/>",
-      line1, "<br/>",
-      line2, "<br/>",
-      line3, "<br/>",
-      line4, "<br/>",
-      line5, "<br/>",
-      line6, "<br/>",
-      line7
-    )
-  )
+  HTML(paste0(
+    "Summary statistics of this dataset:", "<br/>", "<br/>", line1, "<br/>", line2, "<br/>", line3, "<br/>", line4, "<br/>",
+    line5, "<br/>", line6, "<br/>", line7
+  ))
 })
 
 
-# Select Genes ----------------------------------------------------------------
-# this is part of the basic functionality from this tools and thus, can stay in this file.
+# Select Genes ---------------------------------------------------------------- this is part of the basic functionality from this
+# tools and thus, can stay in this file.
 output$geneListSelection <- renderTree({
   geneLists
 })
 
 
-# ONOFF TAB RENDER TABLE ALL CELLS ------------------------------------------------------------------
-# TODO module for DT
-# this is part of the basic functionality from this tools and thus, can stay in this file.
+# ONOFF TAB RENDER TABLE ALL CELLS ------------------------------------------------------------------ TODO module for DT this is part
+# of the basic functionality from this tools and thus, can stay in this file.
 output$selectedGenesTable <- DT::renderDataTable({
-  if (DEBUG) cat(file = stderr(), "output$selectedGenesTable\n")
+  if (DEBUG) {
+    cat(file = stderr(), "output$selectedGenesTable\n")
+  }
   dataTables <- inputData()
   useGenes <- useGenes()
   useCells <- useCells()
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-  
+
   gbm <- as.matrix(exprs(dataTables$gbm))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
@@ -139,18 +123,18 @@ output$selectedGenesTable <- DT::renderDataTable({
   DT::datatable(dt)
 })
 
-# removedGenesTable --------------------------
-# TODO module for DT
-# TODO move to were it belongs
+# removedGenesTable -------------------------- TODO module for DT TODO move to were it belongs
 output$removedGenesTable <- DT::renderDataTable({
-  if (DEBUG) cat(file = stderr(), "output$removedGenesTable\n")
+  if (DEBUG) {
+    cat(file = stderr(), "output$removedGenesTable\n")
+  }
   dataTables <- inputData()
   useGenes <- !useGenes()
   useCells <- useCells()
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-  
+
   gbm <- as.matrix(exprs(dataTables$gbm))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
@@ -159,40 +143,44 @@ output$removedGenesTable <- DT::renderDataTable({
   DT::datatable(dt)
 })
 
-# gsSelectedGenes ---------------------------
-# TODO module of DT with selected names above
-# Print names of selected genes for gene selection above table
+# gsSelectedGenes --------------------------- TODO module of DT with selected names above Print names of selected genes for gene
+# selection above table
 output$gsSelectedGenes <- renderText({
-  if (DEBUG) cat(file = stderr(), "gsSelectedGenes\n")
+  if (DEBUG) {
+    cat(file = stderr(), "gsSelectedGenes\n")
+  }
   dataTables <- inputData()
   useGenes <- useGenes()
   useCells <- useCells()
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-  
+
   gbm <- as.matrix(exprs(dataTables$gbm))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  
+
   paste0(dt$Associated.Gene.Name[input$selectedGenesTable_rows_selected], ",")
 })
 
-# gsrmGenes -----------------
-# Print names of removed genes for gene selection
+# gsrmGenes ----------------- Print names of removed genes for gene selection
 output$gsrmGenes <- renderText({
-  if (DEBUG) cat(file = stderr(), "gsrmGenes\n")
+  if (DEBUG) {
+    cat(file = stderr(), "gsrmGenes\n")
+  }
   dataTables <- inputData()
   useGenes <- useGenes()
   useCells <- useCells()
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-  
+
   gbm <- as.matrix(exprs(dataTables$gbm))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  if (DEBUG) cat(file = stderr(), "gsrmGenes: done\n")
+  if (DEBUG) {
+    cat(file = stderr(), "gsrmGenes: done\n")
+  }
   paste0(dt$Associated.Gene.Name[input$removedGenesTable_rows_selected], ",")
 })
 

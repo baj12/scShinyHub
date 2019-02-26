@@ -315,8 +315,8 @@ plotCoExpressionFunc <-
   }
 
 # geneGrp_vioFunc ------
-geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1, 
-                            dbCluster, showPermutations=FALSE) {
+geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
+                            dbCluster, showPermutations = FALSE) {
   require(gtools)
   require(stringr)
   genesin <- toupper(genesin)
@@ -343,46 +343,46 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   }
 
   expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
-  ylabText = "number genes from list"
+  ylabText <- "number genes from list"
   # projections = projections[,1:12]
   if (showPermutations) {
-    perms = rep("", length(expression))
-    ylabText = "Permutations"
-    xPerm = length(genesin)
-    if(xPerm > 10){
-      xPerm = 10
+    perms <- rep("", length(expression))
+    ylabText <- "Permutations"
+    xPerm <- length(genesin)
+    if (xPerm > 10) {
+      xPerm <- 10
       warning("reducing number of permutations to 10")
     }
-    for(r in 1:xPerm){
-      comb = combinations(xPerm,r,genesin)
-      for(cIdx in 1:nrow(comb)){
+    for (r in 1:xPerm) {
+      comb <- combinations(xPerm, r, genesin)
+      for (cIdx in 1:nrow(comb)) {
         map <-
-          rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx,]), ])
-        
-        permIdx = colSums(as.matrix(exprs(gbm[map, ])) >= minExpr) == length(comb[cIdx,])
-        perms[permIdx] = paste0(comb[cIdx,], collapse = "+")
+          rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
+
+        permIdx <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr) == length(comb[cIdx, ])
+        perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
-    perms = factor(perms)
-    permsNames = levels(perms)
-    permsNum = unlist(lapply(strsplit(permsNames,"\\+"),length))
-    perms = factor(as.character(perms), levels = permsNames[order(permsNum)])
-    permsNames = str_wrap(levels(perms))
-    perms = as.integer(perms)
+    perms <- factor(perms)
+    permsNames <- levels(perms)
+    permsNum <- unlist(lapply(strsplit(permsNames, "\\+"), length))
+    perms <- factor(as.character(perms), levels = permsNames[order(permsNum)])
+    permsNames <- str_wrap(levels(perms))
+    perms <- as.integer(perms)
     projections <- cbind(projections, coExpVal = perms)
-    
-  }else{
+  } else {
     projections <- cbind(projections, coExpVal = expression)
-    permsNames = as.character(1:max(expression))
+    permsNames <- as.character(1:max(expression))
   }
-  
-  
+
+
 
   # if(class(projections[,dbCluster])=="factor"){
 
-    p1 <-
-    ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal", 
-                                   fill = factor(projections[, dbCluster]))) +
+  p1 <-
+    ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal",
+      fill = factor(projections[, dbCluster])
+    )) +
     geom_violin(scale = "width") +
     stat_summary(
       fun.y = median,
@@ -406,8 +406,8 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
       legend.position = "none"
     ) +
     xlab(dbCluster) +
-    
-    scale_y_continuous(breaks = 1:length(permsNames),labels=str_wrap(permsNames)) +
+
+    scale_y_continuous(breaks = 1:length(permsNames), labels = str_wrap(permsNames)) +
     ylab(ylabText)
   # }else{
   #   return(NULL)
@@ -446,7 +446,7 @@ heatmapSOMReactive <- reactive({
   on.exit(
     removeNotification(id = "heatmapSOMReactive")
   )
-  
+
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "output$somReactive\n")
@@ -456,7 +456,7 @@ heatmapSOMReactive <- reactive({
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
   featureData <- featureDataReact()
-  
+
   # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
   if (is.null(gbm_matrix)) {
     return(
@@ -485,7 +485,9 @@ heatmapSOMReactive <- reactive({
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 
   geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
-  output$somGenes = renderText({paste(featureData[geneNames, "Associated.Gene.Name"],collapse = ", ", sep = ",")})
+  output$somGenes <- renderText({
+    paste(featureData[geneNames, "Associated.Gene.Name"], collapse = ", ", sep = ",")
+  })
   if (length(geneNames) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(

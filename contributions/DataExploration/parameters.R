@@ -21,45 +21,39 @@
 # normalization parameters
 
 # choice for the radio buttion
-myNormalizationChoices = list(
-  gbm_log = "gbm_logNormalization" 
-  )
+myNormalizationChoices <- list(
+  gbm_log = "gbm_logNormalization"
+)
 
 # value should be of class shiny.tag
 # will be displayed via renderUI
-myNormalizationParameters = list(
+myNormalizationParameters <- list(
   gbm_log = h4("no Parameters implemented")
 )
 
 gbm_logNormalization <- reactive({
-  if (DEBUG)
+  if (DEBUG) {
     cat(file = stderr(), "gbm_logNormalization\n")
-  gbm = gbm()
-  
+  }
+  gbm <- gbm()
+
   if (is.null(gbm)) {
-    if (DEBUG)
+    if (DEBUG) {
       cat(file = stderr(), "gbm_logNormalization:NULL\n")
+    }
     return(NULL)
   }
-  if (DEBUGSAVE)
-    save(file = "~/scShinyHubDebug/gbm_logNormalization.RData", list = c(ls(),ls(envir = globalenv())))
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/gbm_logNormalization.RData", list = c(ls(), ls(envir = globalenv())))
+  }
   # load(file="~/scShinyHubDebug/gbm_logNormalization.RData")
-  
+
   use_genes <- get_nonzero_genes(gbm)
   gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
   gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
-  
-  if (DEBUG)
+
+  if (DEBUG) {
     cat(file = stderr(), "gbm_logNormalization:Done\n")
+  }
   return(gbm_log)
-  
-  
 })
-
-
-
-
-
-
-
-

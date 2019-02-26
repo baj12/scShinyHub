@@ -85,7 +85,6 @@ inputDataFunc <- function(inFile) {
       featuredata$"Description" <- "not given"
     }
     dataTables$featuredata <- featuredata
-    
   }
   # if (is.null(fData(dataTables$gbm)$symbol)){
   #
