@@ -172,7 +172,7 @@ cellSelectionTab <- tabItem(
     column(6,
       offset = 1,
       tipify(textInput("cellPatternRM", "cells to be filtered out by pattern"),
-        title = "regular expression for cells to be removed (e.g. '-1' will remove all cells from sample 1"
+        title = "regular expression for cells to be removed (e.g. -1 will remove all cells from sample 1"
       )
     )
   ),

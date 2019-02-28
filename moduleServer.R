@@ -62,7 +62,52 @@ clusterServer <- function(input, output, session,
     )
   })
 
-
+  selectedCellNames <- reactive({
+    brushedPs <- input$b1
+    projections <- projections()
+    dimY <- input$dimension_y
+    dimX <- input$dimension_x
+    geneNames <- input$geneIds
+    geneNames2 <- input$geneIds2
+    featureData <- featureDataReact()
+    gbm <- gbm()
+    if (DEBUG) {
+      cat(file = stderr(), "+++cluster: selectedCellNames\n")
+    }
+    if (is.null(projections)) {
+      return(NULL)
+    }
+    inpClusters <- input$clusters
+    
+    if (DEBUGSAVE) {
+      cat(file = stderr(), "cluster: selectedCellNames: saving\n")
+      save(file = "~/scShinyHubDebug/selectedCellNames.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
+    }
+    # load(file="~/scShinyHubDebug/selectedCellNames.RData")
+    
+    geneid <- geneName2Index(geneNames, featureData)
+    projections <- updateProjectionsWithUmiCount(
+      dimX = dimX, dimY = dimY,
+      geneNames = geneNames,
+      geneNames2 = geneNames2,
+      featureData = featureData,
+      gbm = gbm, projections = projections
+    )
+    
+    subsetData <- subset(projections, dbCluster %in% inpClusters)
+    # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
+    # it seems there is a bug in shiny::asNumber that returns 0 for false
+    # whereas in the brushed points this would be 1
+    if (class(subsetData[,brushedPs$mapping$x]) == "logical") {
+      subsetData[,brushedPs$mapping$x] = as.numeric(subsetData[,brushedPs$mapping$x]) + 1
+    }
+    if (class(subsetData[,brushedPs$mapping$y]) == "logical") {
+      subsetData[,brushedPs$mapping$y] = as.numeric(subsetData[,brushedPs$mapping$y]) + 1
+    }
+    cells.names <- brushedPoints(subsetData, brushedPs)
+    return(cells.names)
+  })
+  
 
   returnValues <- reactiveValues(
     cluster = reactive(input$clusters),
@@ -74,7 +119,7 @@ clusterServer <- function(input, output, session,
       if (DEBUG) {
         cat(file = stderr(), paste("clusterServers selectedCells\n"))
       }
-      retVal <- rownames(selectedCellNames())
+      retVal <- rownames(reactive(selectedCellNames()))
       if (length(retVal) == 0) {
         cat(file = stderr(), paste("selectedCellNames is null\n"))
         retVal <- NULL
@@ -218,43 +263,6 @@ clusterServer <- function(input, output, session,
   })
 
 
-  selectedCellNames <- reactive({
-    if (DEBUG) {
-      cat(file = stderr(), "cluster: selectedCellNames\n")
-    }
-    brushedPs <- input$b1
-    projections <- projections()
-    dimY <- input$dimension_y
-    dimX <- input$dimension_x
-    geneNames <- input$geneIds
-    geneNames2 <- input$geneIds2
-    featureData <- featureDataReact()
-    gbm <- gbm()
-    if (is.null(projections)) {
-      return(NULL)
-    }
-    inpClusters <- input$clusters
-
-    if (DEBUGSAVE) {
-      cat(file = stderr(), "cluster: selectedCellNames: saving\n")
-      save(file = "~/scShinyHubDebug/selectedCellNames.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
-    }
-    # load(file="~/scShinyHubDebug/selectedCellNames.RData")
-
-    geneid <- geneName2Index(geneNames, featureData)
-    projections <- updateProjectionsWithUmiCount(
-      dimX = dimX, dimY = dimY,
-      geneNames = geneNames,
-      geneNames2 = geneNames2,
-      featureData = featureData,
-      gbm = gbm, projections = projections
-    )
-
-    subsetData <- subset(projections, dbCluster %in% inpClusters)
-    # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
-    cells.names <- brushedPoints(subsetData, brushedPs)
-    return(cells.names)
-  })
 
   addToGroupValue <- FALSE
 
@@ -299,7 +307,9 @@ clusterServer <- function(input, output, session,
       }
     })
     if (DEBUGSAVE) {
+      cat(file = stderr(), "save: changeGroups\n")
       save(file = "~/scShinyHubDebug/changeGroups.RData", list = c(ls(), ls(envir = globalenv())))
+      cat(file = stderr(), "done save: changeGroups\n")
     }
     # load(file="~/scShinyHubDebug/changeGroups.RData")
     if (!grpN %in% colnames(grpNs)) {
@@ -325,7 +335,8 @@ clusterServer <- function(input, output, session,
         if (cn %in% colnames(prjs)) {
           prjs[, cn] <- grpNs[, cn]
         } else {
-          prjs <- cbind(prjs, grpNs[, cn])
+          prjs <- base::cbind(prjs, grpNs[, cn], deparse.level = 0)
+          colnames(prjs)[ncol(prjs)] <- cn
         }
       }
 
@@ -686,7 +697,7 @@ pHeatMapModule <- function(input, output, session,
     proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
-    if (is.null(heatmapData) | is.null(proje)) {
+    if (is.null(heatmapData) || is.null(proje) || is.null(heatmapData$mat)) {
       return(list(
         src = "empty.png",
         contentType = "image/png",
@@ -717,6 +728,7 @@ pHeatMapModule <- function(input, output, session,
       colN <- rownames(psych::dfOrder(proje, orderColNames))
       colN <- colN[colN %in% colnames(heatmapData$mat)]
       heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
+      # return()
     }
 
     do.call(pheatmap, heatmapData)

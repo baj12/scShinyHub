@@ -31,9 +31,9 @@ geneName2Index <- function(g_id, featureData) {
 
 
 updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NULL, featureData, gbm, projections) {
-  if (dimY == "UmiCountPerGenes" | dimX == "UmiCountPerGenes") {
+  if ((dimY == "UmiCountPerGenes") | (dimX == "UmiCountPerGenes")) {
     geneNames <- geneName2Index(geneNames, featureData)
-    if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
+    if ((length(geneNames) > 0) & (length(geneNames[[1]]) > 0)) {
       if (length(geneNames) == 1) {
         projections$UmiCountPerGenes <- exprs(gbm)[geneNames, ]
       } else {
@@ -43,9 +43,9 @@ updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NU
       projections$UmiCountPerGenes <- 0
     }
   }
-  if (dimY == "UmiCountPerGenes2" | dimX == "UmiCountPerGenes2") {
+  if ((dimY == "UmiCountPerGenes2") | (dimX == "UmiCountPerGenes2")) {
     geneNames <- geneName2Index(geneNames2, featureData)
-    if (length(geneNames) > 0 & length(geneNames[[1]]) > 0) {
+    if ((length(geneNames) > 0) & (length(geneNames[[1]]) > 0)) {
       if (length(geneNames) == 1) {
         projections$UmiCountPerGenes2 <- exprs(gbm)[geneNames, ]
       } else {
