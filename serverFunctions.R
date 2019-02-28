@@ -1,4 +1,8 @@
 geneName2Index <- function(g_id, featureData) {
+  if(is.null(g_id)){
+    return(NULL)
+  }
+  
   g_id <- toupper(g_id)
   g_id <- gsub(" ", "", g_id, fixed = TRUE)
   g_id <- strsplit(g_id, ",")

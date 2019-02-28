@@ -135,12 +135,14 @@ shinyServer(function(input, output, session) {
     myHeavyCalculations <- NULL
     myProjections <- NULL
     base::source(fp, local = TRUE)
+    # TODO rename appendHeavyCalculations to append2list
     heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <- appendHeavyCalculations(myProjections, projectionFunctions)
   }
   # load contribution outputs
   # parse all outputs.R files under contributions to include in application
-  uiFiles <- base::dir(path = "contributions", pattern = "outputs.R", full.names = TRUE, recursive = TRUE)
+  uiFiles <- base::dir(path = "contributions", pattern = "outputs.R", 
+                       full.names = TRUE, recursive = TRUE)
   for (fp in uiFiles) {
     if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations <- NULL

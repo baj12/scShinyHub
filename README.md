@@ -68,6 +68,8 @@ requiredPackages= c("psych", "scran", "shiny", "shinyTree", "plotly", "shinythem
 install.packages(c("rafalib", "shinydashboard", "shinyBS", "shinythemes", "Rfast", "shinycssloaders", "pryr", "scran"))
 rafalib::install_bioc(requiredPackages)
 devtools::install_github("mul118/shinyMCE")
+devtools::install_github("jlmelville/uwot")
+
 install.packages("sm")
 ```
 

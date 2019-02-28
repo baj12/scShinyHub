@@ -4,7 +4,8 @@ menuList <- list(
     menuSubItem("UMI histogram", tabName = "umiHist"),
     menuSubItem("Sample histogram", tabName = "sampleHist"),
     menuSubItem("PC variance", tabName = "variancePC"),
-    menuSubItem("TSNE plot", tabName = "tsnePlot")
+    menuSubItem("TSNE plot", tabName = "tsnePlot"),
+    menuSubItem("Umap", tabName = "umapPlot")
   )
 )
 
@@ -91,5 +92,95 @@ tabList <- list(
       offset = 1,
       tableSelectionUi("cellSelectionTSNEMod")
     ))
+  ),
+  umapTab <- tabItem(
+    
+    # unused parameters:
+    # learning_rate = 1, 
+    # scale = FALSE,
+    # init_sdev = NULL, 
+    # repulsion_strength = 1, a = NULL,
+    # b = NULL, nn_method = NULL, n_trees = 50,
+    # search_k = ifelse(n_refine_iters > 0, n_neighbors * n_trees, 2 *
+    #                     n_neighbors * n_trees),
+    # n_refine_iters = 0, approx_pow = FALSE,
+    # y = NULL, target_n_neighbors = n_neighbors,
+    # target_metric = "euclidean", target_weight = 0.5, pca = NULL,
+    # pca_center = TRUE, ret_model = FALSE, ret_nn = FALSE,
+    # n_sgd_threads = 0, grain_size = 1, verbose = getOption("verbose",
+                                                           # TRUE))
+  
+    
+    tabName = "umapPlot",
+    selectInput(
+      "um_randSeed", label = "random seed",
+      choices = c(1:100), selected = "1"
+    ),
+    selectInput(
+      "um_n_neighbors", label = "N Neighbors",
+      choices = c(2:100), selected = "15"
+    ),
+    selectInput(
+      "um_n_components", label = "N components",
+      choices = c(2:20), selected = "2"
+    ),
+    selectInput(
+      "um_metric", label = "metric",
+      choices = c("euclidean", "manhattan", "cosine", "hamming"), 
+      selected = "euclidean"
+    ),
+    selectInput(
+      "um_n_epochs", label = "n_epochs",
+      choices = c(1:1000), selected = "200"
+    ),
+    # selectInput(
+    #   "um_alpha", label = "alpha",
+    #   choices = seq(0.1,10,0.1), selected = "1.0"
+    # ),
+    selectInput(
+      "um_init", label = "init",
+      choices = c('spectral', 'random'), selected = 'spectral'
+    ),
+    selectInput(
+      "um_spread", label = "spread",
+      choices = c(0:10), selected = "1"
+    ),
+    selectInput(
+      "um_min_dist", label = "min_dist",
+      choices = seq(0.05, 0.5, 0.01), selected = "0.01"
+    ),
+    selectInput(
+      "um_set_op_mix_ratio", label = "set_op_mix_ratio",
+      choices = seq(0, 1, 0.1), selected = "1"
+    ),
+    selectInput(
+      "um_local_connectivity", label = "local_connectivity",
+      choices = 1:20, selected = "1"
+    ),
+    selectInput(
+      "um_bandwidth", label = "bandwidth",
+      choices = c(1:20), selected = "1"
+    ),
+    # selectInput(
+    #   "um_gamma", label = "gamma",
+    #   choices = seq(0,10,0.2), selected = "1"
+    # ),
+    selectInput(
+      "um_negative_sample_rate", label = "negative_sample_rate",
+      choices = c(1:50), selected = "5"
+    ),
+    # selectInput(
+    #   "um_umap1", label = "dim 1 to plot",
+    #   choices = paste0("UMAP", 1:20), selected = "UMAP1"
+    # ),
+    # selectInput(
+    #   "um_umap2", label = "dim 2 to plot",
+    #   choices = paste0("UMAP", 1:20), selected = "UMAP2"
+    # ),
+    fluidRow(column(
+      12,
+      clusterUI("umap_main")
+    ))
+    
   )
 )

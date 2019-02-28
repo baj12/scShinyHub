@@ -24,7 +24,7 @@ library(psych)
 # TODO potentially integrate gene_id selection into module?
 clusterServer <- function(input, output, session,
                           tData,
-                          gene_id,
+                          gene_id = returnNull, # reactive
                           # selectedCells  = NULL,
                           legend.position = "none") {
   ns <- session$ns
@@ -32,6 +32,16 @@ clusterServer <- function(input, output, session,
   selectedGroupName <- ""
   groupName <- ""
 
+  dim1 <- "PC1"
+  dim2 <- "PC2"
+  
+  observe({
+    dim1 <<- input$dimension_x
+  })
+  observe({
+    dim2 <<- input$dimension_y
+  })
+  
   updateInput <- reactive({
     tsneData <- projections()
 
@@ -43,12 +53,12 @@ clusterServer <- function(input, output, session,
     # Can also set the label and select items
     updateSelectInput(session, "dimension_x",
       choices = colnames(tsneData),
-      selected = colnames(tsneData)[1]
+      selected = dim1
     )
 
     updateSelectInput(session, "dimension_y",
       choices = colnames(tsneData),
-      selected = colnames(tsneData)[2]
+      selected = dim2
     )
   })
 
@@ -157,7 +167,7 @@ clusterServer <- function(input, output, session,
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
 
-    if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections) | is.null(g_id) | nchar(g_id) == 0) {
+    if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
@@ -168,8 +178,12 @@ clusterServer <- function(input, output, session,
         list = c(ls(envir = globalenv()), ls(), "legend.position")
       )
     }
-    # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
-
+    
+     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
+    if (is.null(g_id) || nchar(g_id) == 0) {
+      g_id <- featureData$Associated.Gene.Name
+    }
+    
     return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position))
   })
 

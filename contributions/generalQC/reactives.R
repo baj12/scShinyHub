@@ -1,3 +1,7 @@
+require(uwot)
+require(tidyverse)
+require(SingleCellExperiment)
+
 # here we define reactive values/variables
 
 # scaterReadsFunc <- function(gbm, gbm_log, fd){
@@ -246,6 +250,76 @@ tsne.data <- reactive({
   return(tsne.data)
 })
 
+umapReact <- reactive({
+  gbmlog <- gbm_log()
+  
+  start.time <- base::Sys.time()
+  set.seed(input$um_randSeed)
+  xaxis <- input$um_xaxis
+  yaxis <- input$um_yaxis
+  cellT <- input$um_ct
+  inputCT <- input$um_inputCT
+  sampleRatio <- as.numeric(input$um_sampleRatio)
+  sampleIds <- input$um_sampleIds
+  InlevelOrd <- input$um_levelOrd
+  UMAP1 <- input$um_umap1
+  UMAP2 <- input$um_umap2
+  
+  n_neighbors <- as.numeric(input$um_n_neighbors)
+  n_components <- as.numeric(input$um_n_components)
+  n_epochs <- as.numeric(input$um_n_epochs)
+  alpha <- as.numeric(input$um_alpha)
+  init <- input$um_init
+  min_dist <- as.numeric(input$um_min_dist)
+  set_op_mix_ratio <- as.numeric(input$um_set_op_mix_ratio)
+  local_connectivity <- as.numeric(input$um_local_connectivity)
+  bandwidth <- as.numeric(input$um_bandwidth)
+  gamma <- as.numeric(input$um_gamma)
+  negative_sample_rate <- as.numeric(input$um_negative_sample_rate)
+  metric <- input$um_metric
+  spread <- as.numeric(input$um_spread)
+  
+  if (is.null(gbmlog)) {
+    if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
+    return(NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/umap_react.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/umap_react.RData")
+  
+  umapData <- as.matrix(exprs(gbmlog))
+  compCases = complete.cases(umapData)
+  
+  # TODO it might be possible to reuse nearest neighbor information to speeed up recomputations
+  # with eg. new seed
+  
+  embedding <- uwot::umap(t(as.matrix(exprs(gbmlog))),
+                        n_neighbors = n_neighbors,
+                        n_components = n_components, n_epochs = n_epochs,
+                        # alpha = alpha,
+                        init = init,
+                        spread = spread,
+                        min_dist = min_dist,
+                        set_op_mix_ratio = set_op_mix_ratio,
+                        local_connectivity = local_connectivity,
+                        bandwidth = bandwidth,
+                        # gamma = gamma,
+                        negative_sample_rate = negative_sample_rate,
+                        metric = metric,
+                        n_threads = detectCores()
+  )
+  embedding = as.data.frame(embedding)
+  colnames(embedding) = paste0("UMAP", 1:n_components)
+  rownames(embedding) = colnames(gbmlog)
+  
+  end.time <- Sys.time()
+  if (DEBUG)
+    cat(file = stderr(), paste("umap took: ", difftime(end.time, start.time, units = "min"), " min\n"))
+  return(embedding)
+})
+
+
 
 myProjections <- list(
   c("tsne1", "tsne1"),
@@ -253,7 +327,8 @@ myProjections <- list(
   c("tsne3", "tsne3"),
   c("tsne4", "tsne4"),
   c("tsne5", "tsne5"),
-  c("dbCluster", "dbCluster")
+  c("dbCluster", "dbCluster"),
+  c("umap", "umapReact")
 )
 
 

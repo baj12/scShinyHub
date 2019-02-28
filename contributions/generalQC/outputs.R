@@ -1,3 +1,5 @@
+source("moduleServer.R", local = TRUE)
+source("reactives.R", local = TRUE)
 
 
 myZippedReportFiles <- c("gqcProjections.csv")
@@ -77,8 +79,32 @@ output$tsne_main <- renderPlotly({
   if (DEBUG) cat(file = stderr(), "output$tsne_main: done\n")
   return(layout(p))
 })
-source("moduleServer.R", local = TRUE)
-source("reactives.R", local = TRUE)
+
+# output$umap_main <- renderPlotly({
+#   embedding <- umapReact()
+#   gbmlog <- gbm_log()
+#   pointSize <- 1
+#   if (is.null(embedding)) {
+#     if (DEBUG) cat(file = stderr(), "output$umap_main:NULL\n")
+#     return(NULL)
+#   }
+#   if (DEBUGSAVE) {
+#     save(file = "~/scShinyHubDebug/umap_main.RData", list = c(ls(), ls(envir = globalenv())))
+#   }
+#   
+#   # outTab$UMAP1 = embedding$UMAP1
+#   # outTab$UMAP2 = embedding$UMAP2
+#   embedding %>%
+#      ggplot(aes_string(UMAP1, UMAP2)) + geom_point(size = pointSize)
+# })
+
+selctedCluster <-
+  callModule(
+    clusterServer,
+    "umap_main",
+    projections
+  )
+
 
 
 r <- callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)

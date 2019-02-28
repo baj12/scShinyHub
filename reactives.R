@@ -1194,6 +1194,12 @@ log2cpm <- reactive({
   return(log2cpm)
 })
 
+
+# dummy function to return NULL
+returnNull <- function(){
+  return(NULL)
+}
+
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,

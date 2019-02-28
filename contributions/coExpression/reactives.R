@@ -94,9 +94,9 @@ heatmapSelectedReactive <- reactive({
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
-  if (is.null(featureData) |
-    is.null(gbm_matrix) |
-    is.null(projections) | is.null(scCells) | length(scCells) == 0) {
+  if (is.null(featureData) ||
+    is.null(gbm_matrix) ||
+    is.null(projections) || is.null(scCells) || length(scCells) == 0) {
     return(
       list(
         src = "empty.png",
@@ -136,7 +136,7 @@ topExpGenesTable <- reactive({
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
 
-  if (is.null(featureData) | is.null(gbm_log)) {
+  if (is.null(featureData) || is.null(gbm_log) || is.null(scCells)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
