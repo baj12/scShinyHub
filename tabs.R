@@ -28,13 +28,9 @@ inputTab <- tabItem(
       "file1",
       "Choose .Rds file to upload",
       accept = c(
-        ".Rds",
-        "text/comma-separated-values",
-        "text/tab-separated-values",
-        "text/plain",
-        ".csv",
-        ".tsv"
-      )
+        ".Rds",".RData"
+      ),
+      multiple = TRUE
     )
   ))
 )

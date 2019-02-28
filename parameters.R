@@ -49,6 +49,7 @@ allTabs[[length(allTabs) + 1]] <- list(
           inputId = "normalizationRadioButton",
           label = "Normalization to use",
           choices = normaliztionChoices,
+          selected = "gbm_logNormalization",
           width = "100%"
         )
         # 10, offset = 1,
