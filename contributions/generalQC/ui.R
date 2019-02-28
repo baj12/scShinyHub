@@ -112,6 +112,7 @@ tabList <- list(
   
     
     tabName = "umapPlot",
+    checkboxInput("activateUMAP", "activate Umap projection", FALSE),
     selectInput(
       "um_randSeed", label = "random seed",
       choices = c(1:100), selected = "1"

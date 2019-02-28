@@ -33,7 +33,23 @@ inputDataFunc <- function(inFile) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
   start.time <- Sys.time()
-  load(inFile$datapath)
+  save(file = "test.RData", list = c("inFile"))
+  if (length(inFile$datapath) > 1) {
+    fd = NULL
+    fdAll = NULL
+    pdAll = NULL
+    exAll = NULL
+    for(fp in inFile$datapath){
+      fpLs <- load(fp)
+      fd <- rbind(fd, featuredata)
+      fdAll <- rbind(fdAll, fData(gbm))
+      pdAll <- rbind(pdAll, pData(gbm))
+      exAll <- rbind(exAll, exprs(gbm))
+      
+    }
+  }else{
+    load(inFile$datapath)
+  }
   
   cat(stderr(), "Loaded")
   dataTables <- list()
@@ -1228,7 +1244,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   # }
   # validate(need(is.na(sum(expression)) != TRUE, ""))
   
-  geneid <- geneName2Index(geneNames, featureData)
+  # geneid <- geneName2Index(geneNames, featureData)
   projections <- updateProjectionsWithUmiCount(
     dimX = dimX, dimY = dimY,
     geneNames = geneNames,

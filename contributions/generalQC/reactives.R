@@ -267,6 +267,7 @@ umapReact <- reactive({
   InlevelOrd <- input$um_levelOrd
   UMAP1 <- input$um_umap1
   UMAP2 <- input$um_umap2
+  runUMAP <- input$activateUMAP
   
   n_neighbors <- as.numeric(input$um_n_neighbors)
   n_components <- as.numeric(input$um_n_components)
@@ -282,6 +283,9 @@ umapReact <- reactive({
   metric <- input$um_metric
   spread <- as.numeric(input$um_spread)
   
+  
+  
+  
   if (is.null(gbmlog)) {
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
     return(NULL)
@@ -290,7 +294,10 @@ umapReact <- reactive({
     save(file = "~/scShinyHubDebug/umap_react.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load("~/scShinyHubDebug/umap_react.RData")
-  
+  if (!runUMAP) {
+    if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
+    return(NULL)
+  }
   umapData <- as.matrix(exprs(gbmlog))
   compCases = complete.cases(umapData)
   
