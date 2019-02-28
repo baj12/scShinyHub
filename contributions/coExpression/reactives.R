@@ -79,7 +79,7 @@ heatmapSelectedReactive <- reactive({
     removeNotification(id = "selectedHeatmap")
   )
   if (DEBUG) {
-    cat(file = stderr(), "output$selectedHeatmap\n")
+    cat(file = stderr(), "output$heatmapSelectedReactive\n")
   }
   featureData <- featureDataReact()
   gbm_matrix <- gbm_matrix()
