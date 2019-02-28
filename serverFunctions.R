@@ -1,4 +1,7 @@
 geneName2Index <- function(g_id, featureData) {
+  if (DEBUG) {
+    cat(file = stderr(), paste("geneName2Index\n"))
+  }
   if(is.null(g_id)){
     return(NULL)
   }
