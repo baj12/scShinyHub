@@ -98,7 +98,6 @@ output$tsne_main <- renderPlotly({
 #      ggplot(aes_string(UMAP1, UMAP2)) + geom_point(size = pointSize)
 # })
 
-selctedCluster <-
   callModule(
     clusterServer,
     "umap_main",
