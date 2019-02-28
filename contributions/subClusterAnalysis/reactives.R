@@ -30,7 +30,8 @@ dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2
 
 dge <- reactive({
   on.exit(
-    removeNotification(id = "dge")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "dge")
   )
   if (DEBUG) cat(file = stderr(), "dge\n")
   featureData <- featureDataReact()

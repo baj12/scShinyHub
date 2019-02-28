@@ -2,7 +2,8 @@
 # used by bot selection and all
 coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells) {
   on.exit(
-    removeNotification(id = "heatmap")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "heatmap")
   )
   #  create parameters used for pheatmap module
   genesin <- geneName2Index(genesin, featureData)
@@ -76,7 +77,8 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
 # reactive function for selected heatmap
 heatmapSelectedReactive <- reactive({
   on.exit(
-    removeNotification(id = "selectedHeatmap")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "selectedHeatmap")
   )
   if (DEBUG) {
     cat(file = stderr(), "output$heatmapSelectedReactive\n")
@@ -120,7 +122,7 @@ heatmapSelectedReactive <- reactive({
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
   cells.1 <- scCells
-  retval <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
+  z <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
 
   return(retval)
 })
@@ -444,7 +446,8 @@ somFunction <- function(iData, nSom, geneName) {
 
 heatmapSOMReactive <- reactive({
   on.exit(
-    removeNotification(id = "heatmapSOMReactive")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "heatmapSOMReactive")
   )
 
   start.time <- Sys.time()

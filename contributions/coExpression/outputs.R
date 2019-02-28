@@ -50,7 +50,8 @@ updateInputXviolinPlot <- reactive({
 # for all clusters menu item
 heatmapReactive <- reactive({
   on.exit(
-    removeNotification(id = "heatmap")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "heatmap")
   )
   if (DEBUG) cat(file = stderr(), "output$heatmap\n")
   featureData <- featureDataReact()

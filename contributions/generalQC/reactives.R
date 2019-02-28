@@ -10,9 +10,9 @@ scaterReadsFunc <- function(gbm, fd) {
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   }
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
-
+  
   counts <- as.matrix(exprs(gbm))
-
+  
   anno <- pData(gbm)
   anno$sample_id <- anno$sampleNames
   anno$fixed <- "red"
@@ -22,7 +22,7 @@ scaterReadsFunc <- function(gbm, fd) {
   # anno$batch = "b1"
   pheno_data <- new("AnnotatedDataFrame", anno)
   # rownames(pheno_data) <- pheno_dat
-
+  
   reads <- as.matrix(counts)
   rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"], sep = "___")
   rownames(reads)[is.na(rownames(reads)) ] <- "na"
@@ -31,9 +31,9 @@ scaterReadsFunc <- function(gbm, fd) {
     colData = anno
   )
   ercc <- rownames(reads)[grepl("ERCC-", rownames(reads))]
-
+  
   mt <- rownames(reads)[grepl("^MT", rownames(reads))]
-
+  
   reads <- scater::calculateQCMetrics(
     reads
   )
@@ -67,8 +67,8 @@ scaterReads <- reactive({
 sampleHistFunc <- function(samples) {
   counts <- table(samples)
   barplot(counts,
-    main = "histogram of number of cell per sample",
-    xlab = "Samples"
+          main = "histogram of number of cell per sample",
+          xlab = "Samples"
   )
   # x <- hist(as.integer(as.factor(samples)),
   #   main = "histogram of number of cell per sample",
@@ -80,7 +80,8 @@ sampleHistFunc <- function(samples) {
 
 inputTSNESample <- reactive({
   on.exit(
-    removeNotification(id = "inputTSNESample")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "inputTSNESample")
   )
   if (DEBUG) cat(file = stderr(), "inputTSNESample\n")
   projections <- projections()
@@ -90,12 +91,12 @@ inputTSNESample <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("inputTSNESample", id = "inputTSNESample", duration = NULL)
   }
-
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/inputTSNESample.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
-
+  
   return(projections)
 })
 
@@ -103,7 +104,8 @@ inputTSNESample <- reactive({
 # Maybe we need a normalized name like tsneFunc?
 tsne <- reactive({
   on.exit(
-    removeNotification(id = "tsne")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "tsne")
   )
   if (DEBUG) {
     cat(file = stderr(), "tsne\n")
@@ -128,7 +130,7 @@ tsne <- reactive({
   }
   # load(file='~/scShinyHubDebug/tsne.RData')
   require(parallel)
-
+  
   retval <- tryCatch({
     run_tsne(
       pca,
@@ -141,8 +143,8 @@ tsne <- reactive({
   error = function(e) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(paste("Problem with tsne:", e),
-        type = "error",
-        duration = NULL
+                       type = "error",
+                       duration = NULL
       )
     }
     return(NULL)
@@ -222,7 +224,8 @@ tsne5 <- reactive({
 
 tsne.data <- reactive({
   on.exit(
-    removeNotification(id = "tsne.data")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "tsne.data")
   )
   if (DEBUG) {
     cat(file = stderr(), "tsne.data\n")
@@ -243,7 +246,7 @@ tsne.data <- reactive({
   # load(file="~/scShinyHubDebug/tsne.data.RData")
   tsne.data <- data.frame(tsne$Y)
   colnames(tsne.data) <- paste0("tsne", c(1:ncol(tsne.data)))
-
+  
   if (DEBUG) {
     cat(file = stderr(), "tsne.data: done\n")
   }
@@ -295,19 +298,19 @@ umapReact <- reactive({
   # with eg. new seed
   
   embedding <- uwot::umap(t(as.matrix(exprs(gbmlog))),
-                        n_neighbors = n_neighbors,
-                        n_components = n_components, n_epochs = n_epochs,
-                        # alpha = alpha,
-                        init = init,
-                        spread = spread,
-                        min_dist = min_dist,
-                        set_op_mix_ratio = set_op_mix_ratio,
-                        local_connectivity = local_connectivity,
-                        bandwidth = bandwidth,
-                        # gamma = gamma,
-                        negative_sample_rate = negative_sample_rate,
-                        metric = metric,
-                        n_threads = detectCores()
+                          n_neighbors = n_neighbors,
+                          n_components = n_components, n_epochs = n_epochs,
+                          # alpha = alpha,
+                          init = init,
+                          spread = spread,
+                          min_dist = min_dist,
+                          set_op_mix_ratio = set_op_mix_ratio,
+                          local_connectivity = local_connectivity,
+                          bandwidth = bandwidth,
+                          # gamma = gamma,
+                          negative_sample_rate = negative_sample_rate,
+                          metric = metric,
+                          n_threads = detectCores()
   )
   embedding = as.data.frame(embedding)
   colnames(embedding) = paste0("UMAP", 1:n_components)
