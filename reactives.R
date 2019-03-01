@@ -1270,9 +1270,9 @@ returnNull <- function() {
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
-                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position) {
+                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs) {
   geneid <- geneName2Index(g_id, featureData)
-  grpNs <- groupNames$namesDF
+  
 
   # if (length(geneid) == 1) {
   #   expression <- exprs(gbm_log)[geneid, ,drop=FALSE]
@@ -1297,7 +1297,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   )
 
 
-  projections <- cbind(projections, t(expression))
+  projections <- cbind(projections, expression)
   names(projections)[ncol(projections)] <- "exprs"
 
   if (DEBUG) {
@@ -1308,7 +1308,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
   # sample information
   if (length(as.numeric(as.factor(subsetData$sample))) > 18) {
-    subsetData$shape <- 1
+    subsetData$shape <- as.factor(1)
   } else {
     subsetData$shape <- as.numeric(as.factor(subsetData$sample))
   }
@@ -1317,13 +1317,19 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   }
   # load(file="~/scShinyHubDebug/clusterPlot.RData")
   if (nrow(subsetData) == 0) return(NULL)
+  # subsetData$shape = as.factor(1)
+  gtitle <- paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")
+  if (nchar(gtitle)>50) {
+    gtitle = paste(substr(gtitle,1,50), "...")
+  }
+  
   p1 <-
     ggplot(
       subsetData,
       aes_string(x = dimX, y = dimY)
     ) +
     geom_point(aes_string(shape = "shape", size = 2, color = "exprs"), show.legend = TRUE) +
-    scale_shape_identity() +
+    # scale_shape_identity() +
     geom_point(
       shape = 1,
       size = 4,
@@ -1343,7 +1349,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
       axis.title.y = element_text(face = "bold", size = 16),
       legend.position = legend.position
     ) +
-    ggtitle(paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")) +
+    ggtitle(gtitle) +
     scale_fill_continuous()
   selectedCells <- NULL
   if (length(grpN) > 0) {

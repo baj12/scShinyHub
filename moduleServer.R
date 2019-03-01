@@ -219,10 +219,12 @@ clusterServer <- function(input, output, session,
     }
     
     if (DEBUGSAVE) {
+      cat(file = stderr(), paste("cluster plot saving\n"))
       save(
         file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
         list = c(ls(envir = globalenv()), ls(), "legend.position")
       )
+      cat(file = stderr(), paste("cluster plot saving done\n"))
     }
     
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
@@ -230,7 +232,9 @@ clusterServer <- function(input, output, session,
       g_id <- featureData$Associated.Gene.Name
     }
     
-    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position))
+    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, 
+                            geneNames2, dimX, dimY, clId, grpN, legend.position, 
+                            grpNs = grpNs))
   })
   
   # observe({
