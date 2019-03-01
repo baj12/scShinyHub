@@ -122,7 +122,7 @@ heatmapSelectedReactive <- reactive({
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
   cells.1 <- scCells
-  z <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
+  retval <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
 
   return(retval)
 })
