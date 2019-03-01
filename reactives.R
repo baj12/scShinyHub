@@ -36,6 +36,7 @@ inputDataFunc <- function(inFile) {
   }
   start.time <- Sys.time()
   save(file = "test.RData", list = c("inFile"))
+
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
   stats$nFeatures <- 0
