@@ -321,15 +321,19 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
                             dbCluster, showPermutations = FALSE) {
   require(gtools)
   require(stringr)
+  start.time <- Sys.time()
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")[[1]]
-
+  # vIdx=1
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
+  
   map <-
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin), ])
   if (DEBUG) {
     cat(file = stderr(), length(map))
   }
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   if (length(map) == 0) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(
@@ -344,9 +348,12 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
     )
   }
 
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   ylabText <- "number genes from list"
   # projections = projections[,1:12]
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   if (showPermutations) {
     perms <- rep("", length(expression))
     ylabText <- "Permutations"
@@ -355,6 +362,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
       xPerm <- 10
       warning("reducing number of permutations to 10")
     }
+    # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
     for (r in 1:xPerm) {
       comb <- combinations(xPerm, r, genesin)
       for (cIdx in 1:nrow(comb)) {
@@ -365,6 +373,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
+    # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
     perms <- factor(perms)
     permsNames <- levels(perms)
     permsNum <- unlist(lapply(strsplit(permsNames, "\\+"), length))
@@ -376,7 +385,8 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
     projections <- cbind(projections, coExpVal = expression)
     permsNames <- as.character(1:max(expression))
   }
-
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
+  
 
 
   # if(class(projections[,dbCluster])=="factor"){
@@ -385,7 +395,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
     ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal",
       fill = factor(projections[, dbCluster])
     )) +
-    geom_violin(scale = "width") +
+    geom_violin(scale = "count") +
     stat_summary(
       fun.y = median,
       geom = "point",
@@ -417,6 +427,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   if (DEBUG) {
     cat(file = stderr(), "output$gene_vio_plot:done\n")
   }
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   return(p1)
 }
 
