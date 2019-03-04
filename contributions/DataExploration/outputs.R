@@ -186,8 +186,8 @@ output$clusters4 <- renderUI({
     selectInput(
       "clusters4",
       label = "Cluster",
-      choices = c(c("All"), c(0:noOfClusters)),
-      selected = 0
+      choices = c(c("All"), c(1:noOfClusters)),
+      selected = "All"
     )
   }
 })

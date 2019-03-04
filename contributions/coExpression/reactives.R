@@ -467,13 +467,12 @@ heatmapSOMReactive <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "output$somReactive\n")
   }
-  gbm_matrix <- gbm_matrix()
+  gbm_matrix <- as.matrix(exprs(gbm()))
   projections <- projections()
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
   featureData <- featureDataReact()
 
-  # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
   if (is.null(gbm_matrix)) {
     return(
       list(
@@ -500,6 +499,10 @@ heatmapSOMReactive <- reactive({
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 
+  # gbmOrg = gbm_matrix
+  # gbm_matrix = as(gbm_matrix, "dgTMatrix")
+  # rownames(gbm_matrix) = rownames(featureData)
+  # dgTMatrix makes som crash R, I guess it is because it is calling a C function that is able to handle it...
   geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
   output$somGenes <- renderText({
     paste(featureData[geneNames, "Associated.Gene.Name"], collapse = ", ", sep = ",")

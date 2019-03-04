@@ -130,7 +130,8 @@ pca = run_pca(subset(dt$gbm_log,which(rownames(gbm_log) %in% rownames(log2cpm)))
     tsne <- run_tsne(pca, dims = 3, perplexity = 30, theta = 0.5)
 tsne.data = data.frame(tsne$Y)
 colnames(tsne.data) = c("tsne1", "tsne2", "tsne3")
-tsne.data$dbCluster = factor(analysis_results$clustering$kmeans_10_clusters$Cluster-1)
+# tsne.data$dbCluster = factor(analysis_results$clustering$kmeans_10_clusters$Cluster-1)
+tsne.data$dbCluster = factor(analysis_results$clustering$kmeans_10_clusters$Cluster)
 rownames(tsne.data) = analysis_results$clustering$kmeans_10_clusters$Barcode
 fd = featureData(gbm_log)
 

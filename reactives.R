@@ -171,7 +171,7 @@ inputData <- reactive({
 })
 
 medianENSGfunc <- function(gbm) {
-  geneC <- colSums(gbm > 0, na.rm = TRUE)
+  geneC <- Matrix::colSums(gbm > 0, na.rm = TRUE)
   return(median(t(geneC)))
 }
 
@@ -181,7 +181,7 @@ medianENSG <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "medianENSG\n")
   }
-  gbm <- gbm_matrix()
+  gbm <- exprs(gbm())
   if (is.null(gbm)) {
     if (DEBUG) {
       cat(file = stderr(), "medianENSG:NULL\n")
@@ -200,7 +200,7 @@ medianENSG <- reactive({
 })
 
 medianUMIfunc <- function(gbm) {
-  umiC <- colSums(gbm, na.rm = TRUE)
+  umiC <- Matrix::colSums(gbm, na.rm = TRUE)
   return(median(t(umiC)))
 }
 
@@ -210,7 +210,7 @@ medianUMI <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "medianUMI\n")
   }
-  gbm <- gbm_matrix()
+  gbm <- gbm()
   if (is.null(gbm)) {
     if (DEBUG) {
       cat(file = stderr(), "medianUMI:NULL\n")
@@ -649,30 +649,30 @@ gbm <- reactive({
 })
 
 # takes a lot of memory and should be avoided.
-gbm_matrix <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "gbm_matrix\n")
-  }
-  gbm <- gbm()
-  if (is.null(gbm)) {
-    if (DEBUG) {
-      cat(file = stderr(), "gbm_matrix:NULL\n")
-    }
-    return(NULL)
-  }
-  if (ncol(gbm) <= 1 | nrow(gbm) < 1) {
-    return(NULL)
-  }
-  retVal <- as.matrix(exprs(gbm))
-  if (DEBUG) {
-    end.time <- Sys.time()
-
-    cat(file = stderr(), "===gbm_matrix:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  return(retVal)
-})
+# gbm_matrix <- reactive({
+#   start.time <- Sys.time()
+# 
+#   if (DEBUG) {
+#     cat(file = stderr(), "gbm_matrix\n")
+#   }
+#   gbm <- gbm()
+#   if (is.null(gbm)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "gbm_matrix:NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   if (ncol(gbm) <= 1 | nrow(gbm) < 1) {
+#     return(NULL)
+#   }
+#   retVal <- as.matrix(exprs(gbm))
+#   if (DEBUG) {
+#     end.time <- Sys.time()
+# 
+#     cat(file = stderr(), "===gbm_matrix:done", difftime(end.time, start.time, units = "min"), "\n")
+#   }
+#   return(retVal)
+# })
 
 
 rawNormalization <- reactive({
@@ -725,45 +725,45 @@ gbm_log <- reactive({
   return(gbm_log)
 })
 
-gbmLogMatrix <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "gbmLogMatrix")
-    }
-  )
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "gbmLogMatrix\n")
-  }
-  # dataTables = inputData()
-  # useCells = useCells()
-  # useGenes = useGenes()
-  gbmLog <- gbm_log()
-  if (is.null(gbmLog)) {
-    if (DEBUG) {
-      cat(file = stderr(), "gbmLogMatrix:NULL\n")
-    }
-    return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Calculating gbmLogmatrix",
-      id = "gbmLogMatrix",
-      duration = NULL
-    )
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
-
-  retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===gbmLogMatrix:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  return(retVal)
-})
+# gbmLogMatrix <- reactive({
+#   on.exit(
+#     if (!is.null(getDefaultReactiveDomain())) {
+#       removeNotification(id = "gbmLogMatrix")
+#     }
+#   )
+#   start.time <- Sys.time()
+# 
+#   if (DEBUG) {
+#     cat(file = stderr(), "gbmLogMatrix\n")
+#   }
+#   # dataTables = inputData()
+#   # useCells = useCells()
+#   # useGenes = useGenes()
+#   gbmLog <- gbm_log()
+#   if (is.null(gbmLog)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "gbmLogMatrix:NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   if (!is.null(getDefaultReactiveDomain())) {
+#     showNotification("Calculating gbmLogmatrix",
+#       id = "gbmLogMatrix",
+#       duration = NULL
+#     )
+#   }
+#   if (DEBUGSAVE) {
+#     save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = c(ls(), ls(envir = globalenv())))
+#   }
+#   # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
+# 
+#   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
+#   if (DEBUG) {
+#     end.time <- Sys.time()
+#     cat(file = stderr(), "===gbmLogMatrix:done", difftime(end.time, start.time, units = "min"), "\n")
+#   }
+#   return(retVal)
+# })
 
 # gbmLog matrix with symbol as first column
 # TODO
@@ -1094,8 +1094,9 @@ dbCluster <- reactive({
     return(NULL)
   }
 
-  dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
-
+  # dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
+  dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster)
+  
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===dbCluster:done", difftime(end.time, start.time, units = "min"), "\n")

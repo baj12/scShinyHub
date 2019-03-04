@@ -67,7 +67,7 @@ output$summaryStatsSideBar <- renderUI({
   if (DEBUG) {
     cat(file = stderr(), "output$summaryStatsSideBar\n")
   }
-  gbm <- gbm_matrix()
+  gbm <- gbm()
   if (is.null(gbm)) {
     if (DEBUG) {
       cat(file = stderr(), "output$summaryStatsSideBar:NULL\n")

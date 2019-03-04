@@ -81,7 +81,8 @@ if(exists("params")){
   
   tsne.data = data.frame(tsne$Y)
   colnames(tsne.data) = c("tsne1", "tsne2", "tsne3")
-  tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
+  # tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
+  tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster
   rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
   if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
   

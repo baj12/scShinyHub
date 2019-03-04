@@ -198,7 +198,6 @@ clusterServer <- function(input, output, session,
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
     featureData <- featureDataReact()
-    log2cpm <- log2cpm()
     gbm <- gbm()
     gbm_log <- gbm_log()
     projections <- tData()
@@ -213,7 +212,7 @@ clusterServer <- function(input, output, session,
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
     
-    if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
+    if (is.null(featureData)  | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
