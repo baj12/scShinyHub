@@ -134,7 +134,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 
 ```{r plotUmiHist, eval=TRUE, echo=FALSE}
 
-hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
+hist(Matrix::colSums(exprs(gbm)), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs

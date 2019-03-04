@@ -116,7 +116,7 @@ plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames,
   map <-
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
   
- expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+ expression <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr)
 
   projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){

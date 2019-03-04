@@ -17,7 +17,7 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
 
   # expression <- expression[, rownames(projections)]
-  expression <- expression[complete.cases(expression), ]
+  # expression <- expression[GeneBCMatrix::complete.cases(expression), ]
 
   if (!("sampleNames" %in% colnames(projections))) {
     projections$sample <- 1
@@ -48,9 +48,9 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
   # minBreak = max(0, med - 3* stDev)
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
-  nonZeroRows <- which(rowSums(expression) > 0)
+  nonZeroRows <- which(Matrix::rowSums(expression) > 0)
   retVal <- list(
-    mat = as.matrix(expression)[nonZeroRows, order(annotation[, 1], annotation[, 2])],
+    mat = expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
     cluster_cols = FALSE,
     scale = "row",
@@ -84,7 +84,7 @@ heatmapSelectedReactive <- reactive({
     cat(file = stderr(), "output$heatmapSelectedReactive\n")
   }
   featureData <- featureDataReact()
-  gbm_matrix <- gbm_matrix()
+  gbm_matrix <- gbm()
   projections <- projections()
   genesin <- input$heatmap_geneids2
   sc <- selctedCluster()
@@ -146,7 +146,8 @@ topExpGenesTable <- reactive({
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
   # we only work on cells that have been selected
-  mat <- as.matrix(exprs(gbm_log))[, scCells]
+  # mat <- as.matrix(exprs(gbm_log))[, scCells]
+  mat <- exprs(gbm_log)[, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0
   # only genes that are expressed in coEtgPerc or more cells
@@ -166,7 +167,8 @@ topExpGenesTable <- reactive({
     matCV <- matCV[rownames(mat)]
     fd <- cbind(fd, matCV)
     colnames(fd) <- c("gene", "description", "CV")
-    outMat <- cbind(fd, mat)
+    # since we are returning a table to be plotted, we convert to regular table (non-sparse)
+    outMat <- cbind2(fd, as.matrix(mat))
     rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
     return(outMat)
   } else {
@@ -349,7 +351,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   }
 
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
-  expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+  expression <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr)
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   ylabText <- "number genes from list"
   # projections = projections[,1:12]
@@ -369,7 +371,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
         map <-
           rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
 
-        permIdx <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr) == length(comb[cIdx, ])
+        permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }

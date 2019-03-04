@@ -69,6 +69,7 @@ install.packages(c("rafalib", "shinydashboard", "shinyBS", "shinythemes", "Rfast
 rafalib::install_bioc(requiredPackages)
 devtools::install_github("mul118/shinyMCE")
 devtools::install_github("jlmelville/uwot")
+BiocManager::install("TRONCO")
 
 install.packages("sm")
 ```

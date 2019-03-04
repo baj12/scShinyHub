@@ -75,7 +75,7 @@ heatmapReactive <- reactive({
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/heatmap.RData")
-  gbm_matrix <- as.matrix(exprs(gbm_log))
+  gbm_matrix <- exprs(gbm_log)
   retval <- coE_heatmapFunc(
     featureData = featureData, gbm_matrix = gbm_matrix,
     projections = projections, genesin = genesin, cells = colnames(gbm_matrix)

@@ -115,11 +115,11 @@ output$selectedGenesTable <- DT::renderDataTable({
     return(NULL)
   }
 
-  gbm <- as.matrix(exprs(dataTables$gbm))
+  gbm <- exprs(dataTables$gbm)
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  dt$rowSums <- rowSums(gbm[useGenes, useCells])
-  dt$rowSamples <- rowSums(gbm[useGenes, useCells] > 0)
+  dt$rowSums <- Matrix::rowSums(gbm[useGenes, useCells])
+  dt$rowSamples <- Matrix::rowSums(gbm[useGenes, useCells] > 0)
   DT::datatable(dt)
 })
 
@@ -135,11 +135,11 @@ output$removedGenesTable <- DT::renderDataTable({
     return(NULL)
   }
 
-  gbm <- as.matrix(exprs(dataTables$gbm))
+  gbm <- exprs(dataTables$gbm)
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  dt$rowSums <- rowSums(gbm[useGenes, useCells])
-  dt$rowSamples <- rowSums(gbm[useGenes, useCells] > 0)
+  dt$rowSums <- Matrix::rowSums(gbm[useGenes, useCells])
+  dt$rowSamples <- Matrix::rowSums(gbm[useGenes, useCells] > 0)
   DT::datatable(dt)
 })
 
@@ -156,7 +156,7 @@ output$gsSelectedGenes <- renderText({
     return(NULL)
   }
 
-  gbm <- as.matrix(exprs(dataTables$gbm))
+  # gbm <- as.matrix(exprs(dataTables$gbm))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
 
@@ -175,7 +175,7 @@ output$gsrmGenes <- renderText({
     return(NULL)
   }
 
-  gbm <- as.matrix(exprs(dataTables$gbm))
+  # gbm <- as.matrix(exprs(dataTables$gbm))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
   if (DEBUG) {
