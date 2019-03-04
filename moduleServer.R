@@ -26,12 +26,18 @@ clusterServer <- function(input, output, session,
                           tData,
                           gene_id = returnNull, # reactive
                           # selectedCells  = NULL,
-                          legend.position = "none") {
+                          legend.position = "none"
+                          # ,
+                          # defaultValues = c("tsne1", "tsne2")
+                          ) {
+  #TODO
   ns <- session$ns
   subsetData <- NULL
   selectedGroupName <- ""
   groupName <- ""
   
+  # dim1 <- defaultValues[1]
+  # dim2 <- defaultValues[2]
   dim1 <- "PC1"
   dim2 <- "PC2"
   
@@ -184,9 +190,9 @@ clusterServer <- function(input, output, session,
       si <- selectizeInput(
         ns("clusters"),
         label = "Cluster",
-        choices = c(0:noOfClusters),
+        choices = c(1:noOfClusters),
         # selected = input$clusters, # not working because of stack, too slow and possible to create infinite loop
-        selected = c(0:noOfClusters),
+        selected = c(1:noOfClusters),
         multiple = TRUE
       )
     }
@@ -638,7 +644,7 @@ heatmapModuleFunc <- function(
     cluster_rows = TRUE,
     cluster_cols = FALSE,
     scale = "row",
-    fontsize_row = 10,
+    fontsize_row = 14,
     labels_col = colnames(expression),
     labels_row = featureData[rownames(expression), "Associated.Gene.Name"],
     show_rownames = TRUE,
@@ -744,24 +750,26 @@ pHeatMapModule <- function(input, output, session,
     # heatmapData$mat = orgMat
     # system.time(do.call(pheatmap, heatmapData))
     # heatmapData$mat = as(orgMat, "dgTMatrix")
+    heatmapData$fontsize = 14
+    # heatmapData$fontsize_row = 18
     system.time(do.call(TRONCO::pheatmap, heatmapData))
     
     pixelratio <- session$clientData$pixelratio
     if (is.null(pixelratio)) pixelratio <- 1
-    width <- session$clientData$output_plot_width
-    height <- session$clientData$output_plot_height
-    if (is.null(width)) {
-      width <- 96 * 7
-    } # 7x7 inch output
-    if (is.null(height)) {
-      height <- 96 * 7
-    }
+    # width <- session$clientData$output_plot_width
+    # height <- session$clientData$output_plot_height
+    # if (is.null(width)) {
+    #   width <- 96 * 7
+    # } # 7x7 inch output
+    # if (is.null(height)) {
+    #   height <- 96 * 7
+    # }
     outfilePH <<- outfile
     return(list(
       src = outfilePH,
       contentType = "image/png",
-      width = width,
-      height = height,
+      width = "100%",
+      height = "100%",
       alt = "heatmap should be here"
     ))
   })

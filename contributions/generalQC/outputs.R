@@ -102,6 +102,8 @@ output$tsne_main <- renderPlotly({
     clusterServer,
     "umap_main",
     projections
+    # ,
+    # defaultValues = c("UMAP1", "UMAP2")
   )
 
 
