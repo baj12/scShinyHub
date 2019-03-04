@@ -430,6 +430,41 @@ useGenesFunc <-
     return(keepIDs)
   }
 
+# before gene filtering
+beforeFilterCounts <- reactive({
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "beforeFilterCounts")
+    }
+  )
+  dataTables <- inputData()
+  ipIDs <- input$selectIds # regular expression of genes to be removed
+  if (!exists("dataTables") |
+      is.null(dataTables) |
+      length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+    if (DEBUG) {
+      cat(file = stderr(), "beforeFilterCounts: NULL\n")
+    }
+    return(NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("beforeFilterCounts", id = "beforeFilterCounts", duration = NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/beforeFilterCounts.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/beforeFilterCounts.RData")
+  
+  geneIDs = NULL
+  if (nchar(ipIDs) > 0) {
+    geneIDs <- grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+  } 
+  if(is.null(geneIDs)){
+    return(rep(0, nrow(dataTables$featuredata)))
+  }
+  return(Matrix::colSums(dataTables$gbm[geneIDs,]))
+})
+
 # collects information from all places where genes being removed or specified
 useGenes <- reactive({
   on.exit(
@@ -1133,6 +1168,31 @@ geneCount <- reactive({
     cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
+})
+
+beforeFilterPrj <- reactive({
+  start.time <- Sys.time()
+  
+  if (DEBUG) {
+    cat(file = stderr(), "umiCount\n")
+  }
+  gbm <- gbm()
+  bfc <- beforeFilterCounts()
+  if (is.null(gbm) | is.null(bfc)) {
+    return(NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/beforeFilterPrj.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/beforeFilterPrj.RData")
+  cn = colnames(gbm)
+  retVal <- bfc[cn]
+  if (DEBUG) {
+    end.time <- Sys.time()
+    cat(file = stderr(), "===beforeFilterPrj:done", difftime(end.time, start.time, units = "min"), "\n")
+  }
+  return(retVal)
+  
 })
 
 umiCount <- reactive({

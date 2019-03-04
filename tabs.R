@@ -1,4 +1,5 @@
 require(shinyMCE)
+require(shiny)
 source("modulesUI.R")
 # this is where the general tabs are defined:
 if (file.exists("defaultValues.R")) {
@@ -32,6 +33,10 @@ inputTab <- tabItem(
       ),
       multiple = TRUE
     )
+  )),
+  fluidRow(column(
+    6,
+    textInput("beforeFilterRegEx", "regular expression to count genes/cell", value = "^MT-|^RP|^MRP")
   ))
 )
 
