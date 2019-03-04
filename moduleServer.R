@@ -634,8 +634,8 @@ heatmapModuleFunc <- function(
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
   nonZeroRows <- which(rowSums(expression) > 0)
-  pheatmap(
-    as.matrix(expression)[nonZeroRows, order(annotation[, 1], annotation[, 2])],
+  TRONCO::pheatmap(
+    expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
     cluster_cols = FALSE,
     scale = "row",
@@ -740,8 +740,12 @@ pHeatMapModule <- function(input, output, session,
       heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
       # return()
     }
+    # orgMat = heatmapData$mat
     
-    do.call(pheatmap, heatmapData)
+    # heatmapData$mat = orgMat
+    # system.time(do.call(pheatmap, heatmapData))
+    # heatmapData$mat = as(orgMat, "dgTMatrix")
+    system.time(do.call(TRONCO::pheatmap, heatmapData))
     
     pixelratio <- session$clientData$pixelratio
     if (is.null(pixelratio)) pixelratio <- 1

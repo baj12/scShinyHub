@@ -115,7 +115,7 @@ output$plotUmiHist <- renderPlot({
   if (is.null(gbm)) {
     return(NULL)
   }
-  hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main = "histogram of number of UMIs per cell")
+  hist(Matrix::colSums(exprs(gbm)), breaks = 50, main = "histogram of number of UMIs per cell")
 })
 
 output$plotSampleHist <- renderPlot({

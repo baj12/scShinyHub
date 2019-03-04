@@ -35,8 +35,8 @@ inputDataFunc <- function(inFile) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
   start.time <- Sys.time()
-  save(file = "test.RData", list = c("inFile"))
-
+  # save(file = "test.RData", list = c("inFile"))
+  # load("test.RData")
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
   stats$nFeatures <- 0
@@ -49,7 +49,7 @@ inputDataFunc <- function(inFile) {
     fd <- featuredata
     fdAll <- fData(gbm)
     pdAll <- pData(gbm)
-    exAll <- as.matrix(exprs(gbm))
+    exAll <- exprs(gbm)
     stats[1, "nFeatures"] <- nrow(fdAll)
     stats[1, "nCells"] <- nrow(pdAll)
 
@@ -65,7 +65,7 @@ inputDataFunc <- function(inFile) {
       fd <- featuredata[fdIdx, ]
       fdAll <- fdAll[fdIdx, ]
       pd1 <- pData(gbm)
-      ex1 <- as.matrix(exprs(gbm)[fdIdx, ])
+      ex1 <- exprs(gbm)[fdIdx, ]
       if (sum(rownames(pdAll) %in% rownames(pd1)) > 0) {
         cat(file = stderr(), "Houston, there are cells with the same name\n")
         rownames(pd1) <- paste0(rownames(pd1), "_", fpIdx)
@@ -77,7 +77,7 @@ inputDataFunc <- function(inFile) {
       stats[fpIdx, "nFeatures"] <- nrow(fd)
       stats[fpIdx, "nCells"] <- nrow(pd1)
 
-      exAll <- cbind(exAll[fdIdx, ], ex1)
+      exAll <- Matrix::cbind2(exAll[fdIdx, ], ex1)
     }
     gbm <- newGeneBCMatrix(mat = as(exAll, "dgTMatrix"), fd = fdAll, pd = pdAll)
     featuredata <- fd
@@ -115,7 +115,7 @@ inputDataFunc <- function(inFile) {
   }
   # some checks
 
-  if (sum(is.infinite(as.matrix(exprs(gbm)))) > 0) {
+  if (sum(is.infinite(exprs(gbm))) > 0) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("gbm contains infinite values",
         type = "error"
@@ -247,7 +247,7 @@ useCellsFunc <-
     }
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
     goodCols <- rep(TRUE, ncol(dataTables$gbm))
-    gbm <- as.matrix(exprs(dataTables$gbm))
+    gbm <- exprs(dataTables$gbm)
     #### start: cells with genes expressed
     # take only cells where these genes are expressed with at least one read
     genesin <- toupper(geneNames)
@@ -298,7 +298,7 @@ useCellsFunc <-
         )
         return(NULL)
       } else {
-        selCols <- colSums(gbm[ids, ]) > 0
+        selCols <- Matrix::colSums(gbm[ids, ]) > 0
       }
       goodCols <- goodCols & selCols
     }
@@ -529,11 +529,11 @@ gbmFunc <-
     changed <- FALSE # trace if something changed
     keepGenes <- useGenes
     keepCells <- useCells
-    gbm <- as.matrix(exprs(gbmOrg))
+    gbm <- exprs(gbmOrg)
 
     # overall gene expression Min
     if (!is.null(minGene)) {
-      selGenes <- rowSums(gbm[, keepCells]) >= minGene
+      selGenes <- Matrix::rowSums(gbm[, keepCells]) >= minGene
       selGenes <- keepGenes & selGenes
       if (!all(selGenes == keepGenes)) {
         keepGenes <- selGenes
@@ -543,7 +543,7 @@ gbmFunc <-
 
     # min reads per cell
     if (!is.null(minG)) {
-      selCols <- colSums(gbm[keepGenes, ], na.rm = FALSE) > minG
+      selCols <- Matrix::colSums(gbm[keepGenes, ], na.rm = FALSE) > minG
       selCols[is.na(selCols)] <- FALSE
       selCols <- keepCells & selCols
       if (!all(selCols == keepCells)) {
@@ -554,7 +554,7 @@ gbmFunc <-
 
     # max reads per cell
     if (!is.null(maxG)) {
-      selCols <- colSums(gbm[keepGenes, ], na.rm = FALSE) <= maxG
+      selCols <- Matrix::colSums(gbm[keepGenes, ], na.rm = FALSE) <= maxG
       selCols[is.na(selCols)] <- FALSE
       selCols <- selCols & keepCells
       if (!all(selCols == keepCells)) {
@@ -1162,7 +1162,7 @@ geneCount <- reactive({
     save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
-  retVal <- colSums(as.matrix(exprs(gbm)) > 0)
+  retVal <- Matrix::colSums(exprs(gbm) > 0)
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1209,7 +1209,7 @@ umiCount <- reactive({
     save(file = "~/scShinyHubDebug/umiCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/umiCount.RData")
-  retVal <- colSums(as.matrix(exprs(gbm)))
+  retVal <- Matrix::colSums(exprs(gbm))
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1276,7 +1276,7 @@ inputSample <- reactive({
   cellIds <- data.frame(
     cellName = colnames(dataTables$gbm),
     sample = sampInf,
-    ngenes = colSums(as.matrix(exprs(dataTables$gbm)))
+    ngenes = Matrix::colSums(exprs(dataTables$gbm))
   )
 
   if (DEBUG) {
