@@ -821,7 +821,9 @@ pcaFunc <- function(gbm_log) {
   pca <- tryCatch({
     # TODO test for speed and accuracy
     # require(irlba)
-    # prcomp_irlba(x, n = 3, retx = TRUE, center = TRUE, scale. = FALSE, ...)
+    # xx =prcomp_irlba(exprs(gbm_log), n = 10, retx = TRUE, center = Matrix::colMeans(gbm_log), scale. = FALSE)
+    # colnames(data)[colnames(data) == "totalvar"] <- "tot_var"
+    # xx$center 
     run_pca(gbm_log)
   },
   error = function(e) {
