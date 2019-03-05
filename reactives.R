@@ -819,6 +819,9 @@ pcaFunc <- function(gbm_log) {
   }
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
   pca <- tryCatch({
+    # TODO test for speed and accuracy
+    # require(irlba)
+    # prcomp_irlba(x, n = 3, retx = TRUE, center = TRUE, scale. = FALSE, ...)
     run_pca(gbm_log)
   },
   error = function(e) {
@@ -1335,7 +1338,8 @@ returnNull <- function() {
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
-                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs) {
+                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
+                             logx=FALSE, logy=FALSE) {
   geneid <- geneName2Index(g_id, featureData)
   
 
@@ -1429,5 +1433,10 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
     shape[selRows] <- "b"
     p1 <- p1 + geom_point(data = subsetData[selRows, ], mapping = aes(shape = shape, size = 4), colour = "red")
   }
+  if(logx)
+    p1 = p1 + scale_x_continuous(trans='log2')
+  if(logy)
+    p1 = p1 + scale_y_continuous(trans='log2')
+  
   p1
 }
