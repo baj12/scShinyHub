@@ -799,6 +799,10 @@ gbmLogMatrixDisplay <- reactive({
   }
   # load(file="~/scShinyHubDebug/gbmLogMatrixDisplay.RData")
 
+  # TODO 
+  if (ncol(gbmLog) > 20000 ){
+    
+  }
   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
   rownames(retVal) <- make.names(fData(gbmLog)$symbol, unique = TRUE)
 

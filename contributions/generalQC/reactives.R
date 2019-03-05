@@ -11,7 +11,7 @@ scaterReadsFunc <- function(gbm, fd) {
   }
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
   
-  counts <- as.matrix(exprs(gbm))
+  counts <- as(exprs(gbm), "dgCMatrix")
   
   anno <- pData(gbm)
   anno$sample_id <- anno$sampleNames
@@ -23,11 +23,8 @@ scaterReadsFunc <- function(gbm, fd) {
   pheno_data <- new("AnnotatedDataFrame", anno)
   # rownames(pheno_data) <- pheno_dat
   
-  reads <- as.matrix(counts)
-  rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"], sep = "___")
-  rownames(reads)[is.na(rownames(reads)) ] <- "na"
   reads <- SingleCellExperiment(
-    assays = list(counts = reads),
+    assays = list(counts = counts),
     colData = anno
   )
   ercc <- rownames(reads)[grepl("ERCC-", rownames(reads))]
