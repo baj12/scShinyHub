@@ -659,7 +659,7 @@ heatmapModuleFunc <- function(
   TRONCO::pheatmap(
     expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
-    cluster_cols = FALSE,
+    cluster_cols = TRUE,
     scale = "row",
     fontsize_row = 14,
     labels_col = colnames(expression),
@@ -729,6 +729,8 @@ pHeatMapModule <- function(input, output, session,
     addColNames <- input$ColNames
     orderColNames <- input$orderNames
     moreOptions <- input$moreOptions
+    colTree <- input$showColTree
+    
     proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
@@ -763,6 +765,9 @@ pHeatMapModule <- function(input, output, session,
       heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
       # return()
     }
+    if (moreOptions) {
+      heatmapData$cluster_cols = colTree
+    }
     # orgMat = heatmapData$mat
 
     # heatmapData$mat = orgMat
@@ -770,6 +775,7 @@ pHeatMapModule <- function(input, output, session,
     # heatmapData$mat = as(orgMat, "dgTMatrix")
     heatmapData$fontsize <- 14
     # heatmapData$fontsize_row = 18
+    
     system.time(do.call(TRONCO::pheatmap, heatmapData))
 
     pixelratio <- session$clientData$pixelratio
@@ -809,6 +815,7 @@ pHeatMapModule <- function(input, output, session,
     # load(file="~/scShinyHubDebug/heatMapadditionalOptions.RData")
 
     tagList(
+      checkboxInput(ns("showColTree"), label = "Show tree for cells", value = FALSE),
       selectInput(
         ns("ColNames"),
         label = "group names",
