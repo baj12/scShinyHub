@@ -14,7 +14,7 @@
 #   defaultValueMultiGenes <<- input$defaultValueMultiGenes
 # })
 
-library(cellrangerRkit)
+# library(cellrangerRkit)
 inputFileStats <- reactiveValues(
   stats = NULL
 )
