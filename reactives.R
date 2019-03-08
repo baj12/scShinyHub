@@ -1393,12 +1393,27 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   if (nchar(gtitle)>50) {
     gtitle = paste(substr(gtitle,1,50), "...")
   }
-  
-  p1 <-
-    ggplot(
+  require(plotly)
+  f <- list(
+    family = "Courier New, monospace",
+    size = 18,
+    color = "#7f7f7f"
+  )
+  xAxis <- list(title = dimX,
+            titlefont = f)
+  yAxis <- list(title = dimY,
+            titlefont = f)
+  # p1 <-
+    plot_ly(
       subsetData,
-      aes_string(x = dimX, y = dimY)
-    ) +
+      x = ~get(dimX), 
+      y = ~get(dimY),
+      type = "scatter",
+      mode = "markers"
+    ) %>%
+    layout(xaxis = xAxis, yaxis = yAxis)
+  
+  +
     geom_point(aes_string(shape = "shape", size = 2, color = "exprs"), show.legend = TRUE) +
     # scale_shape_identity() +
     geom_point(

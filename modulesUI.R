@@ -43,7 +43,8 @@ clusterUI <- function(id) {
     ),
     fluidRow(column(
       12,
-      jqui_resizable(plotOutput(ns("clusterPlot"), brush = brushOpts(id = ns("b1"))) )
+      # jqui_resizable(plotOutput(ns("clusterPlot"), brush = brushOpts(id = ns("b1"))) )
+      jqui_resizable(plotlyOutput(ns("clusterPlot")))
     )),
     fluidRow(
       checkboxInput(ns("moreOptions"), "show more options", FALSE),

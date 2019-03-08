@@ -199,7 +199,7 @@ clusterServer <- function(input, output, session,
     si
   })
 
-  output$clusterPlot <- renderPlot({
+  output$clusterPlot <- renderPlotly({
     if (DEBUG) {
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
