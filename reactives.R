@@ -440,8 +440,8 @@ beforeFilterCounts <- reactive({
   dataTables <- inputData()
   ipIDs <- input$selectIds # regular expression of genes to be removed
   if (!exists("dataTables") |
-      is.null(dataTables) |
-      length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+    is.null(dataTables) |
+    length(dataTables$featuredata$Associated.Gene.Name) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "beforeFilterCounts: NULL\n")
     }
@@ -454,15 +454,15 @@ beforeFilterCounts <- reactive({
     save(file = "~/scShinyHubDebug/beforeFilterCounts.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/beforeFilterCounts.RData")
-  
-  geneIDs = NULL
+
+  geneIDs <- NULL
   if (nchar(ipIDs) > 0) {
     geneIDs <- grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
-  } 
-  if(is.null(geneIDs)){
+  }
+  if (is.null(geneIDs)) {
     return(rep(0, nrow(dataTables$featuredata)))
   }
-  return(Matrix::colSums(dataTables$gbm[geneIDs,]))
+  return(Matrix::colSums(dataTables$gbm[geneIDs, ]))
 })
 
 # collects information from all places where genes being removed or specified
@@ -651,7 +651,7 @@ gbm <- reactive({
 # takes a lot of memory and should be avoided.
 # gbm_matrix <- reactive({
 #   start.time <- Sys.time()
-# 
+#
 #   if (DEBUG) {
 #     cat(file = stderr(), "gbm_matrix\n")
 #   }
@@ -668,7 +668,7 @@ gbm <- reactive({
 #   retVal <- as.matrix(exprs(gbm))
 #   if (DEBUG) {
 #     end.time <- Sys.time()
-# 
+#
 #     cat(file = stderr(), "===gbm_matrix:done", difftime(end.time, start.time, units = "min"), "\n")
 #   }
 #   return(retVal)
@@ -732,7 +732,7 @@ gbm_log <- reactive({
 #     }
 #   )
 #   start.time <- Sys.time()
-# 
+#
 #   if (DEBUG) {
 #     cat(file = stderr(), "gbmLogMatrix\n")
 #   }
@@ -756,7 +756,7 @@ gbm_log <- reactive({
 #     save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = c(ls(), ls(envir = globalenv())))
 #   }
 #   # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
-# 
+#
 #   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
 #   if (DEBUG) {
 #     end.time <- Sys.time()
@@ -799,9 +799,9 @@ gbmLogMatrixDisplay <- reactive({
   }
   # load(file="~/scShinyHubDebug/gbmLogMatrixDisplay.RData")
 
-  # TODO 
-  if (ncol(gbmLog) > 20000 ){
-    
+  # TODO
+  if (ncol(gbmLog) > 20000) {
+
   }
   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
   rownames(retVal) <- make.names(fData(gbmLog)$symbol, unique = TRUE)
@@ -823,7 +823,7 @@ pcaFunc <- function(gbm_log) {
     # require(irlba)
     # xx =prcomp_irlba(exprs(gbm_log), n = 10, retx = TRUE, center = Matrix::colMeans(gbm_log), scale. = FALSE)
     # colnames(data)[colnames(data) == "totalvar"] <- "tot_var"
-    # xx$center 
+    # xx$center
     run_pca(gbm_log)
   },
   error = function(e) {
@@ -1105,7 +1105,7 @@ dbCluster <- reactive({
 
   # dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
   dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster)
-  
+
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===dbCluster:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1182,7 +1182,7 @@ geneCount <- reactive({
 
 beforeFilterPrj <- reactive({
   start.time <- Sys.time()
-  
+
   if (DEBUG) {
     cat(file = stderr(), "umiCount\n")
   }
@@ -1195,14 +1195,13 @@ beforeFilterPrj <- reactive({
     save(file = "~/scShinyHubDebug/beforeFilterPrj.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/beforeFilterPrj.RData")
-  cn = colnames(gbm)
+  cn <- colnames(gbm)
   retVal <- bfc[cn]
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===beforeFilterPrj:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
-  
 })
 
 umiCount <- reactive({
@@ -1341,9 +1340,9 @@ returnNull <- function() {
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
-                             logx=FALSE, logy=FALSE) {
+                             logx = FALSE, logy = FALSE) {
   geneid <- geneName2Index(g_id, featureData)
-  
+
 
   # if (length(geneid) == 1) {
   #   expression <- exprs(gbm_log)[geneid, ,drop=FALSE]
@@ -1372,7 +1371,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   names(projections)[ncol(projections)] <- "exprs"
 
   if (DEBUG) {
-    cat(file = stderr(), paste("output$dge_plot1:---", clId, "---\n"))
+    cat(file = stderr(), paste("output$dge_plot1:---", clId[1], "---\n"))
   }
   subsetData <- subset(projections, dbCluster %in% clId)
   # subsetData$dbCluster = factor(subsetData$dbCluster)
@@ -1390,53 +1389,60 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   if (nrow(subsetData) == 0) return(NULL)
   # subsetData$shape = as.factor(1)
   gtitle <- paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")
-  if (nchar(gtitle)>50) {
-    gtitle = paste(substr(gtitle,1,50), "...")
+  if (nchar(gtitle) > 50) {
+    gtitle <- paste(substr(gtitle, 1, 50), "...")
   }
+
   require(plotly)
   f <- list(
     family = "Courier New, monospace",
     size = 18,
     color = "#7f7f7f"
   )
-  xAxis <- list(title = dimX,
-            titlefont = f)
-  yAxis <- list(title = dimY,
-            titlefont = f)
-  # p1 <-
-    plot_ly(
-      subsetData,
-      x = ~get(dimX), 
+
+  typeX <- typeY <- "linear"
+  if (logx) {
+    typeX <- "log"
+  }
+  if (logy) {
+    typeY <- "log"
+  }
+  if (is.factor(subsetData[,dimX])) {
+    typeX <- NULL
+  }
+  if (is.factor(subsetData[,dimY])) {
+    typeY <- NULL
+  }
+  xAxis <- list(
+    title = dimX,
+    titlefont = f,
+    type = typeX
+  )
+  yAxis <- list(
+    title = dimY,
+    titlefont = f,
+    type = typeY
+  )
+  p1 <- plot_ly(data = subsetData, source = "subset") %>%
+    add_trace(
+      x = ~get(dimX),
       y = ~get(dimY),
       type = "scatter",
-      mode = "markers"
+      mode = "markers",
+      text = ~ paste(1:nrow(subsetData), " ", rownames(subsetData), "<br />", subsetData$exprs),
+      marker = list(
+        color = subsetData[, "exprs"],
+        size = 4
+      )
     ) %>%
-    layout(xaxis = xAxis, yaxis = yAxis)
-  
-  +
-    geom_point(aes_string(shape = "shape", size = 2, color = "exprs"), show.legend = TRUE) +
-    # scale_shape_identity() +
-    geom_point(
-      shape = 1,
-      size = 4,
-      aes(colour = as.numeric(dbCluster))
-    ) +
-    theme_bw() +
-    theme(
-      axis.text.x = element_text(
-        angle = 90,
-        size = 12,
-        vjust = 0.5
-      ),
-      axis.text.y = element_text(size = 12),
-      strip.text.x = element_text(size = 16),
-      strip.text.y = element_text(size = 14),
-      axis.title.x = element_text(face = "bold", size = 16),
-      axis.title.y = element_text(face = "bold", size = 16),
-      legend.position = legend.position
-    ) +
-    ggtitle(gtitle) +
-    scale_fill_continuous()
+    # add_trace() %>%
+    layout(
+      xaxis = xAxis,
+      yaxis = yAxis,
+      title = gtitle,
+      dragmode = 'select'
+    )
+
   selectedCells <- NULL
   if (length(grpN) > 0) {
     if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN]) > 0) {
@@ -1448,12 +1454,20 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
     shape <- rep("a", nrow(subsetData))
     selRows <- which(rownames(subsetData) %in% selectedCells)
     shape[selRows] <- "b"
-    p1 <- p1 + geom_point(data = subsetData[selRows, ], mapping = aes(shape = shape, size = 4), colour = "red")
+    x1 <- subsetData[selectedCells, dimX, drop = FALSE]
+    y1 <- subsetData[selectedCells, dimY, drop = FALSE]
+    p1 <- p1 %>%
+      add_trace(
+        x = x1[, 1], y = y1[, 1],
+        marker = list(
+          color = rep("green", length(x1)),
+          size = 5
+        ),
+        text = ~ paste( rownames(subsetData[selectedCells]), "<br />", subsetData$exprs),
+        type = "scatter",
+        mode = "markers",
+        name = "selected"
+      )
   }
-  if(logx)
-    p1 = p1 + scale_x_continuous(trans='log2')
-  if(logy)
-    p1 = p1 + scale_y_continuous(trans='log2')
-  
   p1
 }

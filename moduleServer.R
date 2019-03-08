@@ -69,7 +69,8 @@ clusterServer <- function(input, output, session,
   })
 
   selectedCellNames <- reactive({
-    brushedPs <- input$b1
+    brushedPs <- event_data("plotly_selected", source = "subset")
+    # brushedPs <- input$b1
     projections <- projections()
     dimY <- input$dimension_y
     dimX <- input$dimension_x
@@ -80,7 +81,7 @@ clusterServer <- function(input, output, session,
     if (DEBUG) {
       cat(file = stderr(), "+++cluster: selectedCellNames\n")
     }
-    if (is.null(projections)) {
+    if (is.null(projections) | is.null(brushedPs)) {
       return(NULL)
     }
     inpClusters <- input$clusters
@@ -91,6 +92,7 @@ clusterServer <- function(input, output, session,
     }
     # load(file="~/scShinyHubDebug/selectedCellNames.RData")
 
+   
     geneid <- geneName2Index(geneNames, featureData)
     projections <- updateProjectionsWithUmiCount(
       dimX = dimX, dimY = dimY,
@@ -104,13 +106,13 @@ clusterServer <- function(input, output, session,
     # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     # it seems there is a bug in shiny::asNumber that returns 0 for false
     # whereas in the brushed points this would be 1
-    if (class(subsetData[, brushedPs$mapping$x]) == "logical") {
-      subsetData[, brushedPs$mapping$x] <- as.numeric(subsetData[, brushedPs$mapping$x]) + 1
-    }
-    if (class(subsetData[, brushedPs$mapping$y]) == "logical") {
-      subsetData[, brushedPs$mapping$y] <- as.numeric(subsetData[, brushedPs$mapping$y]) + 1
-    }
-    cells.names <- brushedPoints(subsetData, brushedPs)
+    # if (class(subsetData[, brushedPs$mapping$x]) == "logical") {
+    #   subsetData[, brushedPs$mapping$x] <- as.numeric(subsetData[, brushedPs$mapping$x]) + 1
+    # }
+    # if (class(subsetData[, brushedPs$mapping$y]) == "logical") {
+    #   subsetData[, brushedPs$mapping$y] <- as.numeric(subsetData[, brushedPs$mapping$y]) + 1
+    # }
+    cells.names <- rownames(projections)[subset(brushedPs, curveNumber == 0)$pointNumber + 1]
     return(cells.names)
   })
 
@@ -126,7 +128,7 @@ clusterServer <- function(input, output, session,
       if (DEBUG) {
         cat(file = stderr(), paste("clusterServers selectedCells\n"))
       }
-      retVal <- rownames(selectedCellNames())
+      retVal <- selectedCellNames()
       if (length(retVal) == 0) {
         cat(file = stderr(), paste("selectedCellNames is null\n"))
         retVal <- NULL
@@ -240,10 +242,11 @@ clusterServer <- function(input, output, session,
     }
     if (is.null(logx)) logx <- FALSE
     if (is.null(logy)) logy <- FALSE
-    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames,
-      geneNames2, dimX, dimY, clId, grpN, legend.position,
-      grpNs = grpNs, logx, logy
-    ))
+    p1 <- plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames,
+                           geneNames2, dimX, dimY, clId, grpN, legend.position,
+                           grpNs = grpNs, logx, logy
+    )
+    return(p1)
   })
 
   # observe({
@@ -305,7 +308,7 @@ clusterServer <- function(input, output, session,
     # we isolate here because we only want to change if the button is clicked.
     isolate({
       prjs <- sessionProjections$prjs
-      brushedPs <- input$b1
+      # brushedPs <- event_data("plotly_selected", source = "subset")
       gbm <- gbm()
       inpClusters <- input$clusters
       grpN <- make.names(input$groupName)
@@ -332,7 +335,7 @@ clusterServer <- function(input, output, session,
     if (!addToSelection) {
       grpNs[rownames(visibleCells), grpN] <- FALSE
     }
-    grpNs[rownames(cells.names), grpN] <- TRUE
+    grpNs[cells.names, grpN] <- TRUE
     groupNames$namesDF <- grpNs
     updateSelectInput(session, ns("groupNames"),
       choices = colnames(grpNs),
@@ -384,7 +387,10 @@ clusterServer <- function(input, output, session,
   output$nCellsAllSelected <- renderText({
     grpNs <- groupNames$namesDF
     grpN <- make.names(input$groupName)
-    retVal <- paste("number of cells in group over all cells", sum(grpNs[, grpN]))
+    val = 0
+    if (grpN %in% colnames(grpNs))
+      val = sum(grpNs[, grpN])
+    retVal <- paste("number of cells in group over all cells", val)
     return(retVal)
   })
 
@@ -438,7 +444,7 @@ clusterServer <- function(input, output, session,
     )
     if (DEBUG) cat(file = stderr(), "cluster: cellSelection\n")
     ns <- session$ns
-    brushedPs <- (input$b1)
+    brushedPs <- event_data("plotly_selected", source = "subset")
     projections <- projections()
     inpClusters <- (input$clusters)
     myshowCells <- (input$showCells)
@@ -453,6 +459,9 @@ clusterServer <- function(input, output, session,
       return("")
     }
     if (is.null(projections)) {
+      return("")
+    }
+    if (is.null(brushedPs)) {
       return("")
     }
     if (!is.null(getDefaultReactiveDomain())) {
@@ -473,15 +482,17 @@ clusterServer <- function(input, output, session,
       gbm = gbm, projections = projections
     )
 
-    cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
-    for (axis in c("x", "y")) {
-      if (class(subsetData[, brushedPs$mapping[axis][[1]]]) == "factor") {
-        subsetData[, brushedPs$mapping[axis][[1]]] <- as.numeric(droplevels(subsetData[, brushedPs$mapping[axis][[1]]]))
-      }
-    }
+    # cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
+    # for (axis in c("x", "y")) {
+    #   if (class(subsetData[, brushedPs$mapping[axis][[1]]]) == "factor") {
+    #     subsetData[, brushedPs$mapping[axis][[1]]] <- as.numeric(droplevels(subsetData[, brushedPs$mapping[axis][[1]]]))
+    #   }
+    # }
     cat(file = stderr(), "cluster: cellSelection\n")
-    cells.names <- brushedPoints(subsetData, brushedPs)
-    retVal <- paste(rownames(cells.names), collapse = ", ")
+    # cells.names <- brushedPoints(subsetData, brushedPs)
+    cells.names <- rownames(projections)[subset(brushedPs, curveNumber == 0)$pointNumber + 1]
+    
+    retVal <- paste(cells.names, collapse = ", ")
     if (DEBUG) cat(file = stderr(), "cluster: cellSelection: done\n")
     return(retVal)
   })
