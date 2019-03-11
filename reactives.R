@@ -1340,7 +1340,7 @@ returnNull <- function() {
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
-                             logx = FALSE, logy = FALSE) {
+                             logx = FALSE, logy = FALSE, divXBy="None", divYBy="None") {
   geneid <- geneName2Index(g_id, featureData)
 
 
@@ -1384,6 +1384,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
+    cat(file = stderr(), paste("plot2Dprojection saving done.\n"))
   }
   # load(file="~/scShinyHubDebug/clusterPlot.RData")
   if (nrow(subsetData) == 0) return(NULL)
@@ -1399,7 +1400,13 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
     size = 18,
     color = "#7f7f7f"
   )
-
+  if (divXBy != "None"){
+    subsetData[,dimX] = subsetData[,dimX] / subsetData[,divXBy]
+  }
+  if (divYBy != "None"){
+    subsetData[,dimY] = subsetData[,dimY] / subsetData[,divYBy]
+  }
+  
   typeX <- typeY <- "linear"
   if (logx) {
     typeX <- "log"
@@ -1445,7 +1452,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
 
   selectedCells <- NULL
   if (length(grpN) > 0) {
-    if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN]) > 0) {
+    if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {
       grpNSub <- grpNs[rownames(subsetData), ]
       selectedCells <- rownames(grpNSub[grpNSub[, grpN], ])
     }

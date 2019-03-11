@@ -80,7 +80,7 @@ output$summaryStatsSideBar <- renderUI({
     }
     return(NULL)
   }
-
+  line0 <- paste(input$file1$name)
   line1 <- paste("No. of cells: ", dim(gbm)[2], sep = "\t")
   line2 <- paste("No. of genes: ", dim(gbm)[1], sep = "\t")
   line3 <- paste("Median UMIs per cell: ", medianUMI(), sep = "\t")
@@ -89,7 +89,7 @@ output$summaryStatsSideBar <- renderUI({
   line6 <- paste("Memory used:", getMemoryUsed())
   line7 <- paste("Normalization used:", input$normalizationRadioButton)
   HTML(paste0(
-    "Summary statistics of this dataset:", "<br/>", "<br/>", line1, "<br/>", line2, "<br/>", line3, "<br/>", line4, "<br/>",
+    "Summary statistics of this dataset:", "<br/>", "<br/>", line0, "<br/>",  line1, "<br/>", line2, "<br/>", line3, "<br/>", line4, "<br/>",
     line5, "<br/>", line6, "<br/>", line7
   ))
 })

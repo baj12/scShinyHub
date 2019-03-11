@@ -42,7 +42,7 @@ clusterUI <- function(id) {
       )
     ),
     fluidRow(column(
-      12,
+      11,
       # jqui_resizable(plotOutput(ns("clusterPlot"), brush = brushOpts(id = ns("b1"))) )
       jqui_resizable(plotlyOutput(ns("clusterPlot")))
     )),
@@ -88,11 +88,12 @@ pHeatMapUI <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(tags$h3("Heatmap plot")),
-    fluidRow(
-      jqui_resizable(plotOutput(ns("pHeatMapPlot"),
-                                # height = "auto",
-                                brush = brushOpts(id = "crh1")
-      ),options = list( width="95%"))
+    fluidRow(column(11,
+                    jqui_resizable(plotOutput(ns("pHeatMapPlot"),
+                                              # height = "auto",
+                                              brush = brushOpts(id = "crh1")
+                    ),options = list( width="95%"))
+    )
     ),
     fluidRow(
       checkboxInput(ns("moreOptions"), "show more options", FALSE),

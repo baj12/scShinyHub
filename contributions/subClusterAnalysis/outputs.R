@@ -200,7 +200,7 @@ output$clusters1 <- renderUI({
       "clusters1",
       label = "Cluster",
       choices = c(1:noOfClusters),
-      selected = 1,
+      selected = c(1:noOfClusters),
       multiple = TRUE
     )
   }

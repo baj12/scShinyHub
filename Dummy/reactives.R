@@ -17,6 +17,9 @@ DummyReactive <- reactive({
   if (DEBUG) cat(file = stderr(), "pca\n")
   # call dependancies (reactives)
   gbm_log <- gbm_log()
+  prj <- projections()
+  gbm <- gbm()
+  
   # check if they are available
   if (is.null(gbm_log)) {
     if (DEBUG) cat(file = stderr(), "pca:NULL\n")

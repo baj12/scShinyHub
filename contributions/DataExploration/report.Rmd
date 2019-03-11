@@ -88,6 +88,9 @@ geneNames2 <- input$"expclusters-geneIds"
 clId <- input$"expclusters-clusters"
 dimX <- input$"expclusters-dimension_x"
 dimY <- input$"expclusters-dimension_y"
+divXBy <- input$devideXBy
+divYBy <- input$devideYBy
+
 legend.position <- "none"
 grpN <- make.names(input$groupName)
 cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
@@ -97,7 +100,7 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 
 plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, 
                  geneNames2, dimX, dimY, clId, grpN, legend.position, 
-                 grpNs = groupNames$namesDF)
+                 grpNs = groupNames$namesDF, divXBy = divXBy, divYBy = divYBy)
 
 ```
 
