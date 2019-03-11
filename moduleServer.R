@@ -40,14 +40,22 @@ clusterServer <- function(input, output, session,
   # dim2 <- defaultValues[2]
   dim1 <- "PC1"
   dim2 <- "PC2"
-
+  divXBy <- "None"
+  divYBy <- "None"
+  
   observe({
     dim1 <<- input$dimension_x
   })
   observe({
     dim2 <<- input$dimension_y
   })
-
+  observe({
+    divXBy <<- input$devideXBy
+  })
+  observe({
+    divYBy <<- input$devideYBy
+  })
+  
   updateInput <- reactive({
     tsneData <- projections()
 
@@ -66,6 +74,16 @@ clusterServer <- function(input, output, session,
       choices = colnames(tsneData),
       selected = dim2
     )
+    
+    updateSelectInput(session, "devideXBy",
+                      choices = c("None",colnames(tsneData)),
+                      selected = divXBy
+    )
+    updateSelectInput(session, "devideYBy",
+                      choices = c("None",colnames(tsneData)),
+                      selected = divYBy
+    )
+    
   })
 
   selectedCellNames <- reactive({
@@ -221,6 +239,8 @@ clusterServer <- function(input, output, session,
     geneNames2 <- input$geneIds2
     logx <- input$logX
     logy <- input$logY
+    divXBy <- input$devideXBy
+    divYBy <- input$devideYBy
 
     if (is.null(featureData) | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
@@ -242,9 +262,12 @@ clusterServer <- function(input, output, session,
     }
     if (is.null(logx)) logx <- FALSE
     if (is.null(logy)) logy <- FALSE
+    if (is.null(divXBy)) divXBy <- "None"
+    if (is.null(divYBy)) divYBy <- "None"
+    
     p1 <- plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames,
                            geneNames2, dimX, dimY, clId, grpN, legend.position,
-                           grpNs = grpNs, logx, logy
+                           grpNs = grpNs, logx, logy, divXBy, divYBy
     )
     return(p1)
   })
@@ -418,7 +441,27 @@ clusterServer <- function(input, output, session,
         column(
           3,
           checkboxInput(ns("logY"), "log transform Y", value = FALSE)
+        ),
+        column(
+          3,
+          selectInput(
+            ns("devideXBy"),
+            label = "Devide X by",
+            choices = c("None", "Gene.Count", "UMI.Count"),
+            selected = "None"
+          )
+        ),
+        column(
+          3,
+          selectInput(
+            ns("devideYBy"),
+            label = "Devide Y by",
+            choices = c("None", "Gene.Count", "UMI.Count"),
+            selected = "None"
+          )
         )
+        
+        
       ),
       checkboxInput(ns("addToGroup"), "Add to group/otherwise overwrite", addToGroupValue),
       textInput(ns(id = "groupName"), label = "name group", value = groupName),

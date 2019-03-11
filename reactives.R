@@ -1340,7 +1340,7 @@ returnNull <- function() {
 # used in moduleServer and reports
 plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
-                             logx = FALSE, logy = FALSE) {
+                             logx = FALSE, logy = FALSE, divXBy="None", divYBy="None") {
   geneid <- geneName2Index(g_id, featureData)
 
 
@@ -1399,7 +1399,13 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
     size = 18,
     color = "#7f7f7f"
   )
-
+  if (divXBy != "None"){
+    subsetData[,dimX] = subsetData[,dimX] / subsetData[,divXBy]
+  }
+  if (divYBy != "None"){
+    subsetData[,dimY] = subsetData[,dimY] / subsetData[,divYBy]
+  }
+  
   typeX <- typeY <- "linear"
   if (logx) {
     typeX <- "log"

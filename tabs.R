@@ -16,7 +16,10 @@ inputTab <- tabItem(
   br(),
   fluidRow(div(
     h5(
-      "This app is designed for exploratory data analysis of\n                       processed RNA-Seq data of single cell experiments."
+      "This app is designed for exploratory data analysis of processed RNA-Seq data of single cell experiments. 
+      Multiple files can be selected using certain browsers (E.g. chrome). This is not working when running in RStudio as a window.
+      Rds files are R data files generated using base::save(). They contain two objects, gbm and featuredata that hold raw counts in a sparse matrix
+      and annotation in a data frame."
     ),
     align = "center"
   )),
@@ -34,9 +37,16 @@ inputTab <- tabItem(
       multiple = TRUE
     )
   )),
-  fluidRow(column(
-    6,
-    textInput("beforeFilterRegEx", "regular expression to count genes/cell", value = "^MT-|^RP|^MRP")
+  fluidRow(column(6,
+                  textInput("beforeFilterRegEx", "regular expression to count genes/cell", value = "^MT-|^RP|^MRP")
+  )),
+  fluidRow(column(6,
+                  tags$div(
+                    
+                    tags$p("This regular expression will be used before filtering out genes. 
+               It is meant to keep track of genes that were removed from gene filtering. This will generate a projection
+                           called 'before.filter'.")
+                  )
   ))
 )
 
@@ -53,8 +63,8 @@ geneSelectionTab <- tabItem(
   )),
   fluidRow(
     column(3,
-      offset = 1,
-      textInput("selectIds", "regular expression for selection of genes to be removed", value = "^MT-|^RP|^MRP")
+           offset = 1,
+           textInput("selectIds", "regular expression for selection of genes to be removed", value = "^MT-|^RP|^MRP")
     ),
     column(
       5,
@@ -69,8 +79,8 @@ geneSelectionTab <- tabItem(
   ),
   fluidRow(
     column(6,
-      offset = 1,
-      textInput("genesKeep", "genes to keep")
+           offset = 1,
+           textInput("genesKeep", "genes to keep")
     )
   ),
   br(),
@@ -79,13 +89,13 @@ geneSelectionTab <- tabItem(
     br(),
     h4("Selected genes"),
     column(12,
-      offset = 0,
-      textOutput("gsSelectedGenes", inline = FALSE)
+           offset = 0,
+           textOutput("gsSelectedGenes", inline = FALSE)
     ),
     br(),
     column(10,
-      offset = 1,
-      DT::dataTableOutput("selectedGenesTable")
+           offset = 1,
+           DT::dataTableOutput("selectedGenesTable")
     )
   ),
   br(),
@@ -97,8 +107,8 @@ geneSelectionTab <- tabItem(
   ), br(),
   fluidRow(
     column(10,
-      offset = 1,
-      DT::dataTableOutput("removedGenesTable")
+           offset = 1,
+           DT::dataTableOutput("removedGenesTable")
     )
   )
 )
@@ -115,8 +125,8 @@ generalParametersTab <- tabItem(
   )),
   fluidRow(
     column(5,
-      offset = 1,
-      numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
+           offset = 1,
+           numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
     )
   ),
   fluidRow(
@@ -143,20 +153,20 @@ cellSelectionTab <- tabItem(
     align = "center"
   )), fluidRow(
     column(6,
-      offset = 1,
-      tipify(textInput("minExpGenes", "List of genes with minimal expression", value = defaultValueRegExGene),
-        title = "<h3>Cells must have one or more</h3> <ul><li>These cells must have at least one of those genes expressed</li> </ul> ",
-        options = list(
-          "width" = "300px", "placement" = "right", "max-width" = "350px",
-          "data-container" = "body", container = "body"
-        )
-      ) # tool tip: '^CD7$|^KIT$
+           offset = 1,
+           tipify(textInput("minExpGenes", "List of genes with minimal expression", value = defaultValueRegExGene),
+                  title = "<h3>Cells must have one or more</h3> <ul><li>These cells must have at least one of those genes expressed</li> </ul> ",
+                  options = list(
+                    "width" = "300px", "placement" = "right", "max-width" = "350px",
+                    "data-container" = "body", container = "body"
+                  )
+           ) # tool tip: '^CD7$|^KIT$
     )
   ),
   fluidRow(
     column(5,
-      offset = 1,
-      numericInput("minGenes", "Min # of UMIs", 2, min = 2, max = 1000000)
+           offset = 1,
+           numericInput("minGenes", "Min # of UMIs", 2, min = 2, max = 1000000)
     ),
     column(
       5,
@@ -165,39 +175,39 @@ cellSelectionTab <- tabItem(
   ), br(),
   fluidRow(
     column(6,
-      offset = 1,
-      textInput("cellSelectionComment", "Comment for selection of cells")
+           offset = 1,
+           textInput("cellSelectionComment", "Comment for selection of cells")
     )
   ),
   fluidRow(
     column(6,
-      offset = 1,
-      tipify(textInput("cellPatternRM", "cells to be filtered out by pattern"),
-        title = "regular expression for cells to be removed (e.g. -1 will remove all cells from sample 1"
-      )
+           offset = 1,
+           tipify(textInput("cellPatternRM", "cells to be filtered out by pattern"),
+                  title = "regular expression for cells to be removed (e.g. -1 will remove all cells from sample 1"
+           )
     )
   ),
   fluidRow(
     column(6,
-      offset = 1,
-      tipify(textInput("cellKeep", "cells to keep"),
-        title = "comma separated list of cells (with min expression) that should be kept"
-      )
+           offset = 1,
+           tipify(textInput("cellKeep", "cells to keep"),
+                  title = "comma separated list of cells (with min expression) that should be kept"
+           )
     )
   ), fluidRow(
     column(6,
-      offset = 1,
-      tipify(textInput("cellKeepOnly", "cells to keep; remove others"),
-        title = "comma separated list of cells (with min expression) that should be kept and anything else removed"
-      )
+           offset = 1,
+           tipify(textInput("cellKeepOnly", "cells to keep; remove others"),
+                  title = "comma separated list of cells (with min expression) that should be kept and anything else removed"
+           )
     )
   ),
   fluidRow(
     column(10,
-      offset = 1,
-      tipify(textInput("cellsFiltersOut", "Cells to be removed", width = "100%"),
-        title = "comma separted list of cell names to be explicitly removed"
-      )
+           offset = 1,
+           tipify(textInput("cellsFiltersOut", "Cells to be removed", width = "100%"),
+                  title = "comma separted list of cell names to be explicitly removed"
+           )
     )
   ), br(),
   fluidRow(column(
