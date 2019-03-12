@@ -1467,10 +1467,11 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
       add_trace(
         x = x1[, 1], y = y1[, 1],
         marker = list(
-          color = rep("green", length(x1)),
+          color = rep("green", nrow(x1)),
           size = 5
         ),
-        text = ~ paste( rownames(subsetData[selectedCells]), "<br />", subsetData$exprs),
+        text = ~ paste( rownames(subsetData[selectedCells,]), 
+                        "<br />", subsetData$exprs[selectedCells]),
         type = "scatter",
         mode = "markers",
         name = "selected"
