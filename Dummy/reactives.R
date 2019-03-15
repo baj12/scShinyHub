@@ -18,7 +18,7 @@ DummyReactive <- reactive({
   # call dependancies (reactives)
   gbm_log <- gbm_log()
   prj <- projections()
-  gbm <- gbm()
+  countES <- countES()
   
   # check if they are available
   if (is.null(gbm_log)) {
@@ -53,9 +53,9 @@ myHeavyCalculations <- list(c("running DummyReactive", "DummyReactive"))
 imageDummyPrecompute <- reactive({
   if (DEBUG) cat(file = stderr(), "imageDummyPrecompute\n")
 
-  gbm <- gbm()
+  countES <- countES()
   # check if they are available
-  if (is.null(gbm)) {
+  if (is.null(countES)) {
     if (DEBUG) cat(file = stderr(), "imageDummyPrecompute:NULL\n")
     return(NULL)
   }
@@ -84,7 +84,7 @@ imageDummyPrecompute <- reactive({
   outfile <- paste0(tempdir(), "/dummy.png")
   if (DEBUG) cat(file = stderr(), paste("output file: ", outfile, "\n"))
   if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
-  m <- data.frame("V1" = colSums(as.matrix(exprs(gbm))))
+  m <- data.frame("V1" = colSums(as.matrix(exprs(countES))))
   p <- ggplot(m, aes(V1)) + geom_bar()
   ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p, width = myPNGwidth, height = myPNGheight, units = "in")
 

@@ -37,19 +37,23 @@ inputDataFunc <- function(inFile) {
   start.time <- Sys.time()
   # save(file = "test.RData", list = c("inFile"))
   # load("test.RData")
+   
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
   stats$nFeatures <- 0
   stats$nCells <- 0
 
-  if (length(inFile$datapath) > 1) {
+  # if (length(inFile$datapath) > 1) {
     cat(file = stderr(), paste("reading", inFile$name[1], "\n"))
     fp <- inFile$datapath[1]
     fpLs <- load(fp)
-    fd <- featuredata
-    fdAll <- fData(gbm)
-    pdAll <- pData(gbm)
-    exAll <- exprs(gbm)
+    if (!"countES" %in% fpLs) {
+      return(NULL)
+    }
+    # fd <- featuredata
+    fdAll <- fData(countES)
+    pdAll <- pData(countES)
+    exAll <- exprs(countES)
     stats[1, "nFeatures"] <- nrow(fdAll)
     stats[1, "nCells"] <- nrow(pdAll)
 
@@ -58,14 +62,17 @@ inputDataFunc <- function(inFile) {
       cat(file = stderr(), paste("reading", inFile$name[fpIdx], "\n"))
       fp <- inFile$datapath[fpIdx]
       fpLs <- load(fp)
-      fdIdx <- intersect(rownames(fd), rownames(featuredata))
-      if (length(fdIdx) != nrow(fd)) {
-        cat(file = stderr(), "Houston, there is a problem with the features\n")
+      if (!"countES" %in% fpLs) {
+        next()
       }
-      fd <- featuredata[fdIdx, ]
+      fdIdx <- intersect(rownames(fdAll), rownames(fData(countES)))
+      # if (length(fdIdx) != nrow(fd)) {
+      #   cat(file = stderr(), "Houston, there is a problem with the features\n")
+      # }
+      # fd <- featuredata[fdIdx, ]
       fdAll <- fdAll[fdIdx, ]
-      pd1 <- pData(gbm)
-      ex1 <- exprs(gbm)[fdIdx, ]
+      pd1 <- pData(countES)
+      ex1 <- exprs(countES)[fdIdx, ]
       if (sum(rownames(pdAll) %in% rownames(pd1)) > 0) {
         cat(file = stderr(), "Houston, there are cells with the same name\n")
         rownames(pd1) <- paste0(rownames(pd1), "_", fpIdx)
@@ -79,25 +86,39 @@ inputDataFunc <- function(inFile) {
 
       exAll <- Matrix::cbind2(exAll[fdIdx, ], ex1)
     }
-    gbm <- newGeneBCMatrix(mat = as(exAll, "dgTMatrix"), fd = fdAll, pd = pdAll)
-    featuredata <- fd
-  } else {
-    load(inFile$datapath)
-  }
+    assayEnv = assayDataNew(storage.mode = "environment", exprs = exAll)
+    # assayEnv$exprs = as(exAll, "dgTMatrix")
+    
+    # ,
+    featureData = new("AnnotatedDataFrame", data = fdAll)
+    phenoData = new("AnnotatedDataFrame", data = pdAll)
+    # phenoData = Biobase::AnnotatedDataFrame(data = pdAll, dimLabels = c("sampleNames", "sampleColumns"))
+    # featureData = Biobase::AnnotatedDataFrame(data = fdAll, 
+    #                                 dimLabels = c("featureNames", "featureColumns"))
+    countES <- ExpressionSet()
+    slot(countES, "featureData") = featureData
+    slot(countES, "phenoData") = phenoData
+    slot(countES, "assayData") = assayEnv
+  #     newGeneBCMatrix(mat = as(exAll, "dgTMatrix"), fd = fdAll, pd = pdAll)
+  #   # featuredata <- fd
+  # } else {
+  #   load(inFile$datapath)
+  # }
 
   cat(stderr(), "Loaded")
   dataTables <- list()
-  featuredata$Associated.Gene.Name <-
-    toupper(featuredata$Associated.Gene.Name)
-  featuredata <- featuredata[rownames(gbm), ]
-  dataTables$featuredataOrg <- featuredata
+  featuredata <- fData(countES)
+  # featuredata$Associated.Gene.Name <-
+  #   toupper(featuredata$Associated.Gene.Name)
+  # featuredata <- featuredata[rownames(gbm), ]
+  dataTables$featuredataOrg <- fData(countES)
   # dataTables$positiveCells <- NULL
   # dataTables$positiveCellsAll <- NULL
 
   # take only genes that are in all tables
   rnames <- rownames(featuredata)
   # rnames = rnames[rnames %in% rownames(log2cpm)]
-  rnames <- rnames[rnames %in% rownames(gbm)]
+  rnames <- rnames[rnames %in% rownames(countES)]
   # rnames = rnames[rnames %in% rownames(gbm_log)]
 
   # cnames = colnames(log2cpm)
@@ -105,27 +126,27 @@ inputDataFunc <- function(inFile) {
   # cnames = cnames[cnames %in% colnames(gbm_log)]
 
   # dataTables$log2cpm <- log2cpm[rnames, cnames]
-  dataTables$gbm <- gbm[rnames, ]
+  dataTables$countES <- countES[rnames, ]
   # dataTables$gbm_log = gbm_log[rnames, cnames]
   dataTables$featuredata <- featuredata[rnames, ]
 
-  if (is.null(gbm$barcode)) {
-    showNotification("gbm doesn't contain barcode column", type = "error")
+  if (is.null(countES$barcode)) {
+    showNotification("countES doesn't contain barcode column", type = "error")
     return(NULL)
   }
   # some checks
 
-  if (sum(is.infinite(exprs(gbm))) > 0) {
+  if (sum(is.infinite(exprs(countES))) > 0) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("gbm contains infinite values",
+      showNotification("countES contains infinite values",
         type = "error"
       )
     }
     return(NULL)
   }
-  if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
+  if (sum(c("id", "symbol") %in% colnames(fData(countES))) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("gbm - fData doesn't contain id and/or symbol columns",
+      showNotification("countES - fData doesn't contain id and/or symbol columns",
         duration = NULL, type = "error"
       )
     }
@@ -170,8 +191,8 @@ inputData <- reactive({
   return(inputDataFunc(inFile))
 })
 
-medianENSGfunc <- function(gbm) {
-  geneC <- Matrix::colSums(gbm > 0, na.rm = TRUE)
+medianENSGfunc <- function(countES) {
+  geneC <- Matrix::colSums(countES > 0, na.rm = TRUE)
   return(median(t(geneC)))
 }
 
@@ -181,17 +202,17 @@ medianENSG <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "medianENSG\n")
   }
-  gbm <- exprs(gbm())
-  if (is.null(gbm)) {
+  countES <- exprs(countES())
+  if (is.null(countES)) {
     if (DEBUG) {
       cat(file = stderr(), "medianENSG:NULL\n")
     }
     return(0)
   }
-  if (ncol(gbm) <= 1 | nrow(gbm) < 1) {
+  if (ncol(countES) <= 1 | nrow(countES) < 1) {
     return(0)
   }
-  retVal <- medianENSGfunc(gbm)
+  retVal <- medianENSGfunc(countES)
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), paste("===medianENSG:done", difftime(end.time, start.time, units = "min"), "\n"))
@@ -199,8 +220,8 @@ medianENSG <- reactive({
   return(retVal)
 })
 
-medianUMIfunc <- function(gbm) {
-  umiC <- Matrix::colSums(gbm, na.rm = TRUE)
+medianUMIfunc <- function(countES) {
+  umiC <- Matrix::colSums(countES, na.rm = TRUE)
   return(median(t(umiC)))
 }
 
@@ -210,8 +231,8 @@ medianUMI <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "medianUMI\n")
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  countES <- countES()
+  if (is.null(countES)) {
     if (DEBUG) {
       cat(file = stderr(), "medianUMI:NULL\n")
     }
@@ -221,7 +242,7 @@ medianUMI <- reactive({
     save(file = "~/scShinyHubDebug/medianUMI.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/medianUMI.RData')
-  retVal <- medianUMIfunc(gbm)
+  retVal <- medianUMIfunc(countES)
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===medianUMI:done\n", difftime(end.time, start.time, units = "min"), "\n")
@@ -246,8 +267,8 @@ useCellsFunc <-
       save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls()))
     }
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
-    goodCols <- rep(TRUE, ncol(dataTables$gbm))
-    gbm <- exprs(dataTables$gbm)
+    goodCols <- rep(TRUE, ncol(dataTables$countES))
+    countES <- exprs(dataTables$countES)
     #### start: cells with genes expressed
     # take only cells where these genes are expressed with at least one read
     genesin <- toupper(geneNames)
@@ -271,16 +292,16 @@ useCellsFunc <-
       cellsRM <- gsub(" ", "", cellsRM, fixed = TRUE)
       cellsRM <- strsplit(cellsRM, ",")
       cellsRM <- cellsRM[[1]]
-      goodCols[which(toupper(colnames(dataTables$gbm)) %in% cellsRM)] <- FALSE
+      goodCols[which(toupper(colnames(dataTables$countES)) %in% cellsRM)] <- FALSE
     }
 
     # remove cells by pattern
     if (nchar(rmPattern) > 0) {
-      goodCols[grepl(rmPattern, colnames(dataTables$gbm))] <- FALSE
+      goodCols[grepl(rmPattern, colnames(dataTables$countES))] <- FALSE
     }
 
     if (!length(cellKeep) == 0) {
-      ids <- which(toupper(colnames(dataTables$gbm)) %in% cellKeep)
+      ids <- which(toupper(colnames(dataTables$countES)) %in% cellKeep)
       goodCols[ids] <- TRUE
     }
 
@@ -289,7 +310,7 @@ useCellsFunc <-
     if (!length(genesin) == 0) {
       ids <- which(toupper(dataTables$featuredata$Associated.Gene.Name) %in% genesin)
       if (length(ids) == 1) {
-        selCols <- gbm[ids, ] > 0
+        selCols <- countES[ids, ] > 0
       } else if (length(ids) == 0) {
         showNotification(
           "not enough cells, check gene names for min coverage",
@@ -298,14 +319,14 @@ useCellsFunc <-
         )
         return(NULL)
       } else {
-        selCols <- Matrix::colSums(gbm[ids, ]) > 0
+        selCols <- Matrix::colSums(countES[ids, ]) > 0
       }
       goodCols <- goodCols & selCols
     }
 
     if (!length(cellKeepOnly) == 0) {
       goodCols[c(1:length(goodCols))] <- FALSE
-      ids <- which(toupper(colnames(dataTables$gbm)) %in% cellKeepOnly)
+      ids <- which(toupper(colnames(dataTables$countES)) %in% cellKeepOnly)
       goodCols[ids] <- TRUE
     }
 
@@ -365,14 +386,14 @@ featureDataReact <- reactive({
     cat(file = stderr(), "featureData\n")
   }
   dataTables <- inputData()
-  gbm <- gbm()
-  if (!exists("dataTables") | is.null(dataTables) | is.null(gbm)) {
+  countES <- countES()
+  if (!exists("dataTables") | is.null(dataTables) | is.null(countES)) {
     if (DEBUG) {
       cat(file = stderr(), "featureData:NULL\n")
     }
     return(NULL)
   }
-  useGenes <- rownames(dataTables$featuredata) %in% rownames(gbm)
+  useGenes <- rownames(dataTables$featuredata) %in% rownames(countES)
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===featureData:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -395,7 +416,7 @@ useGenesFunc <-
     if (nchar(ipIDs) > 0) {
       keepIDs <- !grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
     } else {
-      keepIDs <- rep(TRUE, nrow(dataTables$gbm))
+      keepIDs <- rep(TRUE, nrow(dataTables$countES))
     }
     genesKeep <- toupper(genesKeep)
     genesKeep <- gsub(" ", "", genesKeep, fixed = TRUE)
@@ -417,7 +438,7 @@ useGenesFunc <-
           }
         }
         selGenes <- unique(selGenes)
-        keepIDs <- (rownames(dataTables$gbm) %in% selGenes) & keepIDs
+        keepIDs <- (rownames(dataTables$countES) %in% selGenes) & keepIDs
       }
     }
 
@@ -462,7 +483,7 @@ beforeFilterCounts <- reactive({
   if (is.null(geneIDs)) {
     return(rep(0, nrow(dataTables$featuredata)))
   }
-  return(Matrix::colSums(dataTables$gbm[geneIDs, ]))
+  return(Matrix::colSums(dataTables$countES[geneIDs, ]))
 })
 
 # collects information from all places where genes being removed or specified
@@ -529,11 +550,11 @@ gbmFunc <-
     changed <- FALSE # trace if something changed
     keepGenes <- useGenes
     keepCells <- useCells
-    gbm <- exprs(gbmOrg)
+    countES <- exprs(gbmOrg)
 
     # overall gene expression Min
     if (!is.null(minGene)) {
-      selGenes <- Matrix::rowSums(gbm[, keepCells]) >= minGene
+      selGenes <- Matrix::rowSums(countES[, keepCells]) >= minGene
       selGenes <- keepGenes & selGenes
       if (!all(selGenes == keepGenes)) {
         keepGenes <- selGenes
@@ -543,7 +564,7 @@ gbmFunc <-
 
     # min reads per cell
     if (!is.null(minG)) {
-      selCols <- Matrix::colSums(gbm[keepGenes, ], na.rm = FALSE) > minG
+      selCols <- Matrix::colSums(countES[keepGenes, ], na.rm = FALSE) > minG
       selCols[is.na(selCols)] <- FALSE
       selCols <- keepCells & selCols
       if (!all(selCols == keepCells)) {
@@ -554,7 +575,7 @@ gbmFunc <-
 
     # max reads per cell
     if (!is.null(maxG)) {
-      selCols <- Matrix::colSums(gbm[keepGenes, ], na.rm = FALSE) <= maxG
+      selCols <- Matrix::colSums(countES[keepGenes, ], na.rm = FALSE) <= maxG
       selCols[is.na(selCols)] <- FALSE
       selCols <- selCols & keepCells
       if (!all(selCols == keepCells)) {
@@ -602,15 +623,15 @@ gbmFunc <-
 
 # apply filters that depend on genes & cells
 # it is here that useCells and useGenes are combined and applied to select for
-gbm <- reactive({
+countES <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "gbm")
+      removeNotification(id = "countES")
     }
   )
   start.time <- Sys.time()
   if (DEBUG) {
-    cat(file = stderr(), "gbm\n")
+    cat(file = stderr(), "countES\n")
   }
   dataTables <- inputData()
   useCells <- useCells()
@@ -621,20 +642,20 @@ gbm <- reactive({
   if (!exists("dataTables") |
     is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     if (DEBUG) {
-      cat(file = stderr(), "gbm: NULL\n")
+      cat(file = stderr(), "countES: NULL\n")
     }
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("gbm", id = "gbm", duration = NULL)
+    showNotification("countES", id = "countES", duration = NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/gbm.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/countES.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/gbm.RData")
+  # load(file="~/scShinyHubDebug/countES.RData")
 
   retVal <- gbmFunc(
-    gbmOrg = dataTables$gbm,
+    gbmOrg = dataTables$countES,
     useCells = useCells,
     useGenes = useGenes,
     minGene = minGene,
@@ -643,7 +664,7 @@ gbm <- reactive({
   )
   if (DEBUG) {
     end.time <- Sys.time()
-    cat(file = stderr(), "===gbm:DONE", difftime(end.time, start.time, units = "min"), "\n")
+    cat(file = stderr(), "===countES:DONE", difftime(end.time, start.time, units = "min"), "\n")
   }
   return(retVal)
 })
@@ -676,11 +697,11 @@ gbm <- reactive({
 
 
 rawNormalization <- reactive({
-  gbm <- gbm()
+  countES <- countES()
   if (DEBUG) {
     cat(file = stderr(), "rawNormalization\n")
   }
-  return(gbm)
+  return(countES)
 })
 
 # individual values
@@ -697,10 +718,10 @@ gbm_log <- reactive({
   # dataTables = inputData()
   # useCells = useCells()
   # useGenes = useGenes()
-  gbm <- gbm()
+  countES <- countES()
   normMethod <- input$normalizationRadioButton
 
-  if (is.null(gbm)) {
+  if (is.null(countES)) {
     if (DEBUG) {
       cat(file = stderr(), "gbm_log:NULL\n")
     }
@@ -946,10 +967,10 @@ projections <- reactive({
   # gbm is the fundamental variable with the raw data, which is available after loading
   # data. Here we ensure that everything is loaded and all varialbles are set by waiting
   # input data being loaded
-  gbm <- gbm()
+  countES <- countES()
   pca <- pca()
   prjs <- (sessionProjections$prjs)
-  if (!exists("gbm") | is.null(gbm) | !exists("pca") | is.null(pca)) {
+  if (!exists("countES") | is.null(countES) | !exists("pca") | is.null(pca)) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
     }
@@ -962,9 +983,9 @@ projections <- reactive({
 
   # phenotypic data/ annotations of cells can already be included in the gbm object. We collect this information, but only for variable that hold information
   # i.e. length(levels) > 1 & < number of rows
-  pd <- pData(gbm)
+  pd <- pData(countES)
   if (ncol(pd) < 2) {
-    cat(file = stderr(), "phenoData for gbm has less than 2 columns\n")
+    cat(file = stderr(), "phenoData for countES has less than 2 columns\n")
     return(NULL)
   }
 
@@ -1064,8 +1085,8 @@ initializeGroupNames <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "initializeGroupNames\n")
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  countES <- countES()
+  if (is.null(countES)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -1073,8 +1094,8 @@ initializeGroupNames <- reactive({
   }
   # load(file="~/scShinyHubDebug/initializeGroupNames.RData")
   isolate({
-    df <- data.frame(all = rep(TRUE, ncol(gbm)), none = rep(FALSE, ncol(gbm)))
-    rownames(df) <- colnames(gbm)
+    df <- data.frame(all = rep(TRUE, ncol(countES)), none = rep(FALSE, ncol(countES)))
+    rownames(df) <- colnames(countES)
     cat(file = stderr(), "initializeGroupNames2\n")
     groupNames[["namesDF"]] <- df
     cat(file = stderr(), "initializeGroupNames3\n")
@@ -1121,8 +1142,8 @@ sample <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "sample\n")
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  countES <- countES()
+  if (is.null(countES)) {
     if (DEBUG) {
       cat(file = stderr(), "sample: NULL\n")
     }
@@ -1138,7 +1159,7 @@ sample <- reactive({
   # } else {
   #   sample <- rep("1", ncol(gbm))
   # }
-  pd <- pData(gbm)
+  pd <- pData(countES)
   retVal <- NULL
   for (pdColName in colnames(pd)) {
     if (length(levels(factor(pd[, pdColName]))) < 100) {
@@ -1164,15 +1185,15 @@ geneCount <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "geneCount\n")
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  countES <- countES()
+  if (is.null(countES)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
-  retVal <- Matrix::colSums(exprs(gbm) > 0)
+  retVal <- Matrix::colSums(exprs(countES) > 0)
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1186,16 +1207,16 @@ beforeFilterPrj <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "umiCount\n")
   }
-  gbm <- gbm()
+  countES <- countES()
   bfc <- beforeFilterCounts()
-  if (is.null(gbm) | is.null(bfc)) {
+  if (is.null(countES) | is.null(bfc)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/beforeFilterPrj.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/beforeFilterPrj.RData")
-  cn <- colnames(gbm)
+  cn <- colnames(countES)
   retVal <- bfc[cn]
   if (DEBUG) {
     end.time <- Sys.time()
@@ -1210,15 +1231,15 @@ umiCount <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "umiCount\n")
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  countES <- countES()
+  if (is.null(countES)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/umiCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/umiCount.RData")
-  retVal <- Matrix::colSums(exprs(gbm))
+  retVal <- Matrix::colSums(exprs(countES))
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1227,9 +1248,9 @@ umiCount <- reactive({
 })
 
 
-sampleInfoFunc <- function(gbm) {
+sampleInfoFunc <- function(countES) {
   # gsub(".*-(.*)", "\\1", gbm$barcode)
-  pData(gbm)$sampleNames
+  pData(countES)$sampleNames
 }
 
 
@@ -1239,19 +1260,19 @@ sampleInfo <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "sampleInfo\n")
   }
-  gbm <- gbm()
+  countES <- countES()
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/sampleInfo.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/sampleInfo.RData")
-  if (!exists("gbm")) {
+  if (!exists("countES")) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
     }
     return(NULL)
   }
 
-  ret <- sampleInfoFunc(gbm)
+  ret <- sampleInfoFunc(countES)
   if (DEBUG) {
     cat(file = stderr(), "sampleInfo: done\n")
   }
@@ -1281,11 +1302,11 @@ inputSample <- reactive({
     save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/inputSample.RData')
-  sampInf <- gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
+  sampInf <- gsub(".*-(.*)", "\\1", dataTables$countES$barcode)
   cellIds <- data.frame(
-    cellName = colnames(dataTables$gbm),
+    cellName = colnames(dataTables$countES),
     sample = sampInf,
-    ngenes = Matrix::colSums(exprs(dataTables$gbm))
+    ngenes = Matrix::colSums(exprs(dataTables$countES))
   )
 
   if (DEBUG) {
@@ -1338,7 +1359,7 @@ returnNull <- function() {
 
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
-plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
+plot2Dprojection <- function(gbm_log, countES, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
                              logx = FALSE, logy = FALSE, divXBy="None", divYBy="None") {
   geneid <- geneName2Index(g_id, featureData)
@@ -1363,7 +1384,7 @@ plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
     geneNames = geneNames,
     geneNames2 = geneNames2,
     featureData = featureData,
-    gbm = gbm, projections = projections
+    countES = countES, projections = projections
   )
 
 

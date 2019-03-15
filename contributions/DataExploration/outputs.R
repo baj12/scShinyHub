@@ -213,6 +213,9 @@ output$panelPlot <- renderPlot({
   cl4 <- input$clusters4
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
+  
+  if (is.null(cl4)) return(NULL)
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/panelPlot.RData", list = c(ls(), ls(envir = globalenv())))
   }
