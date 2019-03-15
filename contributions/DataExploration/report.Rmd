@@ -88,6 +88,9 @@ geneNames2 <- input$"expclusters-geneIds"
 clId <- input$"expclusters-clusters"
 dimX <- input$"expclusters-dimension_x"
 dimY <- input$"expclusters-dimension_y"
+divXBy <- input$devideXBy
+divYBy <- input$devideYBy
+
 legend.position <- "none"
 grpN <- make.names(input$groupName)
 cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
@@ -95,7 +98,9 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
-plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position)
+plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, 
+                 geneNames2, dimX, dimY, clId, grpN, legend.position, 
+                 grpNs = groupNames$namesDF, divXBy = divXBy, divYBy = divYBy)
 
 ```
 
@@ -114,7 +119,7 @@ plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNa
   map <-
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
   
- expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+ expression <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr)
 
   projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){

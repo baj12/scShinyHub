@@ -4,6 +4,7 @@
 
 library(shiny)
 library(shinyTree)
+library(tibble)
 library(shinyBS)
 library(plotly)
 library(shinythemes)
@@ -98,7 +99,8 @@ shinyServer(function(input, output, session) {
   projectionFunctions <<- list(
     c("sampleNames", "sample"),
     c("Gene count", "geneCount"),
-    c("UMI count", "umiCount")
+    c("UMI count", "umiCount"),
+    c("before filter", "beforeFilterPrj")
   )
 
 

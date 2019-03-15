@@ -17,7 +17,7 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
 
   # expression <- expression[, rownames(projections)]
-  expression <- expression[complete.cases(expression), ]
+  # expression <- expression[GeneBCMatrix::complete.cases(expression), ]
 
   if (!("sampleNames" %in% colnames(projections))) {
     projections$sample <- 1
@@ -48,13 +48,13 @@ coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells
   # minBreak = max(0, med - 3* stDev)
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
-  nonZeroRows <- which(rowSums(expression) > 0)
+  nonZeroRows <- which(Matrix::rowSums(expression) > 0)
   retVal <- list(
-    mat = as.matrix(expression)[nonZeroRows, order(annotation[, 1], annotation[, 2])],
+    mat = expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
     cluster_cols = FALSE,
     scale = "row",
-    fontsize_row = 10,
+    fontsize_row = 14,
     labels_col = colnames(expression),
     labels_row = featureData[rownames(expression), "Associated.Gene.Name"],
     show_rownames = TRUE,
@@ -84,7 +84,7 @@ heatmapSelectedReactive <- reactive({
     cat(file = stderr(), "output$heatmapSelectedReactive\n")
   }
   featureData <- featureDataReact()
-  gbm_matrix <- gbm_matrix()
+  gbm_matrix <- gbm()
   projections <- projections()
   genesin <- input$heatmap_geneids2
   sc <- selctedCluster()
@@ -146,7 +146,8 @@ topExpGenesTable <- reactive({
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
   # we only work on cells that have been selected
-  mat <- as.matrix(exprs(gbm_log))[, scCells]
+  # mat <- as.matrix(exprs(gbm_log))[, scCells]
+  mat <- exprs(gbm_log)[, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0
   # only genes that are expressed in coEtgPerc or more cells
@@ -166,7 +167,8 @@ topExpGenesTable <- reactive({
     matCV <- matCV[rownames(mat)]
     fd <- cbind(fd, matCV)
     colnames(fd) <- c("gene", "description", "CV")
-    outMat <- cbind(fd, mat)
+    # since we are returning a table to be plotted, we convert to regular table (non-sparse)
+    outMat <- cbind2(fd, as.matrix(mat))
     rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
     return(outMat)
   } else {
@@ -321,15 +323,19 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
                             dbCluster, showPermutations = FALSE) {
   require(gtools)
   require(stringr)
+  start.time <- Sys.time()
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")[[1]]
-
+  # vIdx=1
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
+  
   map <-
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin), ])
   if (DEBUG) {
     cat(file = stderr(), length(map))
   }
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   if (length(map) == 0) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(
@@ -344,9 +350,12 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
     )
   }
 
-  expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
+  expression <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr)
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   ylabText <- "number genes from list"
   # projections = projections[,1:12]
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   if (showPermutations) {
     perms <- rep("", length(expression))
     ylabText <- "Permutations"
@@ -355,16 +364,18 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
       xPerm <- 10
       warning("reducing number of permutations to 10")
     }
+    # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
     for (r in 1:xPerm) {
       comb <- combinations(xPerm, r, genesin)
       for (cIdx in 1:nrow(comb)) {
         map <-
           rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
 
-        permIdx <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr) == length(comb[cIdx, ])
+        permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
+    # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
     perms <- factor(perms)
     permsNames <- levels(perms)
     permsNum <- unlist(lapply(strsplit(permsNames, "\\+"), length))
@@ -376,7 +387,8 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
     projections <- cbind(projections, coExpVal = expression)
     permsNames <- as.character(1:max(expression))
   }
-
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
+  
 
 
   # if(class(projections[,dbCluster])=="factor"){
@@ -385,7 +397,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
     ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal",
       fill = factor(projections[, dbCluster])
     )) +
-    geom_violin(scale = "width") +
+    geom_violin(scale = "count") +
     stat_summary(
       fun.y = median,
       geom = "point",
@@ -417,6 +429,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   if (DEBUG) {
     cat(file = stderr(), "output$gene_vio_plot:done\n")
   }
+  # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   return(p1)
 }
 
@@ -454,13 +467,12 @@ heatmapSOMReactive <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "output$somReactive\n")
   }
-  gbm_matrix <- gbm_matrix()
+  gbm_matrix <- as.matrix(exprs(gbm()))
   projections <- projections()
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
   featureData <- featureDataReact()
 
-  # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
   if (is.null(gbm_matrix)) {
     return(
       list(
@@ -487,6 +499,10 @@ heatmapSOMReactive <- reactive({
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 
+  # gbmOrg = gbm_matrix
+  # gbm_matrix = as(gbm_matrix, "dgTMatrix")
+  # rownames(gbm_matrix) = rownames(featureData)
+  # dgTMatrix makes som crash R, I guess it is because it is calling a C function that is able to handle it...
   geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
   output$somGenes <- renderText({
     paste(featureData[geneNames, "Associated.Gene.Name"], collapse = ", ", sep = ",")
@@ -511,7 +527,7 @@ heatmapSOMReactive <- reactive({
     cluster_rows = TRUE,
     cluster_cols = TRUE,
     scale = "row",
-    fontsize_row = 10,
+    fontsize_row = 14,
     labels_row = featureData[geneNames, "Associated.Gene.Name"],
     show_rownames = TRUE,
     annotation_col = annotation,

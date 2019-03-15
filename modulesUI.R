@@ -1,3 +1,5 @@
+require(shinyjqui)
+
 # clusterUI -----------
 # to select clusters from the list of available knn clusters
 # Flexible 2 plot
@@ -9,10 +11,10 @@ clusterUI <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(12,
-        offset = 1,
-        textInput(ns("geneIds"), "comma separated list of genes for UmiCountPerGenes", value = ""),
-        textInput(ns("geneIds2"), "comma separated list of genes for UmiCountPerGenes", value = "")
+      column(11,
+             offset = 1,
+             textInput(ns("geneIds"), "comma separated list of genes for UmiCountPerGenes", value = ""),
+             textInput(ns("geneIds2"), "comma separated list of genes for UmiCountPerGenes", value = "")
       )
     ),
     fluidRow(
@@ -40,8 +42,9 @@ clusterUI <- function(id) {
       )
     ),
     fluidRow(column(
-      12,
-      plotOutput(ns("clusterPlot"), brush = brushOpts(id = ns("b1"))) %>% withSpinner()
+      11,
+      # jqui_resizable(plotOutput(ns("clusterPlot"), brush = brushOpts(id = ns("b1"))) )
+      jqui_resizable(plotlyOutput(ns("clusterPlot")))
     )),
     fluidRow(
       checkboxInput(ns("moreOptions"), "show more options", FALSE),
@@ -84,11 +87,14 @@ tableSelectionUi <- function(id) {
 pHeatMapUI <- function(id) {
   ns <- NS(id)
   tagList(
-    tags$h3("Heatmap plot"),
-    plotOutput(ns("pHeatMapPlot"),
-      height = "auto",
-      brush = brushOpts(id = "crh1")
-    ) %>% withSpinner(),
+    fluidRow(tags$h3("Heatmap plot")),
+    fluidRow(column(11,
+                    jqui_resizable(plotOutput(ns("pHeatMapPlot"),
+                                              # height = "auto",
+                                              brush = brushOpts(id = "crh1")
+                    ),options = list( width="95%"))
+    )
+    ),
     fluidRow(
       checkboxInput(ns("moreOptions"), "show more options", FALSE),
       uiOutput(ns("additionalOptions")),

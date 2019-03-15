@@ -55,7 +55,7 @@ tabList <- list(
             )
           )
         ),
-        plotlyOutput("tsne_plt")
+        jqui_resizable(plotlyOutput("tsne_plt"))
       ), column(
         6,
         clusterUI("expclusters")
@@ -64,7 +64,7 @@ tabList <- list(
     br(),
     fluidRow(column(
       12,
-      plotOutput("gene_vio_plot") %>% withSpinner()
+      jqui_resizable( plotOutput("gene_vio_plot") %>% withSpinner())
     ))
   ),
 
@@ -112,7 +112,7 @@ tabList <- list(
     ),
     fluidRow(column(
       12,
-      plotOutput("panelPlot") %>% withSpinner()
+      jqui_resizable(plotOutput("panelPlot") )
     ))
   ),
 

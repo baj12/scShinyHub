@@ -49,7 +49,14 @@ gbm_logNormalization <- reactive({
   # load(file="~/scShinyHubDebug/gbm_logNormalization.RData")
 
   use_genes <- get_nonzero_genes(gbm)
-  gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
+  bc_sums <- Matrix::colSums(gbm)
+  median_sum <- median(bc_sums)
+  A=as(exprs(gbm), "dgCMatrix")
+  A@x <- A@x / Matrix::colSums(A)[exprs(gbm)@j + 1L]
+  # new_matrix <- sweep(exprs(gbm), 2, median_sum/bc_sums, "*")
+  gbm_bcnorm = (newGeneBCMatrix(A, fData(gbm), pData(gbm), 
+                         template = gbm))
+  # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
   gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
 
   if (DEBUG) {

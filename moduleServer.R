@@ -26,14 +26,22 @@ clusterServer <- function(input, output, session,
                           tData,
                           gene_id = returnNull, # reactive
                           # selectedCells  = NULL,
-                          legend.position = "none") {
+                          legend.position = "none"
+                          # ,
+                          # defaultValues = c("tsne1", "tsne2")
+) {
+  # TODO
   ns <- session$ns
   subsetData <- NULL
   selectedGroupName <- ""
   groupName <- ""
-  
+
+  # dim1 <- defaultValues[1]
+  # dim2 <- defaultValues[2]
   dim1 <- "PC1"
   dim2 <- "PC2"
+  divXBy <- "None"
+  divYBy <- "None"
   
   observe({
     dim1 <<- input$dimension_x
@@ -41,29 +49,46 @@ clusterServer <- function(input, output, session,
   observe({
     dim2 <<- input$dimension_y
   })
+  observe({
+    divXBy <<- input$devideXBy
+  })
+  observe({
+    divYBy <<- input$devideYBy
+  })
   
   updateInput <- reactive({
     tsneData <- projections()
-    
+
     # Can use character(0) to remove all choices
     if (is.null(tsneData)) {
       return(NULL)
     }
-    
+
     # Can also set the label and select items
     updateSelectInput(session, "dimension_x",
-                      choices = colnames(tsneData),
-                      selected = dim1
+      choices = colnames(tsneData),
+      selected = dim1
+    )
+
+    updateSelectInput(session, "dimension_y",
+      choices = colnames(tsneData),
+      selected = dim2
     )
     
-    updateSelectInput(session, "dimension_y",
-                      choices = colnames(tsneData),
-                      selected = dim2
+    updateSelectInput(session, "devideXBy",
+                      choices = c("None",colnames(tsneData)),
+                      selected = divXBy
     )
+    updateSelectInput(session, "devideYBy",
+                      choices = c("None",colnames(tsneData)),
+                      selected = divYBy
+    )
+    
   })
-  
+
   selectedCellNames <- reactive({
-    brushedPs <- input$b1
+    brushedPs <- event_data("plotly_selected", source = "subset")
+    # brushedPs <- input$b1
     projections <- projections()
     dimY <- input$dimension_y
     dimX <- input$dimension_x
@@ -74,17 +99,18 @@ clusterServer <- function(input, output, session,
     if (DEBUG) {
       cat(file = stderr(), "+++cluster: selectedCellNames\n")
     }
-    if (is.null(projections)) {
+    if (is.null(projections) | is.null(brushedPs)) {
       return(NULL)
     }
     inpClusters <- input$clusters
-    
+
     if (DEBUGSAVE) {
       cat(file = stderr(), "cluster: selectedCellNames: saving\n")
       save(file = "~/scShinyHubDebug/selectedCellNames.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/selectedCellNames.RData")
-    
+
+   
     geneid <- geneName2Index(geneNames, featureData)
     projections <- updateProjectionsWithUmiCount(
       dimX = dimX, dimY = dimY,
@@ -93,23 +119,23 @@ clusterServer <- function(input, output, session,
       featureData = featureData,
       gbm = gbm, projections = projections
     )
-    
+
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     # it seems there is a bug in shiny::asNumber that returns 0 for false
     # whereas in the brushed points this would be 1
-    if (class(subsetData[,brushedPs$mapping$x]) == "logical") {
-      subsetData[,brushedPs$mapping$x] = as.numeric(subsetData[,brushedPs$mapping$x]) + 1
-    }
-    if (class(subsetData[,brushedPs$mapping$y]) == "logical") {
-      subsetData[,brushedPs$mapping$y] = as.numeric(subsetData[,brushedPs$mapping$y]) + 1
-    }
-    cells.names <- brushedPoints(subsetData, brushedPs)
+    # if (class(subsetData[, brushedPs$mapping$x]) == "logical") {
+    #   subsetData[, brushedPs$mapping$x] <- as.numeric(subsetData[, brushedPs$mapping$x]) + 1
+    # }
+    # if (class(subsetData[, brushedPs$mapping$y]) == "logical") {
+    #   subsetData[, brushedPs$mapping$y] <- as.numeric(subsetData[, brushedPs$mapping$y]) + 1
+    # }
+    cells.names <- rownames(projections)[subset(brushedPs, curveNumber == 0)$pointNumber + 1]
     return(cells.names)
   })
-  
+
   # observe(selectedCellNames)
-  
+
   returnValues <- reactiveValues(
     cluster = reactive(input$clusters),
     # cellNames = ifelse(is.null(subsetData),
@@ -120,7 +146,7 @@ clusterServer <- function(input, output, session,
       if (DEBUG) {
         cat(file = stderr(), paste("clusterServers selectedCells\n"))
       }
-      retVal <- rownames(selectedCellNames())
+      retVal <- selectedCellNames()
       if (length(retVal) == 0) {
         cat(file = stderr(), paste("selectedCellNames is null\n"))
         retVal <- NULL
@@ -138,7 +164,7 @@ clusterServer <- function(input, output, session,
       geneNames2 <- input$geneIds2
       featureData <- featureDataReact()
       gbm <- gbm()
-      
+
       if (DEBUGSAVE) {
         cat(file = stderr(), paste("selectedCell: saving\n"))
         base::save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(), ls(envir = globalenv())))
@@ -152,7 +178,7 @@ clusterServer <- function(input, output, session,
           featureData = featureData,
           gbm = gbm, projections = projections
         )
-        
+
         subsetData <- subset(projections, dbCluster %in% inpClusters)
         grpSubset <- grpNs[rownames(subsetData), ]
         grpVal <- rownames(grpSubset[grpSubset[, grpN], ])
@@ -163,15 +189,15 @@ clusterServer <- function(input, output, session,
       # subsetData <-
       #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
       # cells.1 <- rownames(brushedPoints(subsetData, scBP))
-      
+
       return(retVal)
     })
   )
-  
+
   if (DEBUG) {
     cat(file = stderr(), paste("clusterServers", session$ns("clusters"), "\n"))
   }
-  
+
   output$clusters <- renderUI({
     si <- NULL
     projections <- tData()
@@ -184,27 +210,26 @@ clusterServer <- function(input, output, session,
       si <- selectizeInput(
         ns("clusters"),
         label = "Cluster",
-        choices = c(0:noOfClusters),
+        choices = c(1:noOfClusters),
         # selected = input$clusters, # not working because of stack, too slow and possible to create infinite loop
-        selected = c(0:noOfClusters),
+        selected = c(1:noOfClusters),
         multiple = TRUE
       )
     }
     si
   })
-  
-  output$clusterPlot <- renderPlot({
+
+  output$clusterPlot <- renderPlotly({
     if (DEBUG) {
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
     featureData <- featureDataReact()
-    log2cpm <- log2cpm()
     gbm <- gbm()
     gbm_log <- gbm_log()
     projections <- tData()
     grpNs <- groupNames$namesDF
     grpN <- make.names(input$groupName)
-    
+
     returnValues$cluster <- input$clusters
     dimY <- input$dimension_y
     dimX <- input$dimension_x
@@ -212,33 +237,47 @@ clusterServer <- function(input, output, session,
     g_id <- gene_id()
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
-    
-    if (is.null(featureData) | is.null(log2cpm) | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
+    logx <- input$logX
+    logy <- input$logY
+    divXBy <- input$devideXBy
+    divYBy <- input$devideYBy
+
+    if (is.null(featureData) | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
-    
+
     if (DEBUGSAVE) {
+      cat(file = stderr(), paste("cluster plot saving\n"))
       save(
         file = paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."),
         list = c(ls(envir = globalenv()), ls(), "legend.position")
       )
+      cat(file = stderr(), paste("cluster plot saving done\n"))
     }
-    
+
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     if (is.null(g_id) || nchar(g_id) == 0) {
       g_id <- featureData$Associated.Gene.Name
     }
+    if (is.null(logx)) logx <- FALSE
+    if (is.null(logy)) logy <- FALSE
+    if (is.null(divXBy)) divXBy <- "None"
+    if (is.null(divYBy)) divYBy <- "None"
     
-    return(plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position))
+    p1 <- plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames,
+                           geneNames2, dimX, dimY, clId, grpN, legend.position,
+                           grpNs = grpNs, logx, logy, divXBy, divYBy
+    )
+    return(p1)
   })
-  
+
   # observe({
   #   updateTextInput(session = session, inputId = "groupName",
   #                   value = input$groupNames)
   # })
-  
-  
+
+
   observe({
     input$groupNames # dropdown list with names of cell groups
     isolate({
@@ -248,7 +287,7 @@ clusterServer <- function(input, output, session,
       )
     })
   })
-  
+
   visibleCellNames <- reactive({
     if (DEBUG) {
       cat(file = stderr(), "cluster: selectedCellNames\n")
@@ -262,11 +301,11 @@ clusterServer <- function(input, output, session,
     # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     return(subsetData)
   })
-  
-  
-  
+
+
+
   addToGroupValue <- FALSE
-  
+
   observe({
     if (DEBUG) {
       cat(file = stderr(), "input$addToGroup changed\n")
@@ -279,21 +318,24 @@ clusterServer <- function(input, output, session,
       }
     }
   })
-  
+
   observe({
     ns <- session$ns
     input$changeGroups # action button
     addToSelection <- addToGroupValue
+    # we want to react on a changed filename
+    gbm <- gbm()
     
     if (DEBUG) {
       cat(file = stderr(), "cluster: changeGroups\n")
     }
-    
+
     # we isolate here because we only want to change if the button is clicked.
+    # TODO what happens if new file is loaded??? => problem!
     isolate({
       prjs <- sessionProjections$prjs
-      brushedPs <- input$b1
-      gbm <- gbm()
+      # brushedPs <- event_data("plotly_selected", source = "subset")
+      # gbm <- gbm()
       inpClusters <- input$clusters
       grpN <- make.names(input$groupName)
       grpNs <- groupNames$namesDF
@@ -307,6 +349,9 @@ clusterServer <- function(input, output, session,
         return(NULL)
       }
     })
+    if (length(grpN) == 0) {
+      return(NULL)
+    }
     if (DEBUGSAVE) {
       cat(file = stderr(), "save: changeGroups\n")
       save(file = "~/scShinyHubDebug/changeGroups.RData", list = c(ls(), ls(envir = globalenv())))
@@ -319,17 +364,17 @@ clusterServer <- function(input, output, session,
     if (!addToSelection) {
       grpNs[rownames(visibleCells), grpN] <- FALSE
     }
-    grpNs[rownames(cells.names), grpN] <- TRUE
+    grpNs[cells.names, grpN] <- TRUE
     groupNames$namesDF <- grpNs
     updateSelectInput(session, ns("groupNames"),
-                      choices = colnames(grpNs),
-                      selected = grpN
+      choices = colnames(grpNs),
+      selected = grpN
     )
     updateTextInput(
       session = session, inputId = "groupName",
       value = grpN
     )
-    
+
     if (ncol(prjs) > 0) {
       # didn't find a way to easily overwrite columns
       for (cn in colnames(grpNs)) {
@@ -340,14 +385,14 @@ clusterServer <- function(input, output, session,
           colnames(prjs)[ncol(prjs)] <- cn
         }
       }
-      
+
       sessionProjections$prjs <- prjs
     } else {
       sessionProjections$prjs <- grpNs
     }
     selectedGroupName <<- grpN
   })
-  
+
   # display the number of cells that belong to the group, but only from the visible ones
   output$nCellsVisibleSelected <- renderText({
     grpN <- make.names(input$groupName)
@@ -361,21 +406,24 @@ clusterServer <- function(input, output, session,
       save(file = "~/scShinyHubDebug/nCellsVisibleSelected.RData", list = c(ls(), ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/nCellsVisibleSelected.RData")
-    
+
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     retVal <- paste("Number of visible cells in section", sum(grpNs[rownames(subsetData), grpN]))
     return(retVal)
   })
-  
+
   # display the number of cells that belong to the group, including the cells from non visible clusters
   output$nCellsAllSelected <- renderText({
     grpNs <- groupNames$namesDF
     grpN <- make.names(input$groupName)
-    retVal <- paste("number of cells in group over all cells", sum(grpNs[, grpN]))
+    val = 0
+    if (grpN %in% colnames(grpNs))
+      val = sum(grpNs[, grpN])
+    retVal <- paste("number of cells in group over all cells", val)
     return(retVal)
   })
-  
-  
+
+
   output$additionalOptions <- renderUI({
     if (DEBUG) cat(file = stderr(), "cluster: additionalOptions\n")
     ns <- session$ns
@@ -384,13 +432,43 @@ clusterServer <- function(input, output, session,
     if (!moreOptions) {
       return("")
     }
-    
+
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/additionalOptions.RData", list = c(ls(), ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/additionalOptions.RData")
-    
+
     tagList(
+      fluidRow(
+        column(
+          3,
+          checkboxInput(ns("logX"), "log transform X", value = FALSE)
+        ),
+        column(
+          3,
+          checkboxInput(ns("logY"), "log transform Y", value = FALSE)
+        ),
+        column(
+          3,
+          selectInput(
+            ns("devideXBy"),
+            label = "Devide X by",
+            choices = c("None", "Gene.Count", "UMI.Count"),
+            selected = "None"
+          )
+        ),
+        column(
+          3,
+          selectInput(
+            ns("devideYBy"),
+            label = "Devide Y by",
+            choices = c("None", "Gene.Count", "UMI.Count"),
+            selected = "None"
+          )
+        )
+        
+        
+      ),
       checkboxInput(ns("addToGroup"), "Add to group/otherwise overwrite", addToGroupValue),
       textInput(ns(id = "groupName"), label = "name group", value = groupName),
       selectInput(
@@ -406,15 +484,16 @@ clusterServer <- function(input, output, session,
       verbatimTextOutput(ns("cellSelection"))
     )
   })
-  
+
   output$cellSelection <- renderText({
     on.exit(
-      if (!is.null(getDefaultReactiveDomain()))
+      if (!is.null(getDefaultReactiveDomain())) {
         removeNotification(id = "clustercellSelection")
+      }
     )
     if (DEBUG) cat(file = stderr(), "cluster: cellSelection\n")
     ns <- session$ns
-    brushedPs <- (input$b1)
+    brushedPs <- event_data("plotly_selected", source = "subset")
     projections <- projections()
     inpClusters <- (input$clusters)
     myshowCells <- (input$showCells)
@@ -424,11 +503,14 @@ clusterServer <- function(input, output, session,
     dimX <- input$dimension_x
     featureData <- featureDataReact()
     gbm <- gbm()
-    
+
     if (!myshowCells) {
       return("")
     }
     if (is.null(projections)) {
+      return("")
+    }
+    if (is.null(brushedPs)) {
       return("")
     }
     if (!is.null(getDefaultReactiveDomain())) {
@@ -448,20 +530,22 @@ clusterServer <- function(input, output, session,
       featureData = featureData,
       gbm = gbm, projections = projections
     )
-    
-    cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
-    for (axis in c("x", "y")) {
-      if (class(subsetData[, brushedPs$mapping[axis][[1]]]) == "factor") {
-        subsetData[, brushedPs$mapping[axis][[1]]] <- as.numeric(droplevels(subsetData[, brushedPs$mapping[axis][[1]]]))
-      }
-    }
+
+    # cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
+    # for (axis in c("x", "y")) {
+    #   if (class(subsetData[, brushedPs$mapping[axis][[1]]]) == "factor") {
+    #     subsetData[, brushedPs$mapping[axis][[1]]] <- as.numeric(droplevels(subsetData[, brushedPs$mapping[axis][[1]]]))
+    #   }
+    # }
     cat(file = stderr(), "cluster: cellSelection\n")
-    cells.names <- brushedPoints(subsetData, brushedPs)
-    retVal <- paste(rownames(cells.names), collapse = ", ")
+    # cells.names <- brushedPoints(subsetData, brushedPs)
+    cells.names <- rownames(projections)[subset(brushedPs, curveNumber == 0)$pointNumber + 1]
+    
+    retVal <- paste(cells.names, collapse = ", ")
     if (DEBUG) cat(file = stderr(), "cluster: cellSelection: done\n")
     return(retVal)
   })
-  
+
   return(reactive({
     returnValues
   }))
@@ -472,15 +556,16 @@ tableSelectionServer <- function(input, output, session,
                                  dataTab) {
   if (DEBUG) cat(file = stderr(), paste("tableSelectionServer", session$ns("test"), "\n"))
   ns <- session$ns
-  
+
   output$cellSelection <- renderText({
     on.exit(
-      if (!is.null(getDefaultReactiveDomain()))
+      if (!is.null(getDefaultReactiveDomain())) {
         removeNotification(id = "cellSelection")
+      }
     )
     if (DEBUG) cat(file = stderr(), "cellSelection\n")
     ns <- session$ns
-    
+
     dataTables <- dataTab()
     selectedRows <- input$cellNameTable_rows_selected
     if (is.null(dataTables)) {
@@ -496,7 +581,7 @@ tableSelectionServer <- function(input, output, session,
       )
     }
     # load(file=paste0("~/scShinyHubDebug/cellSelection", "ns", ".RData", collapse = "."))
-    
+
     # in case there is a table with multiple same row ids (see crPrioGenesTable) the gene names has "___" appended plus a number
     # remove this here
     if (length(selectedRows) > 0) {
@@ -510,9 +595,9 @@ tableSelectionServer <- function(input, output, session,
     if (DEBUG) cat(file = stderr(), "cellSelection: done\n")
     return(retVal)
   })
-  
+
   proxy <- dataTableProxy("cellNameTable")
-  
+
   observeEvent(input$selectAll, {
     if (DEBUG) cat(file = stderr(), "input$selectAll\n")
     ipSelect <- input$selectAll
@@ -530,20 +615,21 @@ tableSelectionServer <- function(input, output, session,
       proxy %>% selectRows(allrows)
     }
   })
-  
+
   output$columnSelection <- renderUI({
-    
+
   })
-  
+
   output$cellNameTable <- renderDT({
     on.exit(
-      if (!is.null(getDefaultReactiveDomain()))
+      if (!is.null(getDefaultReactiveDomain())) {
         removeNotification(id = "cellNameTable")
+      }
     )
     if (DEBUG) cat(file = stderr(), "output$cellNameTable\n")
     dataTables <- dataTab()
     ns <- session$ns
-    
+
     if (is.null(dataTables)) {
       return(NULL)
     }
@@ -557,22 +643,22 @@ tableSelectionServer <- function(input, output, session,
       )
     }
     # load(file=paste0("~/scShinyHubDebug/cellNameTable", "", ".RData", collapse = "."))
-    
+
     if (DEBUG) cat(file = stderr(), "cellNameTable: done\n")
     maxCol <- min(20, ncol(dataTables))
     if (dim(dataTables)[1] > 1) {
       return(DT::datatable(dataTables[, 1:maxCol],
-                           rownames = F, filter = "top",
-                           options = list(
-                             orderClasses = TRUE,
-                             autoWidth = TRUE
-                           )
+        rownames = F, filter = "top",
+        options = list(
+          orderClasses = TRUE,
+          autoWidth = TRUE
+        )
       ))
     } else {
       return(NULL)
     }
   })
-  
+
   output$download_cellNameTable <- downloadHandler(
     filename = function() {
       paste("cellNameTable", "table.csv", sep = "_")
@@ -585,31 +671,31 @@ tableSelectionServer <- function(input, output, session,
 }
 
 heatmapModuleFunc <- function(
-  featureData,
-  gbm_matrix,
-  projections,
-  # genesin,
-  cells) {
+                              featureData,
+                              gbm_matrix,
+                              projections,
+                              # genesin,
+                              cells) {
   # genesin <- geneName2Index(genesin, featureData)
   # expression <- gbm_matrix[genesin, cells]
   expression <- gbm_matrix[, cells]
-  
+
   validate(need(
     is.na(sum(expression)) != TRUE,
     "Gene symbol incorrect or genes not expressed"
   ))
-  
+
   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
-  
+
   expression <- expression[complete.cases(expression), ]
-  
+
   if (!("sampleNames" %in% colnames(projections))) {
     projections$sample <- 1
   }
   annotation <- data.frame(projections[cells, c("dbCluster", "sampleNames")])
   rownames(annotation) <- colnames(expression)
   colnames(annotation) <- c("Cluster", "sampleNames")
-  
+
   # For high-res displays, this will be greater than 1
   pixelratio <- session$clientData$pixelratio
   if (is.null(pixelratio)) pixelratio <- 1
@@ -630,12 +716,12 @@ heatmapModuleFunc <- function(
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
   nonZeroRows <- which(rowSums(expression) > 0)
-  pheatmap(
-    as.matrix(expression)[nonZeroRows, order(annotation[, 1], annotation[, 2])],
+  TRONCO::pheatmap(
+    expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
-    cluster_cols = FALSE,
+    cluster_cols = TRUE,
     scale = "row",
-    fontsize_row = 10,
+    fontsize_row = 14,
     labels_col = colnames(expression),
     labels_row = featureData[rownames(expression), "Associated.Gene.Name"],
     show_rownames = TRUE,
@@ -666,33 +752,34 @@ pHeatMapModule <- function(input, output, session,
 ) {
   if (DEBUG) cat(file = stderr(), paste("pHeatMapModule", session$ns("test"), "\n"))
   ns <- session$ns
-  
+
   outfilePH <- NULL
-  
+
   updateInput <- reactive({
     proje <- projections()
-    
+
     # Can use character(0) to remove all choices
     if (is.null(proje)) {
       return(NULL)
     }
-    
+
     # Can also set the label and select items
     updateSelectInput(session, "ColNames",
-                      choices = colnames(proje),
-                      selected = "sampleNames"
+      choices = colnames(proje),
+      selected = "sampleNames"
     )
-    
+
     # updateSelectInput(session, "dimension_y",
     #                   choices = colnames(proje),
     #                   selected = colnames(proje)[2]
     # )
   })
-  
+
   output$pHeatMapPlot <- renderImage({
     on.exit(
-      if (!is.null(getDefaultReactiveDomain()))
+      if (!is.null(getDefaultReactiveDomain())) {
         removeNotification(id = "pHeatMapPlotModule")
+      }
     )
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("pHeatMapPlotModule", id = "pHeatMapPlotModule", duration = NULL)
@@ -702,6 +789,8 @@ pHeatMapModule <- function(input, output, session,
     addColNames <- input$ColNames
     orderColNames <- input$orderNames
     moreOptions <- input$moreOptions
+    colTree <- input$showColTree
+    
     proje <- projections()
     if (DEBUG) cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot\n")
     # genesin <- ns(input$heatmap_geneids)
@@ -711,7 +800,7 @@ pHeatMapModule <- function(input, output, session,
       cat(file = stderr(), "output$pHeatMapModule:pHeatMapPlot saving done\n")
     }
     # load(file = "~/scShinyHubDebug/pHeatMapPlotModule.RData")
-    
+
     if (is.null(heatmapData) | is.null(proje) | is.null(heatmapData$mat)) {
       return(list(
         src = "empty.png",
@@ -721,11 +810,11 @@ pHeatMapModule <- function(input, output, session,
         alt = "pHeatMapPlot should be here"
       ))
     }
-    
+
     outfile <- paste0(tempdir(), "/heatmap", ns("debug"), base::sample(1:10000, 1), ".png")
     outfile <- normalizePath(outfile, mustWork = FALSE)
     heatmapData$filename <- outfile
-    
+
     if (length(addColNames) > 0 & moreOptions) {
       heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
     }
@@ -736,29 +825,39 @@ pHeatMapModule <- function(input, output, session,
       heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
       # return()
     }
+    if (moreOptions) {
+      heatmapData$cluster_cols = colTree
+    }
+    # orgMat = heatmapData$mat
+
+    # heatmapData$mat = orgMat
+    # system.time(do.call(pheatmap, heatmapData))
+    # heatmapData$mat = as(orgMat, "dgTMatrix")
+    heatmapData$fontsize <- 14
+    # heatmapData$fontsize_row = 18
     
-    do.call(pheatmap, heatmapData)
-    
+    system.time(do.call(TRONCO::pheatmap, heatmapData))
+
     pixelratio <- session$clientData$pixelratio
     if (is.null(pixelratio)) pixelratio <- 1
-    width <- session$clientData$output_plot_width
-    height <- session$clientData$output_plot_height
-    if (is.null(width)) {
-      width <- 96 * 7
-    } # 7x7 inch output
-    if (is.null(height)) {
-      height <- 96 * 7
-    }
+    # width <- session$clientData$output_plot_width
+    # height <- session$clientData$output_plot_height
+    # if (is.null(width)) {
+    #   width <- 96 * 7
+    # } # 7x7 inch output
+    # if (is.null(height)) {
+    #   height <- 96 * 7
+    # }
     outfilePH <<- outfile
     return(list(
       src = outfilePH,
       contentType = "image/png",
-      width = width,
-      height = height,
+      width = "100%",
+      height = "100%",
       alt = "heatmap should be here"
     ))
   })
-  
+
   output$additionalOptions <- renderUI({
     if (DEBUG) cat(file = stderr(), "heatmapModule: additionalOptions\n")
     ns <- session$ns
@@ -768,14 +867,15 @@ pHeatMapModule <- function(input, output, session,
     if (!moreOptions | is.null(proje)) {
       return("")
     }
-    
-    
+
+
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/heatMapadditionalOptions.RData", list = c(ls(), ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/heatMapadditionalOptions.RData")
-    
+
     tagList(
+      checkboxInput(ns("showColTree"), label = "Show tree for cells", value = FALSE),
       selectInput(
         ns("ColNames"),
         label = "group names",
@@ -783,7 +883,7 @@ pHeatMapModule <- function(input, output, session,
         selected = "sampleNames",
         multiple = TRUE
       ),
-      
+
       selectInput(
         ns("orderNames"),
         label = "order of columns",
@@ -810,14 +910,14 @@ pHeatMapModule <- function(input, output, session,
         file = dfilename, list =
           c("heatmapData", "addColNames", "orderColNames", "moreOptions", "proje", "groupNs")
       )
-      
-      
+
+
       # 2do: not sure why I cannot find the original file...
       # maybe there is an intermediate session created?
       outfile <- paste0(tempdir(), "/heatmap", ns("debug"), base::sample(1:10000, 1), ".png")
       outfile <- normalizePath(outfile, mustWork = FALSE)
       heatmapData$filename <- outfile
-      
+
       if (length(addColNames) > 0 & moreOptions) {
         heatmapData$annotation_col <- proje[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
       }
@@ -827,10 +927,10 @@ pHeatMapModule <- function(input, output, session,
         colN <- colN[colN %in% colnames(heatmapData$mat)]
         heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
       }
-      
+
       do.call(pheatmap, heatmapData)
-      
-      
+
+
       zippedReportFiles <- c(
         dfilename,
         outfile

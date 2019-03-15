@@ -81,7 +81,8 @@ if(exists("params")){
   
   tsne.data = data.frame(tsne$Y)
   colnames(tsne.data) = c("tsne1", "tsne2", "tsne3")
-  tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
+  # tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster-1
+  tsne.data$dbCluster = clustering$kmeans_10_clusters$Cluster
   rownames(tsne.data) = clustering$kmeans_10_clusters$Barcode
   if(DEBUG)cat(file=stderr(), "tsne.data: done\n")
   
@@ -134,7 +135,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 
 ```{r plotUmiHist, eval=TRUE, echo=FALSE}
 
-hist(colSums(as.matrix(exprs(gbm))), breaks = 50, main="histogram of number of UMI per cell")
+hist(Matrix::colSums(exprs(gbm)), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs

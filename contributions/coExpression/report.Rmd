@@ -66,7 +66,7 @@ if (exists("params")) {
 ```{r coE_heatmapFunc, echo=FALSE}
 require(pheatmap)
 
-gbm_matrix <- as.matrix(exprs(gbm_log))
+gbm_matrix <- exprs(gbm_log)
 genesin <- input$heatmap_geneids
 
 genesin2 <- geneName2Index(genesin, featureData)
@@ -125,7 +125,8 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
-plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position)
+plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
+                 grpNs = groupNames$namesDF)
 ```
 
 
@@ -221,7 +222,7 @@ if(!is.null(brushedPs)){
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
   # we only work on genes that have been selected
-  mat <- as.matrix(exprs(gbm_log))[, scCells]
+  mat <- exprs(gbm_log)[, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0
   # only genes that are expressed in coEtgPerc or more cells
@@ -243,7 +244,7 @@ if(!is.null(brushedPs)){
     matCV <- matCV[rownames(mat)]
     fd <- cbind(fd, matCV)
     colnames(fd) <- c("gene", "description", "CV")
-    outMat <- cbind(fd, mat)
+    outMat <- cbind(fd, as.matrix(mat))
     rownames(outMat) <- make.names(as.character(outMat$gene), unique = TRUE)
     DT::datatable(outMat,
                   rownames = F, filter = "top",

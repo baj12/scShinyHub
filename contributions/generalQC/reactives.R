@@ -11,7 +11,7 @@ scaterReadsFunc <- function(gbm, fd) {
   }
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
   
-  counts <- as.matrix(exprs(gbm))
+  counts <- as(exprs(gbm), "dgCMatrix")
   
   anno <- pData(gbm)
   anno$sample_id <- anno$sampleNames
@@ -23,11 +23,8 @@ scaterReadsFunc <- function(gbm, fd) {
   pheno_data <- new("AnnotatedDataFrame", anno)
   # rownames(pheno_data) <- pheno_dat
   
-  reads <- as.matrix(counts)
-  rownames(reads) <- make.unique(fd[rownames(reads), "Associated.Gene.Name"], sep = "___")
-  rownames(reads)[is.na(rownames(reads)) ] <- "na"
   reads <- SingleCellExperiment(
-    assays = list(counts = reads),
+    assays = list(counts = counts),
     colData = anno
   )
   ercc <- rownames(reads)[grepl("ERCC-", rownames(reads))]
@@ -267,6 +264,7 @@ umapReact <- reactive({
   InlevelOrd <- input$um_levelOrd
   UMAP1 <- input$um_umap1
   UMAP2 <- input$um_umap2
+  runUMAP <- input$activateUMAP
   
   n_neighbors <- as.numeric(input$um_n_neighbors)
   n_components <- as.numeric(input$um_n_components)
@@ -282,6 +280,9 @@ umapReact <- reactive({
   metric <- input$um_metric
   spread <- as.numeric(input$um_spread)
   
+  
+  
+  
   if (is.null(gbmlog)) {
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
     return(NULL)
@@ -290,7 +291,10 @@ umapReact <- reactive({
     save(file = "~/scShinyHubDebug/umap_react.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load("~/scShinyHubDebug/umap_react.RData")
-  
+  if (!runUMAP) {
+    if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
+    return(NULL)
+  }
   umapData <- as.matrix(exprs(gbmlog))
   compCases = complete.cases(umapData)
   
