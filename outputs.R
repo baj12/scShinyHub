@@ -1,6 +1,6 @@
 # SUMMARY STATS ----------------------------------------------------------------
-source("moduleServer.R", local = TRUE)
-source("reactives.R", local = TRUE)
+source ("moduleServer.R", local = TRUE)
+source ("reactives.R", local = TRUE)
 
 
 # normalizationRadioButtonValue -------------------------------- Parameters / normalization
@@ -67,8 +67,8 @@ output$summaryStatsSideBar <- renderUI({
   if (DEBUG) {
     cat(file = stderr(), "output$summaryStatsSideBar\n")
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  scEx <- scEx()
+  if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "output$summaryStatsSideBar:NULL\n")
     }
@@ -80,12 +80,16 @@ output$summaryStatsSideBar <- renderUI({
     }
     return(NULL)
   }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/summaryStatsSideBar.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/summaryStatsSideBar.RData")
   line0 <- paste(input$file1$name)
-  line1 <- paste("No. of cells: ", dim(gbm)[2], sep = "\t")
-  line2 <- paste("No. of genes: ", dim(gbm)[1], sep = "\t")
+  line1 <- paste("No. of cells: ", dim(scEx)[2], sep = "\t")
+  line2 <- paste("No. of genes: ", dim(scEx)[1], sep = "\t")
   line3 <- paste("Median UMIs per cell: ", medianUMI(), sep = "\t")
   line4 <- paste("Median Genes with min 1 UMI: ", medianENSG(), sep = "\t")
-  line5 <- paste("Total number of reads: ", sum(gbm))
+  line5 <- paste("Total number of reads: ", sum(assays(scEx)[[1]]))
   line6 <- paste("Memory used:", getMemoryUsed())
   line7 <- paste("Normalization used:", input$normalizationRadioButton)
   HTML(paste0(
@@ -114,13 +118,17 @@ output$selectedGenesTable <- DT::renderDataTable({
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-
-  gbm <- exprs(dataTables$gbm)
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/selectedGenesTable.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/selectedGenesTable.RData")
+  
+  scEx <- assays(dataTables$scEx)[[1]]
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  dt$rowSums <- Matrix::rowSums(gbm[useGenes, useCells])
-  dt$rowSamples <- Matrix::rowSums(gbm[useGenes, useCells] > 0)
-  DT::datatable(dt)
+  dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
+  dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
+  DT::datatable(as.data.frame(dt))
 })
 
 # removedGenesTable -------------------------- TODO module for DT TODO move to were it belongs
@@ -135,12 +143,16 @@ output$removedGenesTable <- DT::renderDataTable({
     return(NULL)
   }
 
-  gbm <- exprs(dataTables$gbm)
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/removedGenesTable.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/removedGenesTable.RData")
+  scEx <- assays(dataTables$scEx)[[1]]
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  dt$rowSums <- Matrix::rowSums(gbm[useGenes, useCells])
-  dt$rowSamples <- Matrix::rowSums(gbm[useGenes, useCells] > 0)
-  DT::datatable(dt)
+  dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
+  dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
+  DT::datatable(as.data.frame(dt))
 })
 
 # gsSelectedGenes --------------------------- TODO module of DT with selected names above Print names of selected genes for gene
@@ -152,15 +164,20 @@ output$gsSelectedGenes <- renderText({
   dataTables <- inputData()
   useGenes <- useGenes()
   useCells <- useCells()
+  selectedGenesTable_rows_selected <- input$selectedGenesTable_rows_selected
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-
-  # gbm <- as.matrix(exprs(dataTables$gbm))
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/gsSelectedGenes.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/gsSelectedGenes.RData")
+  
+  # scEx <- as.matrix(exprs(dataTables$scEx))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
 
-  paste0(dt$Associated.Gene.Name[input$selectedGenesTable_rows_selected], ",")
+  paste0(dt$Associated.Gene.Name[selectedGenesTable_rows_selected], ",")
 })
 
 # gsrmGenes ----------------- Print names of removed genes for gene selection
@@ -171,17 +188,22 @@ output$gsrmGenes <- renderText({
   dataTables <- inputData()
   useGenes <- useGenes()
   useCells <- useCells()
+  removedGenesTable_rows_selected <- input$removedGenesTable_rows_selected
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
-
-  # gbm <- as.matrix(exprs(dataTables$gbm))
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/gsrmGenes.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/gsrmGenes.RData")
+  
+  # scEx <- as.matrix(exprs(dataTables$scEx))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
   if (DEBUG) {
     cat(file = stderr(), "gsrmGenes: done\n")
   }
-  paste0(dt$Associated.Gene.Name[input$removedGenesTable_rows_selected], ",")
+  paste0(dt$Associated.Gene.Name[removedGenesTable_rows_selected], ",")
 })
 
 
@@ -191,7 +213,7 @@ output$DEBUGSAVEstring <- renderText({
 
 callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 
-callModule(tableSelectionServer, "normalizationResult", gbmLogMatrixDisplay)
+callModule(tableSelectionServer, "normalizationResult", scExLogMatrixDisplay)
 
 output$descriptOfWorkOutput <- renderPrint({
   input$descriptionOfWork

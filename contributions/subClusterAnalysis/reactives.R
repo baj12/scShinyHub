@@ -3,7 +3,7 @@ selectedDge <- reactiveValues(
 )
 
 
-# TODO remove log2cpm change to gbm_log
+# TODO remove log2cpm change to scEx_log
 dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2) {
   subsetData <- subset(projections, dbCluster %in% cl1)
   cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
@@ -35,7 +35,7 @@ dge <- reactive({
   )
   if (DEBUG) cat(file = stderr(), "dge\n")
   featureData <- featureDataReact()
-  gbmLog <- gbm_log()
+  scExLog <- scEx_log()
   prj <- projections()
   gn <- groupNames$namesDF
 
@@ -44,7 +44,7 @@ dge <- reactive({
   db2 <- input$db2
 
   # dbcl = dbCluster
-  if (is.null(featureData) | is.null(gbmLog) | is.null(prj)) {
+  if (is.null(featureData) | is.null(scExLog) | is.null(prj)) {
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
@@ -60,7 +60,7 @@ dge <- reactive({
   # load(file='~/scShinyHubDebug/dge.RData')
 
   toReturn <- dge_func(
-    projections = prj, log2cpm = as.data.frame(as.matrix(exprs(gbmLog))),
+    projections = prj, log2cpm = as.data.frame(as.matrix(assays(scEx_log)[[1]])),
     featureData = featureData,
     dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2
   )

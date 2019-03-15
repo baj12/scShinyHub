@@ -17,6 +17,6 @@ if(exists("DEVELOPMENT")){
 
 
 ```{r}
-retVal = DummyFunc(gbm_log)
+retVal = DummyFunc(scEx_log)
 ```
 

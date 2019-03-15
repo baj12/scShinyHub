@@ -18,7 +18,7 @@ inputTab <- tabItem(
     h5(
       "This app is designed for exploratory data analysis of processed RNA-Seq data of single cell experiments. 
       Multiple files can be selected using certain browsers (E.g. chrome). This is not working when running in RStudio as a window.
-      Rds files are R data files generated using base::save(). They contain two objects, gbm and featuredata that hold raw counts in a sparse matrix
+      Rds files are R data files generated using base::save(). They contain two objects, scEx that hold raw counts in a sparse matrix
       and annotation in a data frame."
     ),
     align = "center"

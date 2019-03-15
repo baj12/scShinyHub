@@ -52,12 +52,12 @@ if(exists("params")){
   useGenes = useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
   featureDataReact = dataTables$featuredata[useGenes, ]
   featureData = dataTables$featuredata[useGenes, ]
-  gbm = dataTables$gbm[useGenes, useCells]
-  gbm_log = dataTables$gbm_log[useGenes, useCells]
+  scEx = dataTables$scEx[useGenes, useCells]
+  scEx_log = dataTables$scEx_log[useGenes, useCells]
   log2cpm = dataTables$log2cpm[useGenes, useCells]
   if(DEBUG)cat(file=stderr(), "pca\n")
   
-  pca = pcaFunc(gbm_log)
+  pca = pcaFunc(scEx_log)
   if(DEBUG)cat(file=stderr(), "tsne\n")
   seed=1
   set.seed(seed = seed)
@@ -135,7 +135,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 
 ```{r plotUmiHist, eval=TRUE, echo=FALSE}
 
-hist(Matrix::colSums(exprs(gbm)), breaks = 50, main="histogram of number of UMI per cell")
+hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs
@@ -152,7 +152,7 @@ hist(Matrix::colSums(exprs(gbm)), breaks = 50, main="histogram of number of UMI 
 ```{r histSamples, eval=TRUE, echo=FALSE}
 if(DEBUGSAVE) 
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
-sampleInf <- sampleInfoFunc(gbm)
+sampleInf <- sampleInfoFunc(scEx)
 sampleHistFunc(sampleInf)
 ```
 

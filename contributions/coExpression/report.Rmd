@@ -53,8 +53,8 @@ if (exists("params")) {
   useGenes <- useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
   featureDataReact <- dataTables$featuredata[useGenes, ]
   featureData <- dataTables$featuredata[useGenes, ]
-  gbm <- dataTables$gbm[useGenes, useCells]
-  gbm_log <- dataTables$gbm_log[useGenes, useCells]
+  scEx <- dataTables$scEx[useGenes, useCells]
+  scEx_log <- dataTables$scEx_log[useGenes, useCells]
   log2cpm <- dataTables$log2cpm[useGenes, useCells]
 }
 ```
@@ -66,15 +66,15 @@ if (exists("params")) {
 ```{r coE_heatmapFunc, echo=FALSE}
 require(pheatmap)
 
-gbm_matrix <- exprs(gbm_log)
+scEx_matrix <- assays(scEx_log)[[1]]
 genesin <- input$heatmap_geneids
 
 genesin2 <- geneName2Index(genesin, featureData)
-genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(gbm_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
+genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
 
 heatmapData <- coE_heatmapFunc(
-  featureData = featureData, gbm_matrix = gbm_matrix,
-  projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
+  featureData = featureData, scEx_matrix = scEx_matrix,
+  projections = projections, genesin = genesin, cells = colnames(scEx_matrix)
 )
 
 addColNames <- input$"coExpHeatmapModule-ColNames"
@@ -125,7 +125,7 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
-plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
+plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
                  grpNs = groupNames$namesDF)
 ```
 
@@ -167,14 +167,14 @@ if(!is.null(brushedPs)){
   projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
                                                geneNames = geneNames,
                                                featureData = featureData,
-                                               gbm = gbm, projections = projections)
+                                               scEx = scEx, projections = projections)
   
   subsetData <- subset(projections, dbCluster %in% inpClusters)
   cells.names <- shiny::brushedPoints(subsetData, brushedPs)
   
   cells.1 <- rownames(cells.names)
   heatmapData <- coE_heatmapFunc(featureData,
-                                 gbm_matrix,
+                                 scEx_matrix,
                                  projections,
                                  genesin,
                                  cells = cells.1
@@ -222,7 +222,7 @@ if(!is.null(brushedPs)){
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
   # we only work on genes that have been selected
-  mat <- exprs(gbm_log)[, scCells]
+  mat <- assays(scEx_log)[[1]][, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0
   # only genes that are expressed in coEtgPerc or more cells
@@ -233,7 +233,7 @@ if(!is.null(brushedPs)){
     sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
   }
   matCV <- apply(mat, 1, cv)
-  # top.genes <- as.data.frame(exprs(gbm_log))
+  # top.genes <- as.data.frame(exprs(scEx_log))
   maxRows <- min(nrow(mat), 200)
   top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
   # 2do dim is not correct produces problmes
@@ -294,7 +294,7 @@ if (DEBUGSAVE) {
 # load(file="~/scShinyHubDebug/plotCoExpression.RData")
 p1 <- plotCoExpressionFunc(
   featureData,
-  gbm_log,
+  scEx_log,
   upI,
   projections,
   genesin,
@@ -321,7 +321,7 @@ minExpr <- input$coEminExpr
 retVal <- geneGrp_vioFunc(
   genesin = geneListStr,
   projections = projections,
-  gbm = gbm,
+  scEx = scEx,
   featureData = featureData,
   minExpr = minExpr,
   dbCluster = projectionVar,

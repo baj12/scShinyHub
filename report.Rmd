@@ -167,26 +167,26 @@ featureDataReact <- dataTables$featuredata[useGenes, ]
 featureData <- dataTables$featuredata[useGenes, ]
 ```
 
-```{r gbm, echo=FALSE}
-if (DEBUG) cat(file = stderr(), "gbm\n")
+```{r scEx, echo=FALSE}
+if (DEBUG) cat(file = stderr(), "scEx\n")
 minGene <- input$minGenesGS # min number of reads per gene
 minG <- input$minGenes # min number of reads per cell
 maxG <- input$maxGenes # max number of reads per cell
 
-gbm <- gbmFunc(gbmOrg = dataTables$gbm, useCells = useCells, useGenes = useGenes, minGene = minGene, minG = minG, maxG = maxG)
+scEx <- scExFunc(scExOrg = dataTables$scEx, useCells = useCells, useGenes = useGenes, minGene = minGene, minG = minG, maxG = maxG)
 
-if (DEBUG) cat(file = stderr(), "gbm:DONE\n")
-if (DEBUG) cat(file = stderr(), paste("gbm:", class(gbm), "\n"))
+if (DEBUG) cat(file = stderr(), "scEx:DONE\n")
+if (DEBUG) cat(file = stderr(), paste("scEx:", class(scEx), "\n"))
 ```
 
 
 ```{r medianENSG, echo=FALSE}
-medianENSG <- medianENSGfunc(as.matrix(exprs(gbm)))
+medianENSG <- medianENSGfunc(as.matrix(assays(scEx)[[1]]))
 ```
 
 
 ```{r medianUMI, echo=FALSE}
-medianUMI <- medianUMIfunc(as.matrix(exprs(gbm)))
+medianUMI <- medianUMIfunc(as.matrix(assays(scEx)[[1]]))
 ```
 
 ```{r groupNames, echo=FALSE}
@@ -195,49 +195,49 @@ groupNames$namesDF <- gNames
 ```
 
 
-```{r gbm_log, eval=FALSE, include=FALSE}
-# gbm_log is the normalized version of the data. This stored in a separate RData
+```{r scEx_log, eval=FALSE, include=FALSE}
+# scEx_log is the normalized version of the data. This stored in a separate RData
 # and thus doen't need to be recomputed.
-if (DEBUG) cat(file = stderr(), "gbm_log\n")
-# use_genes <- get_nonzero_genes(gbm)
-# gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-# gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
+if (DEBUG) cat(file = stderr(), "scEx_log\n")
+# use_genes <- get_nonzero_genes(scEx)
+# scEx_bcnorm <- normalize_barcode_sums_to_median(scEx)
+# scEx_log <- log_gene_bc_matrix(scEx_bcnorm,base=10)
 
 
 normMethod <- input$normalizationRadioButton
 # can only be done in reactive context...
 # thus, here the minimal version for debugging
-    # use_genes <- get_nonzero_genes(gbm)
-    # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-    # gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
+    # use_genes <- get_nonzero_genes(scEx)
+    # scEx_bcnorm <- normalize_barcode_sums_to_median(scEx)
+    # scEx_log <- log_gene_bc_matrix(scEx_bcnorm, base = 10)
 
-gbm_log <- do.call(normMethod, args = list())
-if (DEBUG) cat(file = stderr(), "gbm_log:Done\n")
+scEx_log <- do.call(normMethod, args = list())
+if (DEBUG) cat(file = stderr(), "scEx_log:Done\n")
 ```
 
 
-```{r gbm_matrix, include=FALSE}
+```{r scEx_matrix, include=FALSE}
 
-gbm_matrix <- as.matrix(exprs(gbm))
+scEx_matrix <- as.matrix(assays(scEx)[[1]])
 ```
 
 
 ```{r rawNormalization, include=FALSE}
-rawNormalization <- gbm
+rawNormalization <- scEx
 ```
 
-```{r gbmLogMatrixDisplay, include=FALSE}
-retVal <- as.data.frame(as.matrix(exprs(gbm_log)))
-rownames(retVal) <- make.names(fData(gbm_log)$symbol, unique = TRUE)
+```{r scExLogMatrixDisplay, include=FALSE}
+retVal <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
+rownames(retVal) <- make.names(rowData(scEx_log)$symbol, unique = TRUE)
 
-gbmLogMatrixDisplay <- retVal
+scExLogMatrixDisplay <- retVal
 ```
 
 
 ```{r pca, eval=TRUE, echo=FALSE}
 if (DEBUG) cat(file = stderr(), "pca\n")
 
-pca <- pcaFunc(gbm_log)
+pca <- pcaFunc(scEx_log)
 ```
 Creating  `r input$kNr` clusters.
 
@@ -271,7 +271,7 @@ if (DEBUG) cat(file = stderr(), "tsne: done\n")
 ```{r projections, eval=FALSE, include=FALSE}
 # TODO not working with current projection model and debugging.
 # the correct projections are used via saving/loading of variables during report creation in server.R
-#     base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
+#     base::save(file = tmpPrjFile, list = c("projections", "scEx_log", "gNames"))
 #     reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, "\")\n", collapse = "\n")
 
 if (DEBUG) cat(file = stderr(), "projections\n")
@@ -315,22 +315,22 @@ if (DEBUG) cat(file = stderr(), "projections: done\n")
 ```
 
 ```{r sampleInfo, include=FALSE}
-sampleInfo <- sampleInfoFunc(gbm)
+sampleInfo <- sampleInfoFunc(scEx)
 ```
 
 ```{r inputSample, include=FALSE}
-sampInf <- gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
+sampInf <- gsub(".*-(.*)", "\\1", dataTables$scEx$barcode)
 inputSample <- data.frame(
-  cellName = colnames(dataTables$gbm),
+  cellName = colnames(dataTables$scEx),
   sample = sampInf,
-  ncells = colSums(as.matrix(exprs(dataTables$gbm)))
+  ncells = colSums(as.matrix(assays(dataTables$scEx)[[1]]))
 )
 ```
 
 
 ```{r log2cpm, eval=TRUE, include=FALSE}
 if (DEBUG) cat(file = stderr(), "log2cpm\n")
-log2cpm <- log2cpm <- as.data.frame(as.matrix(exprs(gbm_log)))
+log2cpm <- log2cpm <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
 if (DEBUG) cat(file = stderr(), "log2cpm:Done\n")
 ```
 

@@ -1,8 +1,8 @@
 
-DummyFunc <- function(gbm_log) {
+DummyFunc <- function(scEx_log) {
   # here we perform the calculations and provide the resulting data.
   # run_pca comes from the cellranger package.
-  nrow(gbm_log)
+  nrow(scEx_log)
 }
 
 # here we define reactive values/variables
@@ -16,12 +16,12 @@ DummyReactive <- reactive({
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "pca\n")
   # call dependancies (reactives)
-  gbm_log <- gbm_log()
+  scEx_log <- scEx_log()
   prj <- projections()
-  gbm <- gbm()
-  
+  scEx <- scEx()
+
   # check if they are available
-  if (is.null(gbm_log)) {
+  if (is.null(scEx_log)) {
     if (DEBUG) cat(file = stderr(), "pca:NULL\n")
     return(NULL)
   }
@@ -34,7 +34,7 @@ DummyReactive <- reactive({
   # load(file='~/scShinyHubDebug/DummyReactive.RData')
 
   # actual calculation
-  retVal <- DummyFunc(gbm_log)
+  retVal <- DummyFunc(scEx_log)
 
   if (retVal == 0 & !is.null(getDefaultReactiveDomain())) {
     showNotification("Dummy is 0", type = "warning", duration = NULL) # has to be removed by use, no removeNotification is following.
@@ -53,9 +53,9 @@ myHeavyCalculations <- list(c("running DummyReactive", "DummyReactive"))
 imageDummyPrecompute <- reactive({
   if (DEBUG) cat(file = stderr(), "imageDummyPrecompute\n")
 
-  gbm <- gbm()
+  scEx <- scEx()
   # check if they are available
-  if (is.null(gbm)) {
+  if (is.null(scEx)) {
     if (DEBUG) cat(file = stderr(), "imageDummyPrecompute:NULL\n")
     return(NULL)
   }
@@ -84,7 +84,7 @@ imageDummyPrecompute <- reactive({
   outfile <- paste0(tempdir(), "/dummy.png")
   if (DEBUG) cat(file = stderr(), paste("output file: ", outfile, "\n"))
   if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
-  m <- data.frame("V1" = colSums(as.matrix(exprs(gbm))))
+  m <- data.frame("V1" = Matrix::colSums(assays(scEx)[[1]]))
   p <- ggplot(m, aes(V1)) + geom_bar()
   ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p, width = myPNGwidth, height = myPNGheight, units = "in")
 
@@ -97,4 +97,5 @@ imageDummyPrecompute <- reactive({
     height = height,
     alt = "Dummy should be here"
   ))
+  
 })

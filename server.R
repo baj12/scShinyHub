@@ -192,11 +192,11 @@ shinyServer(function(input, output, session) {
     filename = paste0("counts.", Sys.Date(), ".csv"),
     content = function(file) {
       if (DEBUG) cat(file = stderr(), paste("countcsv: \n"))
-      gbmlog <- gbm_log()
-      if (is.null(gbmlog)) {
+      scExlog <- scEx_log()
+      if (is.null(scExlog)) {
         return(NULL)
       }
-      write.csv(as.matrix(exprs(gbmlog)), file)
+      write.csv(as.matrix(assays(scExlog)[[1]]), file)
     }
   )
 
@@ -204,10 +204,10 @@ shinyServer(function(input, output, session) {
     filename = paste0("project.", Sys.Date(), ".Rds"),
     content = function(file) {
       if (DEBUG) cat(file = stderr(), paste("RDSsave: \n"))
-      gbm <- gbm()
+      scEx <- scEx()
       featuredata <- featureDataReact()
 
-      if (is.null(gbm) | is.null(featuredata)) {
+      if (is.null(scEx) | is.null(featuredata)) {
         return(NULL)
       }
       if (DEBUGSAVE) {
@@ -215,10 +215,10 @@ shinyServer(function(input, output, session) {
       }
       # load(file='~/scShinyHubDebug/RDSsave.RData')
 
-      save(file = file, list = c("featuredata", "gbm"))
+      save(file = file, list = c("featuredata", "scEx"))
       if (DEBUG) cat(file = stderr(), paste("RDSsave:done \n"))
 
-      # write.csv(as.matrix(exprs(gbm)), file)
+      # write.csv(as.matrix(exprs(scEx)), file)
     }
   )
 
@@ -250,11 +250,11 @@ shinyServer(function(input, output, session) {
       # to reduce complexity we are going to save those in a separate RData file
       tmpPrjFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
       projections <- projections()
-      gbm_log <- gbm_log()
-      gbm <- gbm()
+      scEx_log <- scEx_log()
+      scEx <- scEx()
       featuredata <- featureDataReact()
       gNames <- groupNames$namesDF
-      base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
+      base::save(file = tmpPrjFile, list = c("projections", "scEx_log", "gNames"))
 
       # ------------------------------------------------------------------------------------------------------------
       # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
@@ -329,7 +329,7 @@ shinyServer(function(input, output, session) {
       # cat(y, file="tempReport.Rmd", sep="\n")
       cat(y, file = tempReport, sep = "\n")
 
-      if (DEBUG) cat(file = stderr(), "output$report:gbm:\n")
+      if (DEBUG) cat(file = stderr(), "output$report:scEx:\n")
       if (DEBUG) cat(file = stderr(), paste("\n", tempReport, "\n"))
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
@@ -347,8 +347,8 @@ shinyServer(function(input, output, session) {
       )
       tDir <- paste0(tDir, "/")
       base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
-      write.csv(as.matrix(exprs(gbm_log)), file = paste0(reportTempDir, "/normalizedCounts.csv"))
-      base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("gbm", "featureData", "projections"))
+      write.csv(as.matrix(assays(scEx_log)[[1]]), file = paste0(reportTempDir, "/normalizedCounts.csv"))
+      base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("scEx", "projections"))
       zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
       zip(file, zippedReportFiles, flags = "-9Xj")
       if (!is.null(getDefaultReactiveDomain())) {

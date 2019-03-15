@@ -1,13 +1,13 @@
 # heatmapFunc ---------------------------------
 # used by bot selection and all
-coE_heatmapFunc <- function(featureData, gbm_matrix, projections, genesin, cells) {
+coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cells) {
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "heatmap")
   )
   #  create parameters used for pheatmap module
   genesin <- geneName2Index(genesin, featureData)
-  expression <- gbm_matrix[genesin, cells]
+  expression <- scEx_matrix[genesin, cells]
 
   validate(need(
     is.na(sum(expression)) != TRUE,
@@ -84,7 +84,7 @@ heatmapSelectedReactive <- reactive({
     cat(file = stderr(), "output$heatmapSelectedReactive\n")
   }
   featureData <- featureDataReact()
-  gbm_matrix <- gbm()
+  scEx_matrix <- scEx()
   projections <- projections()
   genesin <- input$heatmap_geneids2
   sc <- selctedCluster()
@@ -97,7 +97,7 @@ heatmapSelectedReactive <- reactive({
   }
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   if (is.null(featureData) ||
-    is.null(gbm_matrix) ||
+    is.null(scEx_matrix) ||
     is.null(projections) || is.null(scCells) || length(scCells) == 0) {
     return(
       list(
@@ -122,7 +122,7 @@ heatmapSelectedReactive <- reactive({
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
   cells.1 <- scCells
-  retval <- coE_heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
+  retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin, cells = cells.1)
 
   return(retval)
 })
@@ -130,7 +130,7 @@ heatmapSelectedReactive <- reactive({
 topExpGenesTable <- reactive({
   if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
   featureData <- featureDataReact()
-  gbm_log <- gbm_log()
+  scEx_log <- scEx_log()
   coEtgPerc <- input$coEtgPerc
   coEtgminExpr <- input$coEtgMinExpr
   sc <- selctedCluster()
@@ -138,7 +138,7 @@ topExpGenesTable <- reactive({
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
 
-  if (is.null(featureData) || is.null(gbm_log) || is.null(scCells)) {
+  if (is.null(featureData) || is.null(scEx_log) || is.null(scCells)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -146,8 +146,8 @@ topExpGenesTable <- reactive({
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
   # we only work on cells that have been selected
-  # mat <- as.matrix(exprs(gbm_log))[, scCells]
-  mat <- exprs(gbm_log)[, scCells]
+  # mat <- as.matrix(exprs(scEx_log))[, scCells]
+  mat <- assays(scEx_log)[[1]][, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0
   # only genes that are expressed in coEtgPerc or more cells
@@ -158,7 +158,7 @@ topExpGenesTable <- reactive({
     sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
   }
   matCV <- apply(mat, 1, cv)
-  # top.genes <- as.data.frame(exprs(gbm_log))
+  # top.genes <- as.data.frame(exprs(scEx_log))
   maxRows <- min(nrow(mat), 200)
   top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
   if (dim(mat)[1] > 0) {
@@ -177,63 +177,12 @@ topExpGenesTable <- reactive({
 })
 
 
-# TODO module for heatmap?
-# output$selectedHeatmap <- renderImage({
-#   if (DEBUG) {
-#     cat(file = stderr(), "output$selectedHeatmap\n")
-#   }
-#   featureData <- featureDataReact()
-#   gbm_matrix <- gbm_matrix()
-#   projections <- projections()
-#   genesin <- input$heatmap_geneids2
-#   sc <- selctedCluster()
-#   scCL <- sc$cluster
-#   # scBP = sc$brushedPs()
-#   scCells <- sc$selectedCells()
-#
-#   if (DEBUGSAVE) {
-#     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
-#   }
-#   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
-#   if (is.null(featureData) |
-#     is.null(gbm_matrix) |
-#     is.null(projections) | is.null(scCells) | length(scCells) == 0) {
-#     return(
-#       list(
-#         src = "empty.png",
-#         contentType = "image/png",
-#         width = 96,
-#         height = 96,
-#         alt = "heatmap should be here"
-#       )
-#     )
-#   }
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
-#   }
-#
-#   if (DEBUGSAVE) {
-#     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
-#   }
-#   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
-#
-#   # subsetData <-
-#   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
-#   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
-#   cells.1 <- scCells
-#   retval <- heatmapFunc(featureData, gbm_matrix, projections, genesin, cells = cells.1)
-#
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     removeNotification(id = "selectedHeatmap")
-#   }
-#   return(retval)
-# })
 
 # plotCoExpressionFunc ------
 # used in binarized 2D plot
 plotCoExpressionFunc <-
   function(featureData,
-             gbm_log,
+             scEx_log,
              upI,
              projections,
              genesin,
@@ -246,31 +195,8 @@ plotCoExpressionFunc <-
     # genesin <- strsplit(genesin, ',')
 
     subsetData <- subset(projections, dbCluster %in% cl3)
-    # cells.1 <- rownames(subsetData)
 
-
-    # map <-
-    #   rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
-    # if(DEBUG)cat(file=stderr(),map[1])
-
-    expression <- gbm_log[genesin, ]
-    # if(DEBUG)cat(file=stderr(),rownames(expression))
-
-    # expression<-expression[complete.cases(expression),]
-    # if(DEBUG)cat(file=stderr(),rownames(expression))
-
-    # display genes not found
-    # notFound = genesin[[1]][which(!genesin[[1]] %in% featureData$Associated.Gene.Name)]
-    # if (length(notFound) > 0) {
-    #   if (!is.null(getDefaultReactiveDomain())) {
-    #     showNotification(
-    #       paste("following genes were not found", notFound, collapse = " "),
-    #       id = "plotCoExpressionNotFound",
-    #       type = "warning",
-    #       duration = 20
-    #     )
-    #   }
-    # }
+    expression <- scEx_log[genesin, ]
 
     validate(need(
       is.na(sum(expression)) != TRUE,
@@ -319,7 +245,7 @@ plotCoExpressionFunc <-
   }
 
 # geneGrp_vioFunc ------
-geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
+geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1,
                             dbCluster, showPermutations = FALSE) {
   require(gtools)
   require(stringr)
@@ -351,7 +277,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
   }
 
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
-  expression <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr)
+  expression <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr)
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   ylabText <- "number genes from list"
   # projections = projections[,1:12]
@@ -371,7 +297,7 @@ geneGrp_vioFunc <- function(genesin, projections, gbm, featureData, minExpr = 1,
         map <-
           rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
 
-        permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
+        permIdx <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
@@ -467,13 +393,13 @@ heatmapSOMReactive <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "output$somReactive\n")
   }
-  gbm_matrix <- as.matrix(exprs(gbm()))
+  scEx <- scEx()
   projections <- projections()
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
   featureData <- featureDataReact()
 
-  if (is.null(gbm_matrix)) {
+  if (is.null(scEx)) {
     return(
       list(
         src = "empty.png",
@@ -484,6 +410,7 @@ heatmapSOMReactive <- reactive({
       )
     )
   }
+  scEx_matrix <- as.matrix(assays(scEx)[[1]])
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)
   }
@@ -495,15 +422,7 @@ heatmapSOMReactive <- reactive({
   }
   # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
 
-  # subsetData <-
-  #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
-  # cells.1 <- rownames(brushedPoints(subsetData, scBP))
-
-  # gbmOrg = gbm_matrix
-  # gbm_matrix = as(gbm_matrix, "dgTMatrix")
-  # rownames(gbm_matrix) = rownames(featureData)
-  # dgTMatrix makes som crash R, I guess it is because it is calling a C function that is able to handle it...
-  geneNames <- somFunction(iData = gbm_matrix, nSom = nSOM, geneName = genesin)
+  geneNames <- somFunction(iData = scEx_matrix, nSom = nSOM, geneName = genesin)
   output$somGenes <- renderText({
     paste(featureData[geneNames, "Associated.Gene.Name"], collapse = ", ", sep = ",")
   })
@@ -523,7 +442,7 @@ heatmapSOMReactive <- reactive({
   colnames(annotation) <- c("Cluster", "sampleNames")
 
   retVal <- list(
-    mat = gbm_matrix[geneNames, ],
+    mat = scEx_matrix[geneNames, ],
     cluster_rows = TRUE,
     cluster_cols = TRUE,
     scale = "row",
@@ -541,12 +460,6 @@ heatmapSOMReactive <- reactive({
         "RdBu"
     )))(6)
   )
-  # pheatmap(gbm_matrix[rownames(gbm_matrix)[1:10], ],
-  #          cluster_rows = TRUE,
-  #          cluster_cols = TRUE,
-  #          scale = "row")
-  # do.call(pheatmap, retVal)
-
 
   end.time <- Sys.time()
   cat(file = stderr(), paste("===heatmapSOMReactive:done", difftime(end.time, start.time, units = "min"), " min\n"))

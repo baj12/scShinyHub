@@ -4,16 +4,16 @@ require(SingleCellExperiment)
 
 # here we define reactive values/variables
 
-# scaterReadsFunc <- function(gbm, gbm_log, fd){
-scaterReadsFunc <- function(gbm, fd) {
+# scaterReadsFunc <- function(scEx, scEx_log, fd){
+scaterReadsFunc <- function(scEx, fd) {
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   }
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
   
-  counts <- as(exprs(gbm), "dgCMatrix")
+  counts <- as(assays(scEx)[[1]], "dgCMatrix")
   
-  anno <- pData(gbm)
+  anno <- colData(scEx)
   anno$sample_id <- anno$sampleNames
   anno$fixed <- "red"
   # anno$individual= "NA1"
@@ -50,14 +50,14 @@ scaterReadsFunc <- function(gbm, fd) {
 
 scaterReads <- reactive({
   if (DEBUG) cat(file = stderr(), "scaterReads\n")
-  gbm <- gbm()
-  # gbm_log = gbm_log()
+  scEx <- scEx()
+  # scEx_log = scEx_log()
   fd <- featureDataReact()
-  if (is.null(gbm) | is.null(gbm_log)) {
+  if (is.null(scEx)) {
     return(NULL)
   }
-  # return(scaterReadsFunc(gbm, gbm_log, fd))
-  return(scaterReadsFunc(gbm, fd))
+  # return(scaterReadsFunc(scEx, scEx_log, fd))
+  return(scaterReadsFunc(scEx, fd))
 })
 
 
@@ -251,7 +251,7 @@ tsne.data <- reactive({
 })
 
 umapReact <- reactive({
-  gbmlog <- gbm_log()
+  scExlog <- scEx_log()
   
   start.time <- base::Sys.time()
   set.seed(input$um_randSeed)
@@ -283,7 +283,7 @@ umapReact <- reactive({
   
   
   
-  if (is.null(gbmlog)) {
+  if (is.null(scExlog)) {
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
     return(NULL)
   }
@@ -295,13 +295,13 @@ umapReact <- reactive({
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
     return(NULL)
   }
-  umapData <- as.matrix(exprs(gbmlog))
+  umapData <- as.matrix(assays(scEx_log)[[1]])
   compCases = complete.cases(umapData)
   
   # TODO it might be possible to reuse nearest neighbor information to speeed up recomputations
   # with eg. new seed
   
-  embedding <- uwot::umap(t(as.matrix(exprs(gbmlog))),
+  embedding <- uwot::umap(t(as.matrix(assays(scEx_log)[[1]])),
                           n_neighbors = n_neighbors,
                           n_components = n_components, n_epochs = n_epochs,
                           # alpha = alpha,
@@ -318,7 +318,7 @@ umapReact <- reactive({
   )
   embedding = as.data.frame(embedding)
   colnames(embedding) = paste0("UMAP", 1:n_components)
-  rownames(embedding) = colnames(gbmlog)
+  rownames(embedding) = colnames(scExlog)
   
   end.time <- Sys.time()
   if (DEBUG)

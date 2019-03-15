@@ -95,7 +95,7 @@ clusterServer <- function(input, output, session,
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
     featureData <- featureDataReact()
-    gbm <- gbm()
+    scEx <- scEx()
     if (DEBUG) {
       cat(file = stderr(), "+++cluster: selectedCellNames\n")
     }
@@ -117,7 +117,7 @@ clusterServer <- function(input, output, session,
       geneNames = geneNames,
       geneNames2 = geneNames2,
       featureData = featureData,
-      gbm = gbm, projections = projections
+      scEx = scEx, projections = projections
     )
 
     subsetData <- subset(projections, dbCluster %in% inpClusters)
@@ -163,7 +163,7 @@ clusterServer <- function(input, output, session,
       geneNames <- input$geneIds
       geneNames2 <- input$geneIds2
       featureData <- featureDataReact()
-      gbm <- gbm()
+      scEx <- scEx()
 
       if (DEBUGSAVE) {
         cat(file = stderr(), paste("selectedCell: saving\n"))
@@ -176,7 +176,7 @@ clusterServer <- function(input, output, session,
           geneNames = geneNames,
           geneNames2 = geneNames2,
           featureData = featureData,
-          gbm = gbm, projections = projections
+          scEx = scEx, projections = projections
         )
 
         subsetData <- subset(projections, dbCluster %in% inpClusters)
@@ -224,8 +224,8 @@ clusterServer <- function(input, output, session,
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
     featureData <- featureDataReact()
-    gbm <- gbm()
-    gbm_log <- gbm_log()
+    scEx <- scEx()
+    scEx_log <- scEx_log()
     projections <- tData()
     grpNs <- groupNames$namesDF
     grpN <- make.names(input$groupName)
@@ -242,7 +242,7 @@ clusterServer <- function(input, output, session,
     divXBy <- input$devideXBy
     divYBy <- input$devideYBy
 
-    if (is.null(featureData) | is.null(gbm) | is.null(gbm_log) | is.null(projections)) {
+    if (is.null(featureData) | is.null(scEx) | is.null(scEx_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
@@ -265,7 +265,7 @@ clusterServer <- function(input, output, session,
     if (is.null(divXBy)) divXBy <- "None"
     if (is.null(divYBy)) divYBy <- "None"
     
-    p1 <- plot2Dprojection(gbm_log, gbm, projections, g_id, featureData, geneNames,
+    p1 <- plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
                            geneNames2, dimX, dimY, clId, grpN, legend.position,
                            grpNs = grpNs, logx, logy, divXBy, divYBy
     )
@@ -324,7 +324,7 @@ clusterServer <- function(input, output, session,
     input$changeGroups # action button
     addToSelection <- addToGroupValue
     # we want to react on a changed filename
-    gbm <- gbm()
+    scEx <- scEx()
     
     if (DEBUG) {
       cat(file = stderr(), "cluster: changeGroups\n")
@@ -335,7 +335,7 @@ clusterServer <- function(input, output, session,
     isolate({
       prjs <- sessionProjections$prjs
       # brushedPs <- event_data("plotly_selected", source = "subset")
-      # gbm <- gbm()
+      # scEx <- scEx()
       inpClusters <- input$clusters
       grpN <- make.names(input$groupName)
       grpNs <- groupNames$namesDF
@@ -345,7 +345,7 @@ clusterServer <- function(input, output, session,
         initializeGroupNames()
         grpNs <- groupNames$namesDF
       }
-      if (is.null(gbm)) {
+      if (is.null(scEx)) {
         return(NULL)
       }
     })
@@ -502,7 +502,7 @@ clusterServer <- function(input, output, session,
     dimY <- input$dimension_y
     dimX <- input$dimension_x
     featureData <- featureDataReact()
-    gbm <- gbm()
+    scEx <- scEx()
 
     if (!myshowCells) {
       return("")
@@ -528,7 +528,7 @@ clusterServer <- function(input, output, session,
       geneNames = geneNames,
       geneNames2 = geneNames2,
       featureData = featureData,
-      gbm = gbm, projections = projections
+      scEx = scEx, projections = projections
     )
 
     # cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
@@ -672,13 +672,13 @@ tableSelectionServer <- function(input, output, session,
 
 heatmapModuleFunc <- function(
                               featureData,
-                              gbm_matrix,
+                              scEx_matrix,
                               projections,
                               # genesin,
                               cells) {
   # genesin <- geneName2Index(genesin, featureData)
-  # expression <- gbm_matrix[genesin, cells]
-  expression <- gbm_matrix[, cells]
+  # expression <- scEx_matrix[genesin, cells]
+  expression <- scEx_matrix[, cells]
 
   validate(need(
     is.na(sum(expression)) != TRUE,

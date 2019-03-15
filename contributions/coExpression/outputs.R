@@ -55,10 +55,10 @@ heatmapReactive <- reactive({
   )
   if (DEBUG) cat(file = stderr(), "output$heatmap\n")
   featureData <- featureDataReact()
-  gbm_log <- gbm_log()
+  scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$heatmap_geneids
-  if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
     return(list(
       src = "empty.png",
       contentType = "image/png",
@@ -75,149 +75,21 @@ heatmapReactive <- reactive({
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/heatmap.RData")
-  gbm_matrix <- exprs(gbm_log)
+  scEx_matrix <- assays(scEx_log)[[1]]
   retval <- coE_heatmapFunc(
-    featureData = featureData, gbm_matrix = gbm_matrix,
-    projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
+    featureData = featureData, scEx_matrix = scEx_matrix,
+    projections = projections, genesin = genesin, cells = colnames(scEx_matrix)
   )
 
   return(retval)
 })
 
 
-#   if (DEBUG) cat(file = stderr(), "output$heatmapReactive\n")
-#   genesin <- input$heatmap_geneids
-#   featureData <- featureDataReact()
-#   gbm_log <- gbm_log()
-#   projections <- projections()
-#   if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
-#     return(list(
-#       src = "empty.png",
-#       contentType = "image/png",
-#       width = 96,
-#       height = 96,
-#       alt = "heatmap should be here"
-#     ))
-#   }
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     showNotification("heatmap", id = "heatmap", duration = NULL)
-#   }
-#   if (DEBUG) cat(file = stderr(), "output$heatmapReactive 2\n")
-#
-#   if (DEBUGSAVE) {
-#     cat(file = stderr(), "output$heatmapReactive save\n")
-#     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
-#     cat(file = stderr(), "output$heatmapReactive save done\n")
-#   }
-#   # load(file = "~/scShinyHubDebug/heatmap.RData")
-#   gbm_matrix <- as.matrix(exprs(gbm_log))
-#   cells = colnames(gbm_matrix)
-#   genesin <- geneName2Index(genesin, featureData)
-#   expression <- gbm_matrix[genesin, cells]
-#   validate(need(
-#     is.na(sum(expression)) != TRUE,
-#     "Gene symbol incorrect or genes not expressed"
-#   ))
-#
-#   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
-#
-#   # expression <- expression[, rownames(projections)]
-#   expression <- expression[complete.cases(expression), ]
-#
-#   if (!("sample" %in% colnames(projections))) {
-#     projections$sample <- 1
-#   }
-#   annotation <- data.frame(projections[cells, c("dbCluster", "sample")])
-#   rownames(annotation) <- colnames(expression)
-#   colnames(annotation) <- c("Cluster", "sample")
-#
-#   # For high-res displays, this will be greater than 1
-#   pixelratio <- session$clientData$pixelratio
-#   if (is.null(pixelratio)) pixelratio <- 1
-#   width <- session$clientData$output_plot_width
-#   height <- session$clientData$output_plot_height
-#   if (is.null(width)) {
-#     width <- 96 * 7
-#   } # 7x7 inch output
-#   if (is.null(height)) {
-#     height <- 96 * 7
-#   }
-#   outfile <- paste0(tempdir(), "/heatmap", base::sample(1:10000, 1), ".png")
-#   filename = normalizePath(outfile)
-#   cat(file = stderr(), paste("saving to: ", outfile, "\n"))
-#   # this can fail with na/inf in hclust error message if there is a row with all the same values
-#   # med = median(as.vector(as.matrix(expression)))
-#   # stDev = sd(as.vector(as.matrix(expression)))
-#   # minBreak = max(0, med - 3* stDev)
-#   # maxBreak = med + 3* stDev
-#   # stepBreak = (maxBreak - minBreak) / 6
-#   nonZeroRows <- which(rowSums(expression) > 0)
-#   retVal <- list(
-#     mat = as.matrix(expression)[nonZeroRows, order(annotation[, 1], annotation[, 2])],
-#     cluster_rows = TRUE,
-#     cluster_cols = FALSE,
-#     scale = "row",
-#     fontsize_row = 10,
-#     labels_col = colnames(expression),
-#     labels_row = featureData[rownames(expression), "Associated.Gene.Name"],
-#     show_rownames = TRUE,
-#     annotation_col = annotation,
-#     show_colnames = FALSE,
-#     annotation_legend = TRUE,
-#     # breaks = seq(minBreak, maxBreak, by = stepBreak),
-#     # filename = 'test.png',
-#     # filename = normalizePath(outfile),
-#     colorRampPalette(rev(brewer.pal(
-#       n = 6, name =
-#         "RdBu"
-#     )))(6)
-#   )
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     removeNotification(id = "heatmap")
-#   }
-#
-#   retVal
-# })
 
 # All clusters heat map ------
 callModule(pHeatMapModule, "coExpHeatmapModule", heatmapReactive)
 
 
-# # TODO mnodule for heatmap?
-# output$heatmap <- renderImage({
-#   if (DEBUG) cat(file = stderr(), "output$heatmap\n")
-#   featureData <- featureDataReact()
-#   gbm_log <- gbm_log()
-#   projections <- projections()
-#   genesin <- input$heatmap_geneids
-#   if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
-#     return(list(
-#       src = "empty.png",
-#       contentType = "image/png",
-#       width = 96,
-#       height = 96,
-#       alt = "heatmap should be here"
-#     ))
-#   }
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     showNotification("heatmap", id = "heatmap", duration = NULL)
-#   }
-#
-#   if (DEBUGSAVE) {
-#     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
-#   }
-#   # load(file = "~/scShinyHubDebug/heatmap.RData")
-#   gbm_matrix <- as.matrix(exprs(gbm_log))
-#   retval <- heatmapFunc(
-#     featureData = featureData, gbm_matrix = gbm_matrix,
-#     projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
-#   )
-#
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     removeNotification(id = "heatmap")
-#   }
-#   return(retval)
-# })
 
 
 # 2D plot with selection of cells ------
@@ -264,7 +136,7 @@ output$plotCoExpression <- renderPlot({
   # if (vvvvvvv$doPlot == FALSE)
   #   return()
   featureData <- featureDataReact()
-  gbm_log <- log2cpm()
+  scEx_log <- log2cpm()
   upI <- updateInputXviolinPlot() # no need to check because this is done in projections
   projections <- projections()
   if (is.null(featureData) |
@@ -287,7 +159,7 @@ output$plotCoExpression <- renderPlot({
   # load(file="~/scShinyHubDebug/plotCoExpression.RData")
   p1 <- plotCoExpressionFunc(
     featureData,
-    gbm_log,
+    scEx_log,
     upI,
     projections,
     genesin,
@@ -413,7 +285,7 @@ output$geneGrp_vio_plot <- renderPlot({
   #   return()
   featureData <- featureDataReact()
   projections <- projections()
-  gbm <- gbm()
+  scEx <- scEx()
   geneListStr <- input$geneGrpVioIds
   projectionVar <- input$dimension_xVioiGrp
   minExpr <- input$coEminExpr
@@ -433,7 +305,7 @@ output$geneGrp_vio_plot <- renderPlot({
   retVal <- geneGrp_vioFunc(
     genesin = geneListStr,
     projections = projections,
-    gbm = gbm,
+    scEx = scEx,
     featureData = featureData,
     minExpr = minExpr,
     dbCluster = projectionVar,

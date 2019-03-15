@@ -58,15 +58,15 @@ genesin <- c("h2afx,cdkn2a,cdkn1a")
 
 ```{r heatmap}
 
-gbm_matrix <- as.matrix(exprs(gbm_log))
+scEx_matrix <- as.matrix(assays(scEx_log)[[1]])
 # genesin <- c("h2afx,cdkn2a,cdkn1a")
 
 genesin2 <- geneName2Index(genesin, featuredata)
-genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(gbm_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
+genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
 
 heatmapData <- coE_heatmapFunc(
-  featureData = featuredata, gbm_matrix = gbm_matrix,
-  projections = projections, genesin = genesin, cells = colnames(gbm_matrix)
+  featureData = featuredata, scEx_matrix = scEx_matrix,
+  projections = projections, genesin = genesin, cells = colnames(scEx_matrix)
 )
 addColNames <- input$"coExpHeatmapModule-ColNames"
 orderColNames <- input$"coExpHeatmapModule-orderNames"
@@ -104,7 +104,7 @@ do.call(pheatmap, heatmapData)
   retVal <- geneGrp_vioFunc(
     genesin = geneListStr,
     projections = proje,
-    gbm = gbm,
+    scEx = scEx,
     featureData = featureData,
     minExpr = minExpr,
     dbCluster = projectionVar
@@ -118,10 +118,10 @@ do.call(pheatmap, heatmapData)
 
     map <-
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
-expression <- colSums(as.matrix(exprs(gbm[map, ])) >= minExpr)
+expression <- Matrix::colSums(assays(scEx_log)[[1]][map, ] >= minExpr)
   
 
-ttt=t(as.matrix(exprs(gbm[map, ])))
+ttt=t(as.matrix(assays(scEx_log)[[1]][map, ]))
 ```
 
 

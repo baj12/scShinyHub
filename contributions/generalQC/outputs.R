@@ -80,23 +80,6 @@ output$tsne_main <- renderPlotly({
   return(layout(p))
 })
 
-# output$umap_main <- renderPlotly({
-#   embedding <- umapReact()
-#   gbmlog <- gbm_log()
-#   pointSize <- 1
-#   if (is.null(embedding)) {
-#     if (DEBUG) cat(file = stderr(), "output$umap_main:NULL\n")
-#     return(NULL)
-#   }
-#   if (DEBUGSAVE) {
-#     save(file = "~/scShinyHubDebug/umap_main.RData", list = c(ls(), ls(envir = globalenv())))
-#   }
-#   
-#   # outTab$UMAP1 = embedding$UMAP1
-#   # outTab$UMAP2 = embedding$UMAP2
-#   embedding %>%
-#      ggplot(aes_string(UMAP1, UMAP2)) + geom_point(size = pointSize)
-# })
 
   callModule(
     clusterServer,
@@ -113,11 +96,11 @@ r <- callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)
 
 output$plotUmiHist <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output_plotUmiHist\n")
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  scEx <- scEx()
+  if (is.null(scEx)) {
     return(NULL)
   }
-  hist(Matrix::colSums(exprs(gbm)), breaks = 50, main = "histogram of number of UMIs per cell")
+  hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main = "histogram of number of UMIs per cell")
 })
 
 output$plotSampleHist <- renderPlot({

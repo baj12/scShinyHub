@@ -18,8 +18,8 @@ output$Dummy_plot <- renderPlot({
 
 output$DummySavedPlot <- renderImage({
   if (DEBUG) cat(file = stderr(), paste("DummySavedPlot:\n"))
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  scEx <- scEx()
+  if (is.null(scEx)) {
     if (DEBUG) cat(file = stderr(), paste("DummySavedPlot:NULL\n"))
     return(NULL)
   }

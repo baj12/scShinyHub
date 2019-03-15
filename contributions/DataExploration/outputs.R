@@ -47,11 +47,11 @@ output$gene_vio_plot <- renderPlot({
   #   return()
   featureData <- featureDataReact()
   # log2cpm = log2cpm()
-  gbm_log <- gbm_log()
+  scEx_log <- scEx_log()
   projections <- projections()
   g_id <- input$gene_id
 
-  if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
     if (DEBUG) cat(file = stderr(), "output$gene_vio_plot:NULL\n")
     return(NULL)
   }
@@ -65,11 +65,11 @@ output$gene_vio_plot <- renderPlot({
   # geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
   #                                        toupper(input$gene_id)), ])[1]
 
-  # expression <- exprs(gbm_log)[geneid, ]
+  # expression <- exprs(scEx_log)[geneid, ]
   if (length(geneid) == 1) {
-    expression <- exprs(gbm_log)[geneid, ]
+    expression <- assays(scEx_log)[[1]][geneid, ]
   } else {
-    expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
+    expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, ])
   }
 
   validate(need(is.na(sum(expression)) != TRUE, ""))
@@ -121,9 +121,9 @@ output$downloadExpression <- downloadHandler(
   content = function(file) {
     featureData <- featureDataReact()
     # log2cpm = log2cpm()
-    gbm_log <- gbm_log()
+    scEx_log <- scEx_log()
     projections <- projections()
-    if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+    if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
       return(NULL)
     }
     if (DEBUGSAVE) {
@@ -133,7 +133,7 @@ output$downloadExpression <- downloadHandler(
     geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
       toupper(input$gene_id)), ])[1]
 
-    expression <- exprs(gbm_log)[geneid, ]
+    expression <- assays(scEx_log)[[1]][geneid, ]
     # cat(stderr(),colnames(expression)[1:5])
     projections <- cbind(projections, t(expression))
     # if(DEBUG)cat(file=stderr(),grep('^T_',rownames(projections)))
@@ -151,16 +151,16 @@ output$downloadExpression <- downloadHandler(
     # if(DEBUG)cat(file=stderr(),cells[1:5])
 
     if (length(cells) == 1) {
-      subsetExpression <- exprs(gbm_log)[, cells]
+      subsetExpression <- assays(scEx_log)[[1]][, cells]
       subsetExpression <-
-        as.data.frame(subsetExpression, row.names = rownames(gbm_log))
+        as.data.frame(subsetExpression, row.names = rownames(scEx_log))
       colnames(subsetExpression) <- cells
       subsetExpression$Associated.Gene.Name <-
         featureData[rownames(subsetExpression), "Associated.Gene.Name"]
       write.csv(subsetExpression, file)
     }
     else {
-      subsetExpression <- exprs(gbm_log)[, cells]
+      subsetExpression <- assays(scEx_log)[[1]][, cells]
       # cat(stderr(),colnames(subsetExpression)[1:5])
 
       subsetExpression$Associated.Gene.Name <-
@@ -197,10 +197,10 @@ output$panelPlot <- renderPlot({
 
   featureData <- featureDataReact()
   # log2cpm = log2cpm()
-  gbm_log <- gbm_log()
-  gbm <- gbm()
+  scEx_log <- scEx_log()
+  scEx <- scEx()
   projections <- projections()
-  if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
 
@@ -213,6 +213,9 @@ output$panelPlot <- renderPlot({
   cl4 <- input$clusters4
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
+  
+  if (is.null(cl4)) return(NULL)
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/panelPlot.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -227,7 +230,7 @@ output$panelPlot <- renderPlot({
     ymax <- 0
     for (i in 1:length(genesin)) {
       geneIdx <- which(featureData$Associated.Gene.Name == genesin[i])
-      ymax <- max(ymax, max(Matrix::colSums(exprs(gbm)[geneIdx, , drop = FALSE])))
+      ymax <- max(ymax, max(Matrix::colSums(assays(scEx)[[1]][geneIdx, , drop = FALSE])))
     }
     ylim <- c(0, ymax)
   }
@@ -238,7 +241,7 @@ output$panelPlot <- renderPlot({
         as.numeric(
           cut(
             as.numeric(
-              exprs(gbm_log)[
+              assays(scEx_log)[[1]][
                 rownames(featureData[geneIdx, ]),
               ]
             ),
@@ -247,7 +250,7 @@ output$panelPlot <- renderPlot({
         )
       ]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- Matrix::colSums(exprs(gbm)[geneIdx, , drop = FALSE])
+        projections[, dimy4] <- Matrix::colSums(assays(scEx)[[1]][geneIdx, , drop = FALSE])
       }
 
       plot(projections[, dimx4], projections[, dimy4],
@@ -265,7 +268,7 @@ output$panelPlot <- renderPlot({
         as.numeric(
           cut(
             as.numeric(
-              exprs(gbm_log)[
+              assays(scEx_log)[[1]][
                 rownames(featureData[geneIdx, ]),
               ]
             ),
@@ -277,7 +280,7 @@ output$panelPlot <- renderPlot({
       names(Col) <- rownames(projections)
       plotCol <- Col[rownames(subsetTSNE)]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- Matrix::colSums(exprs(gbm)[geneIdx, , drop = FALSE])
+        projections[, dimy4] <- Matrix::colSums(assays(scEx)[[1]][geneIdx, , drop = FALSE])
         subsetTSNE <- subset(projections, dbCluster == cl4)
       }
 
@@ -312,11 +315,11 @@ output$tsne_plt <- renderPlotly({
   #   return()
   featureData <- featureDataReact()
   # log2cpm = log2cpm()
-  gbm_log <- gbm_log()
+  scEx_log <- scEx_log()
   g_id <- input$gene_id
   projections <- projections()
 
-  if (is.null(featureData) | is.null(gbm_log) | is.null(projections)) {
+  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -328,9 +331,9 @@ output$tsne_plt <- renderPlotly({
   geneid <- geneName2Index(g_id, featureData)
 
   if (length(geneid) == 1) {
-    expression <- exprs(gbm_log)[geneid, ]
+    expression <- assays(scEx_log)[[1]][geneid, ]
   } else {
-    expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
+    expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, ])
   }
 
   # expression <- log2cpm[geneid, ]

@@ -437,8 +437,8 @@ Be aware that the standard parameters are set for project that I am currently wo
 * `useCells`
   cells selected using the user interface. 
   
-* `gbm`
-  data structure from cellranger that holds the original unmodified count data. Contains only the genes/cells that have been selected.
+* `scEx`
+  data structure of class singleCellExperiment that holds the original unmodified count data. Contains only the genes/cells that have been selected.
   
 * `featureDataReact`
   feature data with gene name mappings. Contains only the genes/cells that have been selected.
