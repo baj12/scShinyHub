@@ -278,7 +278,8 @@ if (DEBUG) cat(file = stderr(), "projections\n")
 clustering <- kmClustering
 projections <- data.frame(tsne$Y)
 colnames(projections) <- paste0("tsne", c(1:ncol(projections)))
-projections$dbCluster <- factor(clustering$kmeans_10_clusters$Cluster - 1)
+# projections$dbCluster <- factor(clustering$kmeans_10_clusters$Cluster - 1)
+projections$dbCluster <- factor(clustering$kmeans_10_clusters$Cluster )
 
 projections <- cbind(projections, data.frame(pca$x[, c(1, 2, 3)]))
 

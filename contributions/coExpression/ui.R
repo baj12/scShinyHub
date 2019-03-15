@@ -48,7 +48,7 @@ tabList <- list(
         textInput("gene_id_sch", "Enter gene", value = defaultValueSingleGene)
       ),
       column(
-        10,
+        12,
         clusterUI("selected")
       )
     ),
@@ -59,10 +59,11 @@ tabList <- list(
       textInput("heatmap_geneids2", "Comma seperated gene names", value = defaultValueMultiGenes)
     )),
     fluidRow(column(
-      10,
-      offset = 1,
-      pHeatMapUI("heatmapSelectedModule") %>% withSpinner()
-    )), br(),
+      12,
+      offset = 0,
+      pHeatMapUI("heatmapSelectedModule")
+    )), 
+    # br(),
     fluidRow(
       column(
         3,
@@ -184,8 +185,8 @@ tabList <- list(
         selectInput(
           "dimension_xVioiGrp",
           label = "X",
-          choices = c("tsne1", "tsne2", "tsne3"),
-          selected = "tsne1"
+          choices = c("dbCluster", "sampleName", "tsne3"),
+          selected = "dbCluster"
         )
       ),
       column(
@@ -199,7 +200,7 @@ tabList <- list(
     br(),
     fluidRow(column(
       12,
-      plotOutput("geneGrp_vio_plot") %>% withSpinner()
+      jqui_resizable(plotOutput("geneGrp_vio_plot") )
     ))
   ),
   tabList = tabItem(

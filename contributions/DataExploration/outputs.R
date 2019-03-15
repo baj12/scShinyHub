@@ -186,8 +186,8 @@ output$clusters4 <- renderUI({
     selectInput(
       "clusters4",
       label = "Cluster",
-      choices = c(c("All"), c(0:noOfClusters)),
-      selected = 0
+      choices = c(c("All"), c(1:noOfClusters)),
+      selected = "All"
     )
   }
 })
@@ -227,7 +227,7 @@ output$panelPlot <- renderPlot({
     ymax <- 0
     for (i in 1:length(genesin)) {
       geneIdx <- which(featureData$Associated.Gene.Name == genesin[i])
-      ymax <- max(ymax, max(colSums(as.matrix(exprs(gbm)[geneIdx, , drop = FALSE]))))
+      ymax <- max(ymax, max(Matrix::colSums(exprs(gbm)[geneIdx, , drop = FALSE])))
     }
     ylim <- c(0, ymax)
   }
@@ -247,7 +247,7 @@ output$panelPlot <- renderPlot({
         )
       ]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- colSums(as.matrix(exprs(gbm)[geneIdx, , drop = FALSE]))
+        projections[, dimy4] <- Matrix::colSums(exprs(gbm)[geneIdx, , drop = FALSE])
       }
 
       plot(projections[, dimx4], projections[, dimy4],
@@ -277,7 +277,7 @@ output$panelPlot <- renderPlot({
       names(Col) <- rownames(projections)
       plotCol <- Col[rownames(subsetTSNE)]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- colSums(as.matrix(exprs(gbm)[geneIdx, , drop = FALSE]))
+        projections[, dimy4] <- Matrix::colSums(exprs(gbm)[geneIdx, , drop = FALSE])
         subsetTSNE <- subset(projections, dbCluster == cl4)
       }
 

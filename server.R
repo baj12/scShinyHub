@@ -4,6 +4,7 @@
 
 library(shiny)
 library(shinyTree)
+library(tibble)
 library(shinyBS)
 library(plotly)
 library(shinythemes)
@@ -16,7 +17,6 @@ library(RColorBrewer)
 library(mclust)
 library(reshape)
 # library(cellrangerRkit)
-# library(SCORPIUS)
 library(ggplot2)
 library(knitr)
 library(kableExtra)
@@ -98,7 +98,8 @@ shinyServer(function(input, output, session) {
   projectionFunctions <<- list(
     c("sampleNames", "sample"),
     c("Gene count", "geneCount"),
-    c("UMI count", "umiCount")
+    c("UMI count", "umiCount"),
+    c("before filter", "beforeFilterPrj")
   )
 
 

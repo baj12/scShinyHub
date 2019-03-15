@@ -35,7 +35,7 @@ dge <- reactive({
   )
   if (DEBUG) cat(file = stderr(), "dge\n")
   featureData <- featureDataReact()
-  log2cpm <- log2cpm()
+  gbmLog <- gbm_log()
   prj <- projections()
   gn <- groupNames$namesDF
 
@@ -44,7 +44,7 @@ dge <- reactive({
   db2 <- input$db2
 
   # dbcl = dbCluster
-  if (is.null(featureData) | is.null(log2cpm) | is.null(prj)) {
+  if (is.null(featureData) | is.null(gbmLog) | is.null(prj)) {
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
@@ -60,7 +60,7 @@ dge <- reactive({
   # load(file='~/scShinyHubDebug/dge.RData')
 
   toReturn <- dge_func(
-    projections = prj, log2cpm = log2cpm,
+    projections = prj, log2cpm = as.data.frame(as.matrix(exprs(gbmLog))),
     featureData = featureData,
     dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2
   )
