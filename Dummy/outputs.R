@@ -5,13 +5,13 @@ output$Dummy_plot <- renderPlot({
   if (is.null(projections) | is.null(dummyNRow)) {
     return(NULL)
   }
-
+  
   if (DEBUG) cat(file = stderr(), paste("Dummy_plot:\n"))
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/Dummy_plot.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/Dummy_plot.RData")
-
+  
   plot(dummyNRow)
 })
 

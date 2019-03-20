@@ -1,4 +1,4 @@
-# general reactive f 
+# general reactive
 # (same as global variables, but they are reactive to manipulation and are lazy, i.e. they only get executed when needed.)
 
 # # default values
@@ -780,15 +780,15 @@ pcaFunc <- function(scEx_log) {
     # TODO test for speed and accuracy
     require(irlba)
     system.time(prcomp_irlba(assays(scEx_log)[[1]], n = 10, 
-                 retx = TRUE, 
-                 center = Matrix::colMeans(assays(scEx_log)[[1]]),
-                 fastpath=FALSE,
-                 scale. = FALSE))
+                             retx = TRUE, 
+                             center = Matrix::colMeans(assays(scEx_log)[[1]]),
+                             fastpath=FALSE,
+                             scale. = FALSE))
     system.time(irlba::irlba(assays(scEx_log)[[1]], n = 10, 
-                 retx = TRUE, 
-                 center = Matrix::colMeans(assays(scEx_log)[[1]]),
-                 fastpath=FALSE,
-                 scale. = FALSE))
+                             retx = TRUE, 
+                             center = Matrix::colMeans(assays(scEx_log)[[1]]),
+                             fastpath=FALSE,
+                             scale. = FALSE))
     # colnames(data)[colnames(data) == "totalvar"] <- "tot_var"
     # xx$center
     

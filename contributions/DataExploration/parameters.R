@@ -38,7 +38,7 @@ scEx_logNormalization <- reactive({
     cat(file = stderr(), "scEx_logNormalization\n")
   }
   scEx <- scEx()
-
+  
   if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "scEx_logNormalization:NULL\n")
@@ -49,10 +49,10 @@ scEx_logNormalization <- reactive({
     save(file = "~/scShinyHubDebug/scEx_logNormalization.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/scEx_logNormalization.RData")
-
+  
   # use_genes <- get_nonzero_genes(scEx)
   use_genes <- sort(unique(1 + slot(as(assays(scEx)[[1]], "dgTMatrix"), 
-                              "i")))
+                                    "i")))
   
   bc_sums <- Matrix::colSums(assays(scEx)[[1]])
   median_sum <- median(bc_sums)
@@ -63,15 +63,15 @@ scEx_logNormalization <- reactive({
   #   template = scEx
   # ))
   scEx_bcnorm <- SingleCellExperiment(assay = as(A,"dgTMatrix"),
-                                             colData = colData(scEx),
-                                             rowData = rowData(scEx))
+                                      colData = colData(scEx),
+                                      rowData = rowData(scEx))
   
-  # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)sarg
+  # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
   # gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
   x <- uniqTsparse(assays(scEx_bcnorm)[[1]])
   slot(x, "x") <- log(1 + slot(x, "x"), base = 2) * scalingFactor
   assays(scEx_bcnorm)[[1]] <- x
-
+  
   if (DEBUG) {
     cat(file = stderr(), "scEx_logNormalization:Done\n")
   }
