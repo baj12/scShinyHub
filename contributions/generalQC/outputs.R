@@ -100,7 +100,7 @@ output$plotUmiHist <- renderPlot({
   if (is.null(scEx)) {
     return(NULL)
   }
-  hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main = "histogram of number of UMIs per cell")
+  hist(Matrix::colSums(assays(scEx)[["counts"]]), breaks = 50, main = "histogram of number of UMIs per cell")
 })
 
 output$plotSampleHist <- renderPlot({

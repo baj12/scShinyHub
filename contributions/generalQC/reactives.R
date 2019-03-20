@@ -5,37 +5,37 @@ require(SingleCellExperiment)
 # here we define reactive values/variables
 
 # scaterReadsFunc <- function(scEx, scEx_log, fd){
-scaterReadsFunc <- function(scEx, fd) {
+scaterReadsFunc <- function(scEx) {
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   }
   # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
   
-  counts <- as(assays(scEx)[[1]], "dgCMatrix")
+  # counts <- as(assays(scEx)[["counts"]], "dgCMatrix")
+  # 
+  # anno <- colData(scEx)
+  # anno$sample_id <- anno$sampleNames
+  # anno$fixed <- "red"
+  # # anno$individual= "NA1"
+  # # anno$replicate = "r1"
+  # # anno$well = "A01"
+  # # anno$batch = "b1"
+  # pheno_data <- new("AnnotatedDataFrame", anno)
+  # # rownames(pheno_data) <- pheno_dat
+  # 
+  # reads <- SingleCellExperiment(
+  #   assays = list(counts = counts),
+  #   colData = anno
+  # )
+  ercc <- rownames(scEx)[grepl("ERCC-", rownames(scEx))]
   
-  anno <- colData(scEx)
-  anno$sample_id <- anno$sampleNames
-  anno$fixed <- "red"
-  # anno$individual= "NA1"
-  # anno$replicate = "r1"
-  # anno$well = "A01"
-  # anno$batch = "b1"
-  pheno_data <- new("AnnotatedDataFrame", anno)
-  # rownames(pheno_data) <- pheno_dat
+  mt <- rownames(scEx)[grepl("^MT", rownames(scEx))]
   
-  reads <- SingleCellExperiment(
-    assays = list(counts = counts),
-    colData = anno
+  scEx <- scater::calculateQCMetrics(
+    scEx
   )
-  ercc <- rownames(reads)[grepl("ERCC-", rownames(reads))]
-  
-  mt <- rownames(reads)[grepl("^MT", rownames(reads))]
-  
-  reads <- scater::calculateQCMetrics(
-    reads
-  )
-  filter_by_expr_features <- (reads$total_features_by_counts > 200)
-  reads$use <- (
+  filter_by_expr_features <- (scEx$total_features_by_counts > 200)
+  scEx$use <- (
     # sufficient features (genes)
     filter_by_expr_features
     # sufficient molecules counted
@@ -45,19 +45,18 @@ scaterReadsFunc <- function(scEx, fd) {
     # remove cells with unusual number of reads in MT genes
     # filter_by_MT
   )
-  return(reads)
+  return(scEx)
 }
 
 scaterReads <- reactive({
   if (DEBUG) cat(file = stderr(), "scaterReads\n")
   scEx <- scEx()
   # scEx_log = scEx_log()
-  fd <- featureDataReact()
   if (is.null(scEx)) {
     return(NULL)
   }
   # return(scaterReadsFunc(scEx, scEx_log, fd))
-  return(scaterReadsFunc(scEx, fd))
+  return(scaterReadsFunc(scEx))
 })
 
 
@@ -251,7 +250,7 @@ tsne.data <- reactive({
 })
 
 umapReact <- reactive({
-  scExlog <- scEx_log()
+  scEx_log <- scEx_log()
   
   start.time <- base::Sys.time()
   set.seed(input$um_randSeed)
@@ -283,7 +282,7 @@ umapReact <- reactive({
   
   
   
-  if (is.null(scExlog)) {
+  if (is.null(scEx_log)) {
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
     return(NULL)
   }
@@ -318,7 +317,7 @@ umapReact <- reactive({
   )
   embedding = as.data.frame(embedding)
   colnames(embedding) = paste0("UMAP", 1:n_components)
-  rownames(embedding) = colnames(scExlog)
+  rownames(embedding) = colnames(scEx_log)
   
   end.time <- Sys.time()
   if (DEBUG)

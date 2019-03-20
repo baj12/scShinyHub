@@ -38,7 +38,7 @@ scEx_logNormalization <- reactive({
     cat(file = stderr(), "scEx_logNormalization\n")
   }
   scEx <- scEx()
-
+  
   if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "scEx_logNormalization:NULL\n")
@@ -49,29 +49,37 @@ scEx_logNormalization <- reactive({
     save(file = "~/scShinyHubDebug/scEx_logNormalization.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/scEx_logNormalization.RData")
-
-  # use_genes <- get_nonzero_genes(scEx)
-  use_genes <- sort(unique(1 + slot(as(assays(scEx)[[1]], "dgTMatrix"), 
-                              "i")))
   
-  bc_sums <- Matrix::colSums(assays(scEx)[[1]])
+  # use_genes <- get_nonzero_genes(scEx)
+<<<<<<< HEAD
+  use_genes <- sort(unique(1 + slot(as(assays(scEx)[["counts"]], "dgTMatrix"), 
+=======
+  use_genes <- sort(unique(1 + slot(as(assays(scEx)[[1]], "dgTMatrix"), 
+>>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
+                                    "i")))
+  
+  bc_sums <- Matrix::colSums(assays(scEx)[["counts"]])
   median_sum <- median(bc_sums)
-  A <- as(assays(scEx)[[1]], "dgCMatrix")
-  A@x <- A@x / Matrix::colSums(A)[assays(scEx)[[1]]@j + 1L]
+  A <- as(assays(scEx)[["counts"]], "dgCMatrix")
+  A@x <- A@x / Matrix::colSums(A)[assays(scEx)[["counts"]]@j + 1L]
   # new_matrix <- sweep(exprs(scEx), 2, median_sum/bc_sums, "*")
   # scEx_bcnorm <- (newGeneBCMatrix(A, fData(scEx), pData(scEx),
   #   template = scEx
   # ))
+<<<<<<< HEAD
+  scEx_bcnorm <- SingleCellExperiment(assay = list(logcounts = as(A,"dgTMatrix")),
+=======
   scEx_bcnorm <- SingleCellExperiment(assay = as(A,"dgTMatrix"),
-                                             colData = colData(scEx),
-                                             rowData = rowData(scEx))
+>>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
+                                      colData = colData(scEx),
+                                      rowData = rowData(scEx))
   
-  # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)sarg
+  # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
   # gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
   x <- uniqTsparse(assays(scEx_bcnorm)[[1]])
   slot(x, "x") <- log(1 + slot(x, "x"), base = 2) * scalingFactor
   assays(scEx_bcnorm)[[1]] <- x
-
+  
   if (DEBUG) {
     cat(file = stderr(), "scEx_logNormalization:Done\n")
   }

@@ -230,7 +230,7 @@ output$panelPlot <- renderPlot({
     ymax <- 0
     for (i in 1:length(genesin)) {
       geneIdx <- which(featureData$Associated.Gene.Name == genesin[i])
-      ymax <- max(ymax, max(Matrix::colSums(assays(scEx)[[1]][geneIdx, , drop = FALSE])))
+      ymax <- max(ymax, max(Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])))
     }
     ylim <- c(0, ymax)
   }
@@ -250,7 +250,7 @@ output$panelPlot <- renderPlot({
         )
       ]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- Matrix::colSums(assays(scEx)[[1]][geneIdx, , drop = FALSE])
+        projections[, dimy4] <- Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])
       }
 
       plot(projections[, dimx4], projections[, dimy4],
@@ -280,7 +280,7 @@ output$panelPlot <- renderPlot({
       names(Col) <- rownames(projections)
       plotCol <- Col[rownames(subsetTSNE)]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- Matrix::colSums(assays(scEx)[[1]][geneIdx, , drop = FALSE])
+        projections[, dimy4] <- Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])
         subsetTSNE <- subset(projections, dbCluster == cl4)
       }
 

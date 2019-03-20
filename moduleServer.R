@@ -323,8 +323,6 @@ clusterServer <- function(input, output, session,
     ns <- session$ns
     input$changeGroups # action button
     addToSelection <- addToGroupValue
-    # we want to react on a changed filename
-    scEx <- scEx()
     
     if (DEBUG) {
       cat(file = stderr(), "cluster: changeGroups\n")
@@ -333,6 +331,8 @@ clusterServer <- function(input, output, session,
     # we isolate here because we only want to change if the button is clicked.
     # TODO what happens if new file is loaded??? => problem!
     isolate({
+      # we should react on a changed filename, but that would imply calculating pca's etc directly after loading
+      scEx <- scEx()
       prjs <- sessionProjections$prjs
       # brushedPs <- event_data("plotly_selected", source = "subset")
       # scEx <- scEx()

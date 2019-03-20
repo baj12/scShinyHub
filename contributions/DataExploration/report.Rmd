@@ -120,7 +120,7 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
     rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
   
  # expression <- Matrix::colSums(exprs(scEx[map, ]) >= minExpr)
- expression <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr)
+ expression <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr)
 
   projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){

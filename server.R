@@ -22,7 +22,7 @@ library(ggplot2)
 library(knitr)
 library(kableExtra)
 library(shinyWidgets)
-# library(scater)
+library(scater)
 library(shinyMCE)
 library(kohonen)
 library(Rsomoclu)
@@ -192,11 +192,11 @@ shinyServer(function(input, output, session) {
     filename = paste0("counts.", Sys.Date(), ".csv"),
     content = function(file) {
       if (DEBUG) cat(file = stderr(), paste("countcsv: \n"))
-      scExlog <- scEx_log()
-      if (is.null(scExlog)) {
+      scEx_log <- scEx_log()
+      if (is.null(scEx_log)) {
         return(NULL)
       }
-      write.csv(as.matrix(assays(scExlog)[[1]]), file)
+      write.csv(as.matrix(assays(scEx_log)[[1]]), file)
     }
   )
 

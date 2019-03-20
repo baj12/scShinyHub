@@ -181,12 +181,12 @@ if (DEBUG) cat(file = stderr(), paste("scEx:", class(scEx), "\n"))
 
 
 ```{r medianENSG, echo=FALSE}
-medianENSG <- medianENSGfunc(as.matrix(assays(scEx)[[1]]))
+medianENSG <- medianENSGfunc(as.matrix(assays(scEx)[["counts"]]))
 ```
 
 
 ```{r medianUMI, echo=FALSE}
-medianUMI <- medianUMIfunc(as.matrix(assays(scEx)[[1]]))
+medianUMI <- medianUMIfunc(as.matrix(assays(scEx)[["counts"]]))
 ```
 
 ```{r groupNames, echo=FALSE}
@@ -218,7 +218,7 @@ if (DEBUG) cat(file = stderr(), "scEx_log:Done\n")
 
 ```{r scEx_matrix, include=FALSE}
 
-scEx_matrix <- as.matrix(assays(scEx)[[1]])
+scEx_matrix <- as.matrix(assays(scEx)[["counts"]])
 ```
 
 

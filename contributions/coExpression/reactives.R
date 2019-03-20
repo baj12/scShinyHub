@@ -84,7 +84,7 @@ heatmapSelectedReactive <- reactive({
     cat(file = stderr(), "output$heatmapSelectedReactive\n")
   }
   featureData <- featureDataReact()
-  scEx_matrix <- scEx()
+  scEx_matrix <- assays(scEx())[["counts"]]
   projections <- projections()
   genesin <- input$heatmap_geneids2
   sc <- selctedCluster()
@@ -277,7 +277,7 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
   }
 
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
-  expression <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr)
+  expression <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr)
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   ylabText <- "number genes from list"
   # projections = projections[,1:12]
@@ -297,7 +297,7 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
         map <-
           rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
 
-        permIdx <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr) == length(comb[cIdx, ])
+        permIdx <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
@@ -410,7 +410,7 @@ heatmapSOMReactive <- reactive({
       )
     )
   }
-  scEx_matrix <- as.matrix(assays(scEx)[[1]])
+  scEx_matrix <- as.matrix(assays(scEx)[["counts"]])
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)
   }

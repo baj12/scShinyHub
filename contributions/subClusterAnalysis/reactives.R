@@ -35,7 +35,7 @@ dge <- reactive({
   )
   if (DEBUG) cat(file = stderr(), "dge\n")
   featureData <- featureDataReact()
-  scExLog <- scEx_log()
+  scEx_log <- scEx_log()
   prj <- projections()
   gn <- groupNames$namesDF
 
@@ -44,7 +44,7 @@ dge <- reactive({
   db2 <- input$db2
 
   # dbcl = dbCluster
-  if (is.null(featureData) | is.null(scExLog) | is.null(prj)) {
+  if (is.null(featureData) | is.null(scEx_log) | is.null(prj)) {
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
