@@ -7,9 +7,9 @@ require(SingleCellExperiment)
 # scaterReadsFunc <- function(gbm, gbm_log, fd){
 scaterReadsFunc <- function(gbm, fd) {
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
+    save(file = "~/scShinyHubDebug/scaterReadsFunc.Rds", list = c(ls()))
   }
-  # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
+  # load(file='~/scShinyHubDebug/scaterReadsFunc.Rds')
   
   counts <- as(exprs(gbm), "dgCMatrix")
   

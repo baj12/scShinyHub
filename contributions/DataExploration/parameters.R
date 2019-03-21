@@ -57,10 +57,11 @@ gbm_logNormalization <- reactive({
   gbm_bcnorm = (newGeneBCMatrix(A, fData(gbm), pData(gbm), 
                          template = gbm))
   # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-  gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
-
+  gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10) 
+  x = exprs(gbm_log) * 10000
+  gbm_new = newGeneBCMatrix(x, fData(gbm_log), pData(gbm_log), template = gbm_log)
   if (DEBUG) {
     cat(file = stderr(), "gbm_logNormalization:Done\n")
   }
-  return(gbm_log)
+  return(gbm_new)
 })

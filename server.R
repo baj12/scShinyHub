@@ -3,6 +3,7 @@
 # LIBRARY -----------------------------------------------------------------
 
 library(shiny)
+# library(reactlog)
 library(shinyTree)
 library(tibble)
 library(shinyBS)
@@ -27,6 +28,7 @@ library(kohonen)
 library(Rsomoclu)
 library(gtools)
 # library(ElPiGraph.R)
+
 
 if (file.exists("defaultValues.R")) {
   base::source(file = "defaultValues.R")
@@ -84,7 +86,7 @@ shinyServer(function(input, output, session) {
   base::load(file = "geneLists.RData")
 
   if (DEBUG) base::cat(file = stderr(), "ShinyServer running\n")
-
+  # if (DEBUG) options(shiny.reactlog = TRUE)
   # base calculations that are quite expensive to calculate
   # display name, reactive name to be executed
   heavyCalculations <- list(
@@ -361,5 +363,6 @@ shinyServer(function(input, output, session) {
   )
 }) # END SERVER
 
+# shiny::showReactLog()
 
 # enableBookmarking(store = "server")

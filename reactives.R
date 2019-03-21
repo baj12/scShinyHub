@@ -42,19 +42,28 @@ inputDataFunc <- function(inFile) {
   stats$nFeatures <- 0
   stats$nCells <- 0
 
-  if (length(inFile$datapath) > 1) {
     cat(file = stderr(), paste("reading", inFile$name[1], "\n"))
     fp <- inFile$datapath[1]
     fpLs <- load(fp)
-    fd <- featuredata
+    if ("featuredata" %in% fpLs){
+      fd <- featuredata
+    }else{
+      fd = featuredata = fData(gbm)
+    }
     fdAll <- fData(gbm)
-    pdAll <- pData(gbm)
+    fdIdx <- intersect(rownames(fdAll), rownames(featuredata))
+    if (length(fdIdx) != nrow(fd)) {
+      cat(file = stderr(), "Houston, there is a problem with the features\n")
+    }
+    
+     pdAll <- pData(gbm)
     exAll <- exprs(gbm)
     stats[1, "nFeatures"] <- nrow(fdAll)
     stats[1, "nCells"] <- nrow(pdAll)
 
 
-    for (fpIdx in 2:length(inFile$datapath)) {
+    if (length(inFile$datapath) > 1) {
+      for (fpIdx in 2:length(inFile$datapath)) {
       cat(file = stderr(), paste("reading", inFile$name[fpIdx], "\n"))
       fp <- inFile$datapath[fpIdx]
       fpLs <- load(fp)
@@ -85,7 +94,7 @@ inputDataFunc <- function(inFile) {
     load(inFile$datapath)
   }
 
-  cat(stderr(), "Loaded")
+  cat(file = stderr(), "file Loaded")
   dataTables <- list()
   featuredata$Associated.Gene.Name <-
     toupper(featuredata$Associated.Gene.Name)
@@ -824,9 +833,11 @@ pcaFunc <- function(gbm_log) {
     # xx =prcomp_irlba(exprs(gbm_log), n = 10, retx = TRUE, center = Matrix::colMeans(gbm_log), scale. = FALSE)
     # colnames(data)[colnames(data) == "totalvar"] <- "tot_var"
     # xx$center
-    run_pca(gbm_log)
+    use_genes = get_nonzero_genes(gbm_log)
+    cellrangerRkit::run_pca(gbm_log[use_genes, ], n_pcs = 10, logscale = TRUE, use_genes = use_genes)
   },
   error = function(e) {
+    cat(file = stderr(), paste("error in PCA:", e))
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(
         "Problem with PCA, probably not enough cells?",
@@ -835,8 +846,12 @@ pcaFunc <- function(gbm_log) {
       )
     }
     return(NULL)
+  },
+  finally = {
+    cat( file = stderr(), paste("pca done\n"))
   }
   )
+  cat( file = stderr(), paste("pca returning\n"))
   return(pca)
 }
 

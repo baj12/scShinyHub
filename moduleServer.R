@@ -324,7 +324,7 @@ clusterServer <- function(input, output, session,
     input$changeGroups # action button
     addToSelection <- addToGroupValue
     # we want to react on a changed filename
-    gbm <- gbm()
+    
     
     if (DEBUG) {
       cat(file = stderr(), "cluster: changeGroups\n")
@@ -333,6 +333,7 @@ clusterServer <- function(input, output, session,
     # we isolate here because we only want to change if the button is clicked.
     # TODO what happens if new file is loaded??? => problem!
     isolate({
+      gbm <- gbm()
       prjs <- sessionProjections$prjs
       # brushedPs <- event_data("plotly_selected", source = "subset")
       # gbm <- gbm()
