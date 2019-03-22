@@ -21,6 +21,10 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
     "Gene symbol incorrect or genes not expressed"
   ))
 
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/coE_heatmapFunc.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/coE_heatmapFunc.RData")
   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
 
   # expression <- expression[, rownames(projections)]
@@ -149,7 +153,7 @@ topExpGenesTable <- reactive({
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", "scCL", "sc", ls()))
+    save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
   # we only work on cells that have been selected
@@ -177,7 +181,7 @@ topExpGenesTable <- reactive({
     # since we are returning a table to be plotted, we convert to regular table (non-sparse)
     outMat <- cbind2(fd, as.matrix(mat))
     rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
-    return(outMat)
+    return(as.data.frame(outMat))
   } else {
     return(NULL)
   }
@@ -210,6 +214,10 @@ plotCoExpressionFunc <-
       "Gene symbol incorrect or genes not expressed"
     ))
 
+    if (DEBUGSAVE) {
+      save(file = "~/scShinyHubDebug/plotCoExpressionFunc.RData", list = c(ls(), ls(envir = globalenv())))
+    }
+    # load(file="~/scShinyHubDebug/plotCoExpressionFunc.RData")
     bin <- expression
     bin[] <- 0
 
@@ -268,6 +276,10 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
   if (DEBUG) {
     cat(file = stderr(), length(map))
   }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/geneGrp_vioFunc.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/geneGrp_vioFunc.RData")
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   if (length(map) == 0) {
     if (!is.null(getDefaultReactiveDomain())) {
@@ -303,8 +315,9 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
       for (cIdx in 1:nrow(comb)) {
         map <-
           rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
-
-        permIdx <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr) == length(comb[cIdx, ])
+        # permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
+        
+        permIdx <- colSums(assays(scEx)[["counts"]][map, ,drop=FALSE] >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
@@ -384,6 +397,10 @@ somFunction <- function(iData, nSom, geneName) {
     scaleCooling = "linear"
   )
 
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/somFunction.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/somFunction.RData")
   rownames(res2$globalBmus) <- make.unique(as.character(rownames(iData)), sep = "___")
   simGenes <- rownames(res2$globalBmus)[which(res2$globalBmus[, 1] == res2$globalBmus[geneName, 1] &
     res2$globalBmus[, 2] == res2$globalBmus[geneName, 2])]
@@ -417,6 +434,10 @@ heatmapSOMReactive <- reactive({
       )
     )
   }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/heatmapSOMReactive.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/heatmapSOMReactive.RData")
   scEx_matrix <- as.matrix(assays(scEx)[["counts"]])
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)

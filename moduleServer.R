@@ -631,7 +631,7 @@ tableSelectionServer <- function(input, output, session,
     ns <- session$ns
 
     if (is.null(dataTables)) {
-      return(NULL)
+      return(warning("test"))
     }
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("cellNameTable", id = "cellNameTable", duration = NULL)
@@ -642,10 +642,11 @@ tableSelectionServer <- function(input, output, session,
         list = c(ls(), ls(envir = globalenv()))
       )
     }
-    # load(file=paste0("~/scShinyHubDebug/cellNameTable", "", ".RData", collapse = "."))
+    # load(file=paste0("~/scShinyHubDebug/cellNameTable", "ns", ".RData", collapse = "."))
 
     if (DEBUG) cat(file = stderr(), "cellNameTable: done\n")
     maxCol <- min(20, ncol(dataTables))
+    dataTables = as.data.frame(dataTables)
     if (dim(dataTables)[1] > 1) {
       return(DT::datatable(dataTables[, 1:maxCol],
         rownames = F, filter = "top",
@@ -655,7 +656,7 @@ tableSelectionServer <- function(input, output, session,
         )
       ))
     } else {
-      return(NULL)
+      return(warning("test"))
     }
   })
 

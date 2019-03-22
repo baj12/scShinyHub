@@ -9,6 +9,7 @@ scaterReadsFunc <- function(scEx) {
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   }
+  # load("~/scShinyHubDebug/scaterReadsFunc.Rmd")
   # not sure, but this works on another with dgTMatrix
   if (class(assays(scEx)[["counts"]]) == "dgTMatrix") {
     assays(scEx)[["counts"]] = as(assays(scEx)[["counts"]], "dgCMatrix")
