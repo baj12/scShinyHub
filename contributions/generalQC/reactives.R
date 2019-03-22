@@ -9,24 +9,11 @@ scaterReadsFunc <- function(scEx) {
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
   }
-  # load(file='~/scShinyHubDebug/scaterReadsFunc.Rmd')
+  # not sure, but this works on another with dgTMatrix
+  if (class(assays(scEx)[["counts"]]) == "dgTMatrix") {
+    assays(scEx)[["counts"]] = as(assays(scEx)[["counts"]], "dgCMatrix")
+  }
   
-  # counts <- as(assays(scEx)[["counts"]], "dgCMatrix")
-  # 
-  # anno <- colData(scEx)
-  # anno$sample_id <- anno$sampleNames
-  # anno$fixed <- "red"
-  # # anno$individual= "NA1"
-  # # anno$replicate = "r1"
-  # # anno$well = "A01"
-  # # anno$batch = "b1"
-  # pheno_data <- new("AnnotatedDataFrame", anno)
-  # # rownames(pheno_data) <- pheno_dat
-  # 
-  # reads <- SingleCellExperiment(
-  #   assays = list(counts = counts),
-  #   colData = anno
-  # )
   ercc <- rownames(scEx)[grepl("ERCC-", rownames(scEx))]
   
   mt <- rownames(scEx)[grepl("^MT", rownames(scEx))]
@@ -128,7 +115,7 @@ tsne <- reactive({
   require(parallel)
   
   retval <- tryCatch({
-    run_tsne(
+    cellrangerRkit::run_tsne(
       pca,
       dims = tsneDim,
       perplexity = tsnePerplexity,

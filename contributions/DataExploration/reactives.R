@@ -33,7 +33,8 @@ scaterPNG <- reactive({
   if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
   n <- min(nrow(scaterReads), 50)
   # use plotHighestExprs instead of plotQC
-  p1 <- scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by = "fixed", n = n)
+  # p1 <- scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by = "fixed", n = n)
+  p1 <- scater::plotHighestExprs(scaterReads, colour_cells_by = "fixed", n=n)
   tryCatch(
     ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p1, width = myPNGwidth, height = myPNGheight, units = "in"),
     error = function(e) {

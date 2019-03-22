@@ -19,8 +19,8 @@ object.size(scEx)
 class(assays(scEx)[[1]])
 
 system.time({scEx = scater::runPCA(scEx,ncomponents = 10, method = "irlba",
-               ntop = 500, exprs_values = "logcounts")})
-pca = reducedDim(scaterPCA, "PCA")
+               ntop = 500, exprs_values = "counts")})
+pca = reducedDim(scEx, "PCA")
 attr(pca,"percentVar")
 
 system.time({irlaPCA = irlba::prcomp_irlba(assays(scEx)[[1]], n = 10, 

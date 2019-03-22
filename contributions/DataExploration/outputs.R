@@ -62,6 +62,9 @@ output$gene_vio_plot <- renderPlot({
 
   geneid <- geneName2Index(g_id, featureData)
 
+  if (length(geneid) == 0) {
+    return(NULL)
+  }
   # geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
   #                                        toupper(input$gene_id)), ])[1]
 
@@ -329,7 +332,9 @@ output$tsne_plt <- renderPlotly({
 
 
   geneid <- geneName2Index(g_id, featureData)
-
+  if (length(geneid) == 0) {
+    return(NULL)
+  }
   if (length(geneid) == 1) {
     expression <- assays(scEx_log)[[1]][geneid, ]
   } else {

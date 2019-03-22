@@ -5,8 +5,15 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "heatmap")
   )
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/coE_heatmapFunc.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file = "~/scShinyHubDebug/coE_heatmapFunc.RData")
   #  create parameters used for pheatmap module
   genesin <- geneName2Index(genesin, featureData)
+  if (is.null(genesin) | is.null(cells)) {
+    return(NULL)
+  }
   expression <- scEx_matrix[genesin, cells]
 
   validate(need(

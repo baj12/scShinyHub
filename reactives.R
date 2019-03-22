@@ -82,11 +82,7 @@ inputDataFunc <- function(inFile) {
       # fd <- featuredata[fdIdx, ]
       fdAll <- fdAll[fdIdx, ]
       pd1 <- colData(scEx)
-<<<<<<< HEAD
       ex1 <- assays(scEx)[["counts"]][fdIdx, ]
-=======
-      ex1 <- assays(scEx)[[1]][fdIdx, ]
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
       if (sum(rownames(pdAll) %in% rownames(pd1)) > 0) {
         cat(file = stderr(), "Houston, there are cells with the same name\n")
         rownames(pd1) <- paste0(rownames(pd1), "_", fpIdx)
@@ -101,51 +97,18 @@ inputDataFunc <- function(inFile) {
       exAll <- Matrix::cbind2(exAll[fdIdx, ], ex1)
     }
   }
-<<<<<<< HEAD
   exAll = as(exAll, "dgTMatrix")
   scEx = SingleCellExperiment(assay = list(counts = exAll),
                               colData = pdAll,
                               rowData = fdAll)
   
-=======
-  scEx = SingleCellExperiment(assay = exAll,
-                              colData = pdAll,
-                              rowData = fdAll)
-  
-  #     newGeneBCMatrix(mat = as(exAll, "dgTMatrix"), fd = fdAll, pd = pdAll)
-  #   # featuredata <- fd
-  # } else {
-  #   load(inFile$datapath)
-  # }
-  
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   cat(stderr(), "Loaded")
   dataTables <- list()
   featuredata <- rowData(scEx)
   dataTables$featuredataOrg <- rowData(scEx)
-<<<<<<< HEAD
    dataTables$scEx <- scEx
   dataTables$featuredata <- featuredata
-=======
-  # dataTables$positiveCells <- NULL
-  # dataTables$positiveCellsAll <- NULL
-  
-  # take only genes that are in all tables
-  rnames <- rownames(featuredata)
-  # rnames = rnames[rnames %in% rownames(log2cpm)]
-  rnames <- rnames[rnames %in% rownames(scEx)]
-  # rnames = rnames[rnames %in% rownames(scEx_log)]
-  
-  # cnames = colnames(log2cpm)
-  # cnames =colnames(scEx)
-  # cnames = cnames[cnames %in% colnames(scEx_log)]
-  
-  # dataTables$log2cpm <- log2cpm[rnames, cnames]
-  dataTables$scEx <- scEx[rnames, ]
-  # dataTables$scEx_log = scEx_log[rnames, cnames]
-  dataTables$featuredata <- featuredata[rnames, ]
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
-  
+
   if (is.null(scEx$barcode)) {
     showNotification("scEx doesn't contain barcode column", type = "error")
     return(NULL)
@@ -225,11 +188,7 @@ medianENSG <- reactive({
     }
     return(0)
   }
-<<<<<<< HEAD
   scEx <- assays(scEx)[["counts"]]
-=======
-  scEx <- assays(scEx)[[1]]
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   if (ncol(scEx) <= 1 | nrow(scEx) < 1) {
     return(0)
   }
@@ -263,11 +222,7 @@ medianUMI <- reactive({
     save(file = "~/scShinyHubDebug/medianUMI.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/medianUMI.RData')
-<<<<<<< HEAD
   scEx = assays(scEx)[["counts"]]
-=======
-  scEx = assays(scEx)[[1]]
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   retVal <- medianUMIfunc(scEx)
   if (DEBUG) {
     end.time <- Sys.time()
@@ -508,11 +463,7 @@ beforeFilterCounts <- reactive({
   if (is.null(geneIDs)) {
     return(rep(0, nrow(dataTables$featuredata)))
   }
-<<<<<<< HEAD
   return(Matrix::colSums(assays(dataTables$scEx)[["counts"]][geneIDs, ]))
-=======
-  return(Matrix::colSums(dataTables$scEx[geneIDs, ]))
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
 })
 
 # collects information from all places where genes being removed or specified
@@ -802,28 +753,13 @@ pcaFunc <- function(scEx_log) {
     save(file = "~/scShinyHubDebug/pcaFunc.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
-<<<<<<< HEAD
   scaterPCA <- tryCatch({
+    # not sure, but this works on another with dgTMatrix
+    if (class(assays(scEx_log)[["logcounts"]]) == "dgTMatrix"){
+      assays(scEx_log)[["logcounts"]] = as(assays(scEx_log)[["logcounts"]], "dgCMatrix")
+    }
     scater::runPCA(scEx_log,ncomponents = 10, method = "irlba",
                    ntop = 500, exprs_values = "logcounts")
-=======
-  pca <- tryCatch({
-    # TODO test for speed and accuracy
-    require(irlba)
-    system.time(prcomp_irlba(assays(scEx_log)[[1]], n = 10, 
-                             retx = TRUE, 
-                             center = Matrix::colMeans(assays(scEx_log)[[1]]),
-                             fastpath=FALSE,
-                             scale. = FALSE))
-    system.time(irlba::irlba(assays(scEx_log)[[1]], n = 10, 
-                             retx = TRUE, 
-                             center = Matrix::colMeans(assays(scEx_log)[[1]]),
-                             fastpath=FALSE,
-                             scale. = FALSE))
-    # colnames(data)[colnames(data) == "totalvar"] <- "tot_var"
-    # xx$center
-    
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   },
   error = function(e) {
     if (!is.null(getDefaultReactiveDomain())) {
@@ -833,13 +769,15 @@ pcaFunc <- function(scEx_log) {
         duration = NULL
       )
     }
+    cat(file = stderr(), "PCA FAILED!!!\n")
     return(NULL)
   }
   )
-  pca = reducedDim(scaterPCA, "PCA")
-  attr(pca,"percentVar")
-  
-  return(list(x = reducedDim(scaterPCA, "PCA"),  
+  if (is.null(scaterPCA)) return(NULL)
+  # pca = reducedDim(scaterPCA, "PCA")
+  # attr(pca,"percentVar")
+  # 
+  return(list(x = SingleCellExperiment::reducedDim(scaterPCA, "PCA"),  
               var_pcs = attr(pca,"percentVar")))
   
 }
@@ -881,7 +819,7 @@ kmClusteringFunc <- function(pca, seed, kNr = 10) {
   # kNr = 10
   # for (kNr in 2:kNr) {
   set.seed(seed = seed)
-  km <- run_kmeans_clustering(pca, k = kNr)
+  km <- cellrangerRkit::run_kmeans_clustering(pca, k = kNr)
   clustering[[paste0("kmeans_", kNr, "_clusters")]] <- data.frame(
     "Barcode" = rownames(data.frame(km$cluster)),
     "Cluster" = km$cluster
@@ -1176,11 +1114,7 @@ geneCount <- reactive({
     save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
-<<<<<<< HEAD
   retVal <- Matrix::colSums(assays(scEx)[["counts"]] > 0)
-=======
-  retVal <- Matrix::colSums(assays(scEx)[[1]] > 0)
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1226,11 +1160,7 @@ umiCount <- reactive({
     save(file = "~/scShinyHubDebug/umiCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/umiCount.RData")
-<<<<<<< HEAD
   retVal <- Matrix::colSums(assays(scEx)[["counts"]])
-=======
-  retVal <- Matrix::colSums(assays(scEx)[[1]])
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1355,7 +1285,9 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
                              logx = FALSE, logy = FALSE, divXBy="None", divYBy="None") {
   geneid <- geneName2Index(g_id, featureData)
   
-  
+  if (length(geneid) == 0) {
+   return(NULL) 
+  }
   # if (length(geneid) == 1) {
   #   expression <- exprs(scEx_log)[geneid, ,drop=FALSE]
   # } else {
