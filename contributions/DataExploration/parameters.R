@@ -51,11 +51,7 @@ scEx_logNormalization <- reactive({
   # load(file="~/scShinyHubDebug/scEx_logNormalization.RData")
   
   # use_genes <- get_nonzero_genes(scEx)
-<<<<<<< HEAD
   use_genes <- sort(unique(1 + slot(as(assays(scEx)[["counts"]], "dgTMatrix"), 
-=======
-  use_genes <- sort(unique(1 + slot(as(assays(scEx)[[1]], "dgTMatrix"), 
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
                                     "i")))
   
   bc_sums <- Matrix::colSums(assays(scEx)[["counts"]])
@@ -66,11 +62,7 @@ scEx_logNormalization <- reactive({
   # scEx_bcnorm <- (newGeneBCMatrix(A, fData(scEx), pData(scEx),
   #   template = scEx
   # ))
-<<<<<<< HEAD
   scEx_bcnorm <- SingleCellExperiment(assay = list(logcounts = as(A,"dgTMatrix")),
-=======
-  scEx_bcnorm <- SingleCellExperiment(assay = as(A,"dgTMatrix"),
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
                                       colData = colData(scEx),
                                       rowData = rowData(scEx))
   

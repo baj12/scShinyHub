@@ -84,11 +84,7 @@ imageDummyPrecompute <- reactive({
   outfile <- paste0(tempdir(), "/dummy.png")
   if (DEBUG) cat(file = stderr(), paste("output file: ", outfile, "\n"))
   if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
-<<<<<<< HEAD
   m <- data.frame("V1" = Matrix::colSums(assays(scEx)[["counts"]]))
-=======
-  m <- data.frame("V1" = Matrix::colSums(assays(scEx)[[1]]))
->>>>>>> 15ba2245b451381ee5096a6fd814dfdefef83320
   p <- ggplot(m, aes(V1)) + geom_bar()
   ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p, width = myPNGwidth, height = myPNGheight, units = "in")
   
