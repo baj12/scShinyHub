@@ -778,7 +778,7 @@ pcaFunc <- function(scEx_log) {
   # attr(pca,"percentVar")
   # 
   return(list(x = SingleCellExperiment::reducedDim(scaterPCA, "PCA"),  
-              var_pcs = attr(pca,"percentVar")))
+              var_pcs = attr(SingleCellExperiment::reducedDim(scaterPCA, "PCA"), "percentVar")))
   
 }
 
