@@ -317,7 +317,7 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
           rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
         # permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
         
-        permIdx <- colSums(assays(scEx)[["counts"]][map, ,drop=FALSE] >= minExpr) == length(comb[cIdx, ])
+        permIdx <- Matrix::colSums(assays(scEx)[["counts"]][map, ,drop=FALSE] >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }

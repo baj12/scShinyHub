@@ -2,6 +2,7 @@ require(ggplot2)
 
 scaterPNG <- reactive({
   if (DEBUG) cat(file = stderr(), "scaterPNG\n")
+  start.time <- base::Sys.time()
   scaterReads <- scaterReads()
   if (is.null(scaterReads)) {
     return(NULL)
@@ -46,7 +47,9 @@ scaterPNG <- reactive({
   )
 
   if (DEBUG) cat(file = stderr(), "done:scaterPNG\n")
-
+  end.time <- base::Sys.time()
+  cat(file = stderr(), paste("this took: ", difftime(end.time, start.time, units = "min"), " min\n"))
+  
   return(list(
     src = normalizePath(outfile, mustWork = FALSE),
     contentType = "image/png",

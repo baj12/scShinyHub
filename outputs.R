@@ -137,11 +137,12 @@ output$removedGenesTable <- DT::renderDataTable({
     cat(file = stderr(), "output$removedGenesTable\n")
   }
   dataTables <- inputData()
-  useGenes <- !useGenes()
+  useGenes <- useGenes()
   useCells <- useCells()
   if (is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     return(NULL)
   }
+  useGenes <- !useGenes
 
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/removedGenesTable.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))

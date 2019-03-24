@@ -6,14 +6,20 @@ library(SingleCellExperiment)
 require(irlba)
 
 class(gbm)
-gbmMat = as.matrix(gbm)
+gbmMat = as.matrix(exprs(gbm))
 object.size(gbm)
 object.size(gbmMat)
+pd = pData(gbm)
+fd = fData(gbm)
+pd = pd[1:200,]
+fd = fd[1:1000,]
+gbmMat = gbmMat[1:1000,1:200]
+
 counts <- as(gbmMat, "dgCMatrix")
 
 scEx = SingleCellExperiment(assay = list(counts=counts),
-                            colData = pData(gbm),
-                            rowData = fData(gbm))
+                            colData = pd,
+                            rowData = fd)
 class(scEx)
 object.size(scEx)
 class(assays(scEx)[[1]])
