@@ -29,6 +29,7 @@ library(Rsomoclu)
 library(gtools)
 # library(ElPiGraph.R)
 library(SingleCellExperiment)
+library(Matrix)
 
 if (file.exists("defaultValues.R")) {
   base::source(file = "defaultValues.R")
