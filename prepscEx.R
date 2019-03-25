@@ -12,6 +12,9 @@ object.size(gbmMat)
 pd = pData(gbm)
 fd = fData(gbm)
 pd = pd[1:200,]
+pd$sampleNames = as.character(pd$sampleNames)
+pd$sampleNames[101:200] = "test2"
+pd$sampleNames = as.factor(pd$sampleNames)
 fd = fd[1:1000,]
 gbmMat = gbmMat[1:1000,1:200]
 

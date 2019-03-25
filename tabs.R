@@ -129,12 +129,20 @@ generalParametersTab <- tabItem(
            numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
     )
   ),
+  br(),
   fluidRow(
     tinyMCE(
       "descriptionOfWork",
       "Please describe your work. This will be included in the report."
     )
-  )
+  ),
+  br(),
+  fluidRow(
+    actionButton("updateColors", "Update colours", icon = icon("update"))
+  ),
+  fluidRow(column(4,offset = 1,
+    uiOutput('sampleColorSelection')
+  ))
   # ,
   # fluidRow(
   #   column(11,offset = 1,

@@ -30,6 +30,7 @@ library(gtools)
 # library(ElPiGraph.R)
 library(SingleCellExperiment)
 library(Matrix)
+library(colourpicker)
 
 if (file.exists("defaultValues.R")) {
   base::source(file = "defaultValues.R")

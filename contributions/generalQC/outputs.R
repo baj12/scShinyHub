@@ -97,15 +97,29 @@ r <- callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)
 output$plotUmiHist <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output_plotUmiHist\n")
   scEx <- scEx()
+  scols = sampleCols$colPal
   if (is.null(scEx)) {
     return(NULL)
   }
-  hist(Matrix::colSums(assays(scEx)[["counts"]]), breaks = 50, main = "histogram of number of UMIs per cell")
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/plotUmiHist.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file = "~/scShinyHubDebug/plotUmiHist.RData")
+  dat = data.frame(counts = Matrix::colSums(assays(scEx)[["counts"]]))
+  dat$sample = colData(scEx)$sampleNames
+  ggplot(data=dat, aes(counts, fill=sample)) + 
+    geom_histogram(bins = 50) +
+    labs(title = "Histogram for raw counts", x="count", y="Frequency") +
+    scale_fill_manual(values=scols, aesthetics = "fill")
+  
+  # hist(, breaks = 50, main = "histogram of number of UMIs per cell")
 })
 
 output$plotSampleHist <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output_sampleHist\n")
   sampleInf <- sampleInfo()
+  scols = sampleCols$colPal
+  
   if (is.null(sampleInf)) {
     return(NULL)
   }
@@ -113,7 +127,7 @@ output$plotSampleHist <- renderPlot({
     save(file = "~/scShinyHubDebug/sampleHist.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/sampleHist.RData")
-  sampleHistFunc(sampleInf)
+  sampleHistFunc(sampleInf, scols)
 })
 
 output$variancePCA <- renderPlot({

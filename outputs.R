@@ -223,3 +223,54 @@ output$descriptOfWorkOutput <- renderPrint({
 if (DEBUG) {
   cat(file = stderr(), paste("end: outputs.R\n"))
 }
+
+
+output$sampleColorSelection <- renderUI({ 
+  scEx <- scEx()
+  
+  if (is.null(scEx) ) {
+    return(NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/sampleColorSelection.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/sampleColorSelection.RData")
+  
+  lev <- levels(colData(scEx)$sampleNames)
+  # cols <- gg_fill_hue(length(lev))
+  
+  # New IDs "colX1" so that it partly coincide with input$select...
+  lapply(seq_along(lev), function(i) {
+    colourpicker::colourInput(inputId = paste0("sampleNamecol", lev[i]),
+                              label = paste0("Choose colour for sample \"", lev[i],"\""), 
+                              palette = "limited"
+    )        
+  })
+})
+
+
+observeEvent(input$updateColors, {
+  cat(file = stderr(), paste0("observeEvent input$updateColors\n"))
+  scExx <- scEx()
+  if (is.null(scExx) ) {
+    return(NULL)
+  }
+  scols = sampleCols$colPal
+  inCols = list()
+  lev <- levels(colData(scExx)$sampleNames)
+
+  inCols <- lapply(seq_along(lev), function(i){
+     input[[paste0("sampleNamecol", lev[i])]]
+  })
+  names(inCols) = lev
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/updateColors.RData", list = c(ls(), ls(envir = globalenv())))
+    cat(file = stderr(), paste0("observeEvent save done\n"))
+  }
+  # load(file="~/scShinyHubDebug/updateColors.RData")
+  
+  isolate({
+    sampleCols$colPal = unlist(inCols)
+  })
+})
+

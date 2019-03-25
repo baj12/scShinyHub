@@ -48,11 +48,12 @@ scaterReads <- reactive({
 })
 
 
-sampleHistFunc <- function(samples) {
+sampleHistFunc <- function(samples, scols) {
   counts <- table(samples)
   barplot(counts,
           main = "histogram of number of cell per sample",
-          xlab = "Samples"
+          xlab = "Samples",
+          col=scols
   )
   # x <- hist(as.integer(as.factor(samples)),
   #   main = "histogram of number of cell per sample",

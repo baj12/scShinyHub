@@ -153,7 +153,8 @@ hist(Matrix::colSums(assays(scEx)[["counts"]]), breaks = 50, main="histogram of 
 if(DEBUGSAVE) 
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
 sampleInf <- sampleInfoFunc(scEx)
-sampleHistFunc(sampleInf)
+scols = sampleCols$colPal
+sampleHistFunc(sampleInf, scols)
 ```
 
 ## TSNE plot
