@@ -2,6 +2,11 @@
 source ("moduleServer.R", local = TRUE)
 source ("reactives.R", local = TRUE)
 
+allowedColors = c("#8c510a","#d8b365","#f6e8c3","#c7eae5","#5ab4ac","#01665e","#c51b7d","#e9a3c9",
+                  "#fde0ef","#e6f5d0","#a1d76a","#4d9221","#762a83","#af8dc3","#e7d4e8","#d9f0d3",
+                  "#7fbf7b","#1b7837","#b35806","#f1a340","#fee0b6","#d8daeb","#998ec3","#542788",
+                  "#b2182b","#ef8a62","#fddbc7","#d1e5f0","#67a9cf","#2166ac","#b2182b","#ef8a62",
+                  "#fddbc7","#e0e0e0","#999999","#4d4d4d")
 
 # normalizationRadioButtonValue -------------------------------- Parameters / normalization
 output$normalizationRadioButtonValue <- renderPrint({
@@ -227,6 +232,7 @@ if (DEBUG) {
 
 output$sampleColorSelection <- renderUI({ 
   scEx <- scEx()
+  isolate({sampCol = sampleCols$colPal})
   
   if (is.null(scEx) ) {
     return(NULL)
@@ -242,7 +248,11 @@ output$sampleColorSelection <- renderUI({
   # New IDs "colX1" so that it partly coincide with input$select...
   lapply(seq_along(lev), function(i) {
     colourpicker::colourInput(inputId = paste0("sampleNamecol", lev[i]),
-                              label = paste0("Choose colour for sample \"", lev[i],"\""), 
+                              label = paste0("Choose colour for sample ",sampCol[i], "\"", lev[i],"\""), 
+                              # value = "#762A83"
+                              # ,
+                              value = sampCol[i],
+                              allowedCols = allowedColors,
                               palette = "limited"
     )        
   })

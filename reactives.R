@@ -143,6 +143,7 @@ inputDataFunc <- function(inFile) {
       ))(length(sampNames))
       names(sampleCols$colPal) <- sampNames
     })
+   
   } else {
     showNotification("scEx - colData doesn't contain sampleNames",
       duration = NULL, type = "error"
@@ -193,7 +194,26 @@ inputData <- reactive({
     }
     return(NULL)
   }
-  return(inputDataFunc(inFile))
+  retVal = inputDataFunc(inFile)
+  # lev <- levels(colData(retVal$scEx)$sampleNames)
+  # isolate({sampCol = sampleCols$colPal})
+  # t = input$sampleNamecol1
+  # t1 = input$sampleNamecoltest2
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/inputData.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file='~/scShinyHubDebug/inputData.RData')
+  # lapply(seq_along(lev), function(i) {
+  #   do.call(what = "updateColourInput",
+  #           args = list(
+  #             session = session,
+  #             inputId = paste0("sampleNamecol", lev[i]),
+  #             value = sampCol[i]
+  #           )
+  #   )
+  # })
+  
+  return(retVal)
 })
 
 medianENSGfunc <- function(scEx) {
