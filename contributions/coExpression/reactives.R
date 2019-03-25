@@ -1,6 +1,6 @@
 # heatmapFunc ---------------------------------
 # used by bot selection and all
-coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cells) {
+coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cells, sampCol) {
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "heatmap")
@@ -60,6 +60,17 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
   # maxBreak = med + 3* stDev
   # stepBreak = (maxBreak - minBreak) / 6
   nonZeroRows <- which(Matrix::rowSums(expression) > 0)
+  # prj = factor(projections[, dbCluster])
+  # mycolPal = colorRampPalette(brewer.pal(
+  #   n = 6, name =
+  #     "RdYlBu"
+  # ))(length(levels(prj)))
+  # 
+  # if (dbCluster == "sampleNames"){
+  #   mycolPal = sampleCols$colPal
+  # }
+  annCols = list("sampleNames" =sampCol)
+  
   retVal <- list(
     mat = expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
@@ -75,12 +86,15 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
     # breaks = seq(minBreak, maxBreak, by = stepBreak),
     # filename = 'test.png',
     # filename = normalizePath(outfile),
-    colorRampPalette(rev(brewer.pal(
+    color = colorRampPalette(rev(RColorBrewer::brewer.pal(
       n = 6, name =
         "RdBu"
-    )))(6)
+    )))(6),
+    annotation_colors = annCols
   )
+  # do.call(TRONCO::pheatmap, retVal)
   retVal
+  
 }
 
 
@@ -102,6 +116,7 @@ heatmapSelectedReactive <- reactive({
   scCL <- sc$cluster
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
+  sampCol = sampleCols$colPal
 
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
@@ -133,7 +148,8 @@ heatmapSelectedReactive <- reactive({
   #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
   # cells.1 <- rownames(brushedPoints(subsetData, scBP))
   cells.1 <- scCells
-  retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin, cells = cells.1)
+  retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin, 
+                            cells = cells.1, sampCol = sampCol)
 
   return(retval)
 })
@@ -191,73 +207,86 @@ topExpGenesTable <- reactive({
 
 # plotCoExpressionFunc ------
 # used in binarized 2D plot
-plotCoExpressionFunc <-
-  function(featureData,
-             scEx_log,
-             upI,
-             projections,
-             genesin,
-             cl3,
-             dimx3,
-             dimy3) {
-    genesin <- geneName2Index(genesin, featureData)
-    # genesin <- toupper(genesin)
-    # genesin <- gsub(" ", "", genesin, fixed = TRUE)
-    # genesin <- strsplit(genesin, ',')
-
-    subsetData <- subset(projections, dbCluster %in% cl3)
-
-    expression <- scEx_log[genesin, ]
-
-    validate(need(
-      is.na(sum(expression)) != TRUE,
-      "Gene symbol incorrect or genes not expressed"
-    ))
-
-    if (DEBUGSAVE) {
-      save(file = "~/scShinyHubDebug/plotCoExpressionFunc.RData", list = c(ls(), ls(envir = globalenv())))
-    }
-    # load(file="~/scShinyHubDebug/plotCoExpressionFunc.RData")
-    bin <- expression
-    bin[] <- 0
-
-    for (i in 1:nrow(expression)) {
-      x <- Mclust(expression[i, ], G = 2)
-      bin[i, ] <- x$classification
-    }
-    bin <- bin - 1
-    allexprs <- apply(bin, 2, sum)
-    plotexprs <- allexprs
-    plotexprs[] <- 0
-    plotexprs[allexprs >= length(rownames(bin))] <- 1
-    # TODO positiveCells is changing too often. Maybe this can be controlled a bit more? check if changed? Use global variable not a reactive value?
-    # positiveCells$positiveCells <- allexprs >= length(rownames(bin))
-    # positiveCells$positiveCellsAll <- plotexprs
-
-    mergeExprs <- plotexprs[rownames(subsetData)]
-    # if(DEBUG)cat(file=stderr(),length(mergeExprs))
-
-    subsetData$CoExpression <- factor(mergeExprs)
-    subsetData$dbCluster <- as.factor(subsetData$dbCluster)
-    p1 <-
-      ggplot(
-        subsetData,
-        aes_string(x = dimx3, y = dimy3)
-      ) +
-      geom_point(aes_string(
-        shape = "sampleNames",
-        # alpha = 'CoExpression',
-        color = "dbCluster"
-      ),
-      size = 4
-      ) +
-      theme_bw()
-
-    if (DEBUG) {
-      cat(file = stderr(), "output$plotCoExpression:done\n")
-    }
-    return(p1)
-  }
+# plotCoExpressionFunc <-
+#   function(featureData,
+#              scEx_log,
+#              upI,
+#              projections,
+#              genesin,
+#              cl3,
+#              dimx3,
+#              dimy3) {
+#     genesin <- geneName2Index(genesin, featureData)
+#     # genesin <- toupper(genesin)
+#     # genesin <- gsub(" ", "", genesin, fixed = TRUE)
+#     # genesin <- strsplit(genesin, ',')
+# 
+#     subsetData <- subset(projections, dbCluster %in% cl3)
+# 
+#     expression <- scEx_log[genesin, ]
+# 
+#     validate(need(
+#       is.na(sum(expression)) != TRUE,
+#       "Gene symbol incorrect or genes not expressed"
+#     ))
+# 
+#     if (DEBUGSAVE) {
+#       save(file = "~/scShinyHubDebug/plotCoExpressionFunc.RData", list = c(ls(), ls(envir = globalenv())))
+#     }
+#     # load(file="~/scShinyHubDebug/plotCoExpressionFunc.RData")
+#     bin <- expression
+#     bin[] <- 0
+# 
+#     for (i in 1:nrow(expression)) {
+#       x <- Mclust(expression[i, ], G = 2)
+#       bin[i, ] <- x$classification
+#     }
+#     bin <- bin - 1
+#     allexprs <- apply(bin, 2, sum)
+#     plotexprs <- allexprs
+#     plotexprs[] <- 0
+#     plotexprs[allexprs >= length(rownames(bin))] <- 1
+#     # TODO positiveCells is changing too often. Maybe this can be controlled a bit more? check if changed? Use global variable not a reactive value?
+#     # positiveCells$positiveCells <- allexprs >= length(rownames(bin))
+#     # positiveCells$positiveCellsAll <- plotexprs
+# 
+#     mergeExprs <- plotexprs[rownames(subsetData)]
+#     # if(DEBUG)cat(file=stderr(),length(mergeExprs))
+# 
+#     subsetData$CoExpression <- factor(mergeExprs)
+#     subsetData$dbCluster <- as.factor(subsetData$dbCluster)
+#     
+#     prj = factor(projections[, dbCluster])
+#     mycolPal = colorRampPalette(brewer.pal(
+#       n = 6, name =
+#         "RdYlBu"
+#     ))(length(levels(prj)))
+#     
+#     if (dbCluster == "sampleNames"){
+#       mycolPal = sampleCols$colPal
+#     }
+#     
+#     p1 <-
+#       ggplot(
+#         subsetData,
+#         aes_string(x = dimx3, y = dimy3)
+#       ) +
+#       geom_point(
+#         aes_string(
+#           shape = "sampleNames"
+#           # alpha = 'CoExpression',
+#           # color = "dbCluster"
+#         ),
+#         size = 4
+#       ) +
+#       theme_bw() + 
+#       scale_color_manual(values=mycolPal)
+#     
+#     if (DEBUG) {
+#       cat(file = stderr(), "output$plotCoExpression:done\n")
+#     }
+#     return(p1)
+#   }
 
 # geneGrp_vioFunc ------
 geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1,
@@ -338,12 +367,22 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
 
 
   # if(class(projections[,dbCluster])=="factor"){
+  prj = factor(projections[, dbCluster])
+  mycolPal = colorRampPalette(brewer.pal(
+    n = 6, name =
+      "RdYlBu"
+  ))(length(levels(prj)))
+  
+  if (dbCluster == "sampleNames"){
+    mycolPal = sampleCols$colPal
+  }
 
   p1 <-
-    ggplot(projections, aes_string(factor(projections[, dbCluster]), "coExpVal",
+    ggplot(projections, aes_string(prj, "coExpVal",
       fill = factor(projections[, dbCluster])
     )) +
     geom_violin(scale = "count") +
+    scale_color_manual(values=mycolPal) +
     stat_summary(
       fun.y = median,
       geom = "point",
@@ -422,7 +461,8 @@ heatmapSOMReactive <- reactive({
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
   featureData <- featureDataReact()
-
+  sampCol = sampleCols$colPal
+  
   if (is.null(scEx)) {
     return(
       list(
@@ -469,6 +509,8 @@ heatmapSOMReactive <- reactive({
   rownames(annotation) <- rownames(projections)
   colnames(annotation) <- c("Cluster", "sampleNames")
 
+  annCols = list("sampleNames" = sampCol)
+  
   retVal <- list(
     mat = scEx_matrix[geneNames, ],
     cluster_rows = TRUE,
@@ -486,9 +528,11 @@ heatmapSOMReactive <- reactive({
     color = colorRampPalette(rev(brewer.pal(
       n = 6, name =
         "RdBu"
-    )))(6)
+    )))(6),
+    annotation_colors = annCols
   )
-
+  # system.time(do.call(TRONCO::pheatmap, retVal))
+  
   end.time <- Sys.time()
   cat(file = stderr(), paste("===heatmapSOMReactive:done", difftime(end.time, start.time, units = "min"), " min\n"))
 

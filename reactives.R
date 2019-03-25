@@ -18,6 +18,16 @@
 inputFileStats <- reactiveValues(
   stats = NULL
 )
+
+
+sampleCols <- reactiveValues(
+  colPal = c("1" = colorRampPalette(brewer.pal(
+    n = 6, name =
+      "RdYlBu"
+  ))(1))
+  
+  
+)
 # reactive values  ------------------------------------------------------------------
 # should only hold original data
 # internal, should not be used by plug-ins
@@ -123,6 +133,21 @@ inputDataFunc <- function(inFile) {
     }
     return(NULL)
   }
+  
+  if ("sampleNames" %in% names(colData(scEx))) {
+    sampNames = levels(colData(scEx)$sampleNames)
+    isolate({sampleCols$colPal = colorRampPalette(brewer.pal(
+        n = 6, name =
+          "RdYlBu"
+      ))(length(sampNames))
+    names(sampleCols$colPal) = sampNames
+    })
+  } else {
+    showNotification("scEx - colData doesn't contain sampleNames",
+                     duration = NULL, type = "error"
+    )
+  }
+  
   if (sum(c("id", "symbol") %in% colnames(rowData(scEx))) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("scEx - rowData doesn't contain id and/or symbol columns",
@@ -1182,16 +1207,16 @@ sampleInfo <- reactive({
     cat(file = stderr(), "sampleInfo\n")
   }
   scEx <- scEx()
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/sampleInfo.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/sampleInfo.RData")
   if (!exists("scEx")) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
     }
     return(NULL)
   }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/sampleInfo.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/sampleInfo.RData")
   
   ret <- sampleInfoFunc(scEx)
   if (DEBUG) {

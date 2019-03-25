@@ -68,13 +68,15 @@ require(pheatmap)
 
 scEx_matrix <- assays(scEx_log)[[1]]
 genesin <- input$heatmap_geneids
+sampCol = sampleCols$colPal
 
 genesin2 <- geneName2Index(genesin, featureData)
 genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
 
 heatmapData <- coE_heatmapFunc(
   featureData = featureData, scEx_matrix = scEx_matrix,
-  projections = projections, genesin = genesin, cells = colnames(scEx_matrix)
+  projections = projections, genesin = genesin, cells = colnames(scEx_matrix),
+  sampCol = sampCol
 )
 
 addColNames <- input$"coExpHeatmapModule-ColNames"
@@ -161,6 +163,8 @@ geneNames <- input$'selected-geneIds'
 inpClusters <- input$"selected-clusters"
 dimX <- brushedPs$mapping$x
 dimY <- brushedPs$mapping$y
+sampCol = sampleCols$colPal
+
 if(!is.null(brushedPs)){
   
   # geneid <- geneName2Index(geneNames, featureData)
@@ -177,7 +181,8 @@ if(!is.null(brushedPs)){
                                  scEx_matrix,
                                  projections,
                                  genesin,
-                                 cells = cells.1
+                                 cells = cells.1,
+                                 sampCol = sampCol
   )
   
   # print heatmap
