@@ -57,6 +57,7 @@ genesin <- c("h2afx,cdkn2a,cdkn1a")
 
 
 ```{r heatmap}
+  sampCol = sampleCols$colPal
 
 scEx_matrix <- as.matrix(assays(scEx_log)[[1]])
 # genesin <- c("h2afx,cdkn2a,cdkn1a")
@@ -66,7 +67,8 @@ genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(scEx_matrix
 
 heatmapData <- coE_heatmapFunc(
   featureData = featuredata, scEx_matrix = scEx_matrix,
-  projections = projections, genesin = genesin, cells = colnames(scEx_matrix)
+  projections = projections, genesin = genesin, cells = colnames(scEx_matrix),
+  sampCol = sampCol
 )
 addColNames <- input$"coExpHeatmapModule-ColNames"
 orderColNames <- input$"coExpHeatmapModule-orderNames"
@@ -100,14 +102,15 @@ do.call(pheatmap, heatmapData)
   geneListStr = genesin
   projectionVar <- input$dimension_xVioiGrp
   minExpr <- input$coEminExpr
-
+  sampCol = sampleCols$colPal
   retVal <- geneGrp_vioFunc(
     genesin = geneListStr,
     projections = proje,
     scEx = scEx,
     featureData = featureData,
     minExpr = minExpr,
-    dbCluster = projectionVar
+    dbCluster = projectionVar,
+    sampCol = sampCol
   )
   retVal
   

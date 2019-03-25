@@ -58,6 +58,8 @@ heatmapReactive <- reactive({
   scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$heatmap_geneids
+  sampCol = sampleCols$colPal
+  
   if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
     return(list(
       src = "empty.png",
@@ -78,7 +80,8 @@ heatmapReactive <- reactive({
   scEx_matrix <- assays(scEx_log)[[1]]
   retval <- coE_heatmapFunc(
     featureData = featureData, scEx_matrix = scEx_matrix,
-    projections = projections, genesin = genesin, cells = colnames(scEx_matrix)
+    projections = projections, genesin = genesin, cells = colnames(scEx_matrix),
+    sampCol = sampCol
   )
 
   return(retval)
@@ -129,47 +132,47 @@ callModule(
 # plotCoExpression ----
 # binarized 2D plot
 # TODO module?
-output$plotCoExpression <- renderPlot({
-  if (DEBUG) {
-    cat(file = stderr(), "output$plotCoExpression\n")
-  }
-  # if (vvvvvvv$doPlot == FALSE)
-  #   return()
-  featureData <- featureDataReact()
-  scEx_log <- log2cpm()
-  upI <- updateInputXviolinPlot() # no need to check because this is done in projections
-  projections <- projections()
-  if (is.null(featureData) |
-    is.null(projections) |
-    is.null(log2cpm) | is.null(input$clusters3)) {
-    return(NULL)
-  }
-
-  genesin <- input$mclustids
-  cl3 <- input$clusters3
-  dimx3 <- input$dimension_x3
-  dimy3 <- input$dimension_y3
-  # posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
-  # posCellsAll <- positiveCells$positiveCellsAll
-
-
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/plotCoExpression.RData")
-  p1 <- plotCoExpressionFunc(
-    featureData,
-    scEx_log,
-    upI,
-    projections,
-    genesin,
-    cl3,
-    dimx3,
-    dimy3
-  )
-  return(p1)
-})
-
+# output$plotCoExpression <- renderPlot({
+#   if (DEBUG) {
+#     cat(file = stderr(), "output$plotCoExpression\n")
+#   }
+#   # if (vvvvvvv$doPlot == FALSE)
+#   #   return()
+#   featureData <- featureDataReact()
+#   scEx_log <- log2cpm()
+#   upI <- updateInputXviolinPlot() # no need to check because this is done in projections
+#   projections <- projections()
+#   if (is.null(featureData) |
+#     is.null(projections) |
+#     is.null(log2cpm) | is.null(input$clusters3)) {
+#     return(NULL)
+#   }
+# 
+#   genesin <- input$mclustids
+#   cl3 <- input$clusters3
+#   dimx3 <- input$dimension_x3
+#   dimy3 <- input$dimension_y3
+#   # posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
+#   # posCellsAll <- positiveCells$positiveCellsAll
+# 
+# 
+#   if (DEBUGSAVE) {
+#     save(file = "~/scShinyHubDebug/plotCoExpression.RData", list = c(ls(), ls(envir = globalenv())))
+#   }
+#   # load(file="~/scShinyHubDebug/plotCoExpression.RData")
+#   p1 <- plotCoExpressionFunc(
+#     featureData,
+#     scEx_log,
+#     upI,
+#     projections,
+#     genesin,
+#     cl3,
+#     dimx3,
+#     dimy3
+#   )
+#   return(p1)
+# })
+# 
 
 # downloadExpressionOnOff -----
 # binarized
@@ -251,29 +254,29 @@ output$plotCoExpression <- renderPlot({
 
 # TODO as module
 # coexpression binarized
-output$clusters3 <- renderUI({
-  if (DEBUG) {
-    cat(file = stderr(), "output$clusters3\n")
-  }
-  projections <- projections()
-  if (is.null(projections)) {
-    HTML("Please load data first")
-    return(NULL)
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/clusters3.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/clusters3.RData")
-
-  noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
-  selectizeInput(
-    "clusters3",
-    label = "Cluster",
-    choices = c(1:noOfClusters),
-    selected = 1,
-    multiple = TRUE
-  )
-})
+# output$clusters3 <- renderUI({
+#   if (DEBUG) {
+#     cat(file = stderr(), "output$clusters3\n")
+#   }
+#   projections <- projections()
+#   if (is.null(projections)) {
+#     HTML("Please load data first")
+#     return(NULL)
+#   }
+#   if (DEBUGSAVE) {
+#     save(file = "~/scShinyHubDebug/clusters3.RData", list = c(ls(), ls(envir = globalenv())))
+#   }
+#   # load(file="~/scShinyHubDebug/clusters3.RData")
+# 
+#   noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
+#   selectizeInput(
+#     "clusters3",
+#     label = "Cluster",
+#     choices = c(1:noOfClusters),
+#     selected = 1,
+#     multiple = TRUE
+#   )
+# })
 
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
 # TODO module for violin plot  ??
@@ -290,6 +293,9 @@ output$geneGrp_vio_plot <- renderPlot({
   projectionVar <- input$dimension_xVioiGrp
   minExpr <- input$coEminExpr
   showPermutations <- input$showPermutations
+  colPal = geneGrp_vioFunc
+  sampCol = sampleCols$colPal
+  
   upI <- updateInputXviolinPlot() # no need to check because this is done in projections
   if (is.null(projections)) {
     if (DEBUG) {
@@ -309,7 +315,8 @@ output$geneGrp_vio_plot <- renderPlot({
     featureData = featureData,
     minExpr = minExpr,
     dbCluster = projectionVar,
-    showPermutations = showPermutations
+    showPermutations = showPermutations,
+    sampCol = sampCol
   )
   if (DEBUG) {
     cat(file = stderr(), "output$plotCoExpression:done\n")
