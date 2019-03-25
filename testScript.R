@@ -4,3 +4,4 @@ recordTest(".")
 
 testApp(".", "mytest.R")
 
+snapshotUpdate(".", "mytest")
