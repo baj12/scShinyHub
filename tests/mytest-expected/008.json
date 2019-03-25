@@ -1170,7 +1170,7 @@
   "output": {
     "DEBUGSAVEstring": "FALSE",
     "summaryStatsSideBar": {
-      "html": "Summary statistics of this dataset:<br/><br/>scEx.Rds<br/>No. of cells: \t192<br/>No. of genes: \t817<br/>Median UMIs per cell: \t77<br/>Median Genes with min 1 UMI: \t66<br/>Total number of reads:  14717<br/>Memory used: 385.1 Mb 2<br/>Normalization used: scEx_logNormalization",
+      "html": "Summary statistics of this dataset:<br/><br/>scEx.Rds<br/>No. of cells: \t192<br/>No. of genes: \t817<br/>Median UMIs per cell: \t77<br/>Median Genes with min 1 UMI: \t66<br/>Total number of reads:  14717<br/>Memory used: 384.9 Mb 2<br/>Normalization used: scEx_logNormalization",
       "deps": [
 
       ]
