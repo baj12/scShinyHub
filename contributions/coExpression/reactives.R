@@ -117,7 +117,7 @@ heatmapSelectedReactive <- reactive({
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
   sampCol = sampleCols$colPal
-  
+
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -150,7 +150,6 @@ heatmapSelectedReactive <- reactive({
   cells.1 <- scCells
   retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin, 
                             cells = cells.1, sampCol = sampCol)
-  
   return(retval)
 })
 
@@ -509,7 +508,6 @@ heatmapSOMReactive <- reactive({
   annotation <- data.frame(projections[, c("dbCluster", "sampleNames")])
   rownames(annotation) <- rownames(projections)
   colnames(annotation) <- c("Cluster", "sampleNames")
-  
   annCols = list("sampleNames" = sampCol)
   
   retVal <- list(
