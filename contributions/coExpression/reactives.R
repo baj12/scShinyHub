@@ -6,7 +6,7 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
       removeNotification(id = "heatmap")
   )
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/coE_heatmapFunc.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/coE_heatmapFunc.RData", list = c(ls(envir = globalenv()), ls()))
   }
   # load(file = "~/scShinyHubDebug/coE_heatmapFunc.RData")
   #  create parameters used for pheatmap module

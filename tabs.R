@@ -115,21 +115,33 @@ geneSelectionTab <- tabItem(
 
 generalParametersTab <- tabItem(
   "generalParameters",
-  fluidRow(div(h3("General parameters"), align = "center")),
+  fluidRow(div(h2("General parameters"), align = "center")),
   br(),
-  fluidRow(div(
-    h4(
-      "How many clusters should be calculated?"
-    ),
-    align = "center"
-  )),
+  fluidRow(div(h3("Parameters for clustering"), align = "left")),
   fluidRow(
-    column(5,
-           offset = 1,
-           numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
+    # column(2,
+    #        offset = 1,
+    #        numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
+    # ),
+    column(2, offset = 0,
+           selectInput("clusterSource", "use PCA or normalized data?", choices = c("PCA", "normData"), selected = "PCA")),
+    column(2, offset = 0,
+           numericInput("minClusterSize", "minimum size of each cluster.", 2, min = 2)),
+    column(2, offset = 0,
+           selectInput("clusterMethod", "clustering method to use", choices = c("hclust", "igraph"), selected = "igraph"))
+  ),
+  fluidRow(
+    column(10, offset = 1,
+    textInput("geneSelectionClustering", "Genes to be used for clustering")
     )
   ),
   br(),
+  fluidRow(
+    column(10, offset = 1,
+           textOutput("Nclusters"))
+  ),
+  br(),
+  fluidRow(div(h3("Comments"), align = "left")),
   fluidRow(
     tinyMCE(
       "descriptionOfWork",
@@ -137,6 +149,7 @@ generalParametersTab <- tabItem(
     )
   ),
   br(),
+  fluidRow(div(h3("Colors"), align = "left")),
   fluidRow(
     actionButton("updateColors", "Update colours", icon = icon("update"))
   ),

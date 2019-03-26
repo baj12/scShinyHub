@@ -1,8 +1,6 @@
 
 DummyFunc <- function(scEx_log) {
-  # here we perform the calculations and provide the resulting data.
-  # run_pca comes from the cellranger package.
-  nrow(scEx_log)
+   nrow(scEx_log)
 }
 
 # here we define reactive values/variables

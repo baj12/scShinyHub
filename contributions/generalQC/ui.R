@@ -46,7 +46,7 @@ tabList <- list(
     fluidRow(
       column(
         3,
-        numericInput("tsneDim", "Tsne dimensions", 3, min = 3, max = 5)
+        numericInput("tsneDim", "Tsne dimensions", 3, min = 3, max = 3)
       ),
       column(
         3,

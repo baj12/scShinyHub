@@ -115,7 +115,8 @@ inputDataFunc <- function(inFile) {
   cat(stderr(), "Loaded")
   dataTables <- list()
   featuredata <- rowData(scEx)
-  dataTables$featuredataOrg <- rowData(scEx)
+  featuredata$Associated.Gene.Name = toupper(featuredata$Associated.Gene.Name)
+  # dataTables$featuredataOrg <- rowData(scEx)
   dataTables$scEx <- scEx
   dataTables$featuredata <- featuredata
 
@@ -143,7 +144,6 @@ inputDataFunc <- function(inFile) {
       ))(length(sampNames))
       names(sampleCols$colPal) <- sampNames
     })
-   
   } else {
     showNotification("scEx - colData doesn't contain sampleNames",
       duration = NULL, type = "error"
@@ -170,6 +170,7 @@ inputDataFunc <- function(inFile) {
     if (!"Description" %in% colnames(featuredata)) {
       featuredata$"Description" <- "not given"
     }
+    featuredata$Associated.Gene.Name = toupper(featuredata$Associated.Gene.Name)
     dataTables$featuredata <- featuredata
   }
   # if (is.null(rowData(dataTables$scEx)$symbol)){
@@ -182,6 +183,7 @@ inputDataFunc <- function(inFile) {
   cat(file = stderr(), paste("===load data:done", difftime(end.time, start.time, units = "min"), " min\n"))
 
   inputFileStats$stats <- stats
+  exportTestValues(inputFileStats = { inputFileStats })
   return(dataTables)
 }
 
@@ -194,7 +196,7 @@ inputData <- reactive({
     }
     return(NULL)
   }
-  retVal = inputDataFunc(inFile)
+  retVal <- inputDataFunc(inFile)
   # lev <- levels(colData(retVal$scEx)$sampleNames)
   # isolate({sampCol = sampleCols$colPal})
   # t = input$sampleNamecol1
@@ -212,7 +214,7 @@ inputData <- reactive({
   #           )
   #   )
   # })
-  
+
   return(retVal)
 })
 
@@ -423,7 +425,7 @@ featureDataReact <- reactive({
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/featureDataReact.Rdata", list = c(ls(), ls(envir = globalenv())))
   }
-
+  # load("~/scShinyHubDebug/featureDataReact.Rdata")
   useGenes <- rownames(dataTables$featuredata) %in% rownames(scEx)
   if (DEBUG) {
     end.time <- Sys.time()
@@ -862,34 +864,82 @@ pca <- reactive({
 })
 
 
-kmClusteringFunc <- function(pca, seed, kNr = 10) {
-  clustering <- list()
+# kmClusteringFunc <- function(pca, seed, kNr = 10) {
+#   clustering <- list()
+# 
+#   # kNr = 10
+#   # for (kNr in 2:kNr) {
+#   set.seed(seed = seed)
+#   km <- cellrangerRkit::run_kmeans_clustering(pca, k = kNr)
+#   clustering[[paste0("kmeans_", kNr, "_clusters")]] <- data.frame(
+#     "Barcode" = rownames(data.frame(km$cluster)),
+#     "Cluster" = km$cluster
+#   )
+#   # }
+#   return(clustering)
+# }
 
-  # kNr = 10
-  # for (kNr in 2:kNr) {
-  set.seed(seed = seed)
-  km <- cellrangerRkit::run_kmeans_clustering(pca, k = kNr)
-  clustering[[paste0("kmeans_", kNr, "_clusters")]] <- data.frame(
-    "Barcode" = rownames(data.frame(km$cluster)),
-    "Cluster" = km$cluster
+scranCluster <- function(pca, scEx_log, seed, clusterSource,
+                         geneSelectionClustering, minClusterSize, clusterMethod, featureData) {
+  set.seed(seed)
+  geneid <- geneName2Index(geneSelectionClustering, featureData)
+  
+  params <- list(
+    min.mean = NULL,
+    min.size = minClusterSize,
+    method = clusterMethod
   )
+  if (clusterSource == "PCA") {
+    params$x <- t(pca$x)
+  } else {
+    params$x <- scEx_log
+    params$assay.type <- "logcounts"
+    if (length(geneid) > 0)
+        params$subset.row <- geneid
+  }
+  
+  retVal <- tryCatch({
+    do.call("quickCluster", params)
+  },
+  error = function(e) {
+    cat(file = stderr(), paste("\nProblem with clustering", e, "\n\n"))
+    return(NULL)
+   }#,
+  # warning = function(e){
+  #   cat(file = stderr(), paste("\nclustering produced Warning:\n",e , "\n"))
+  #   return(do.call("quickCluster", params))
   # }
-  return(clustering)
+  )
+  retVal = data.frame(Barcode = colData(scEx_log)$barcode,
+                      Cluster = retVal)
+  rownames(retVal) = retVal$Barcode
+  return(retVal)
 }
+
 
 kmClustering <- reactive({
   on.exit(
-    removeNotification(id = "kmClustering")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "kmClustering")
+    }
   )
   start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "kmClustering\n")
   }
   pca <- pca()
+  scEx_log <- scEx_log()
+  featureData <- featureDataReact()
+  
   seed <- input$seed
   kNr <- input$kNr
+  clusterSource <- input$clusterSource
+  geneSelectionClustering <- input$geneSelectionClustering
+  minClusterSize <- input$minClusterSize
+  clusterMethod <- input$clusterMethod
+
   # kNr = 10
-  if (is.null(pca)) {
+  if (is.null(pca) | is.null(scEx_log)) {
     if (DEBUG) {
       cat(file = stderr(), "kmClustering:NULL\n")
     }
@@ -906,7 +956,20 @@ kmClustering <- reactive({
   if (is.null(seed)) {
     seed <- 1
   }
-  retVal <- kmClusteringFunc(pca, seed = seed, kNr = kNr)
+  # retVal <- kmClusteringFunc(pca, seed = seed, kNr = kNr)
+  retVal <- scranCluster(
+    pca, scEx_log, seed, clusterSource,
+    geneSelectionClustering, minClusterSize, clusterMethod, 
+    featureData
+  )
+  if (is.null(retVal)) {
+      showNotification(
+        paste("error: clustering didn't produce a result"),
+        type = "error",
+        duration = NULL
+      )
+    
+  }
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===kmClustering:done", difftime(end.time, start.time, units = "min"), "\n")
@@ -1095,7 +1158,7 @@ dbCluster <- reactive({
   }
 
   # dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
-  dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster)
+  dbCluster <- clustering$Cluster
 
   if (DEBUG) {
     end.time <- Sys.time()
@@ -1475,4 +1538,3 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   }
   p1
 }
-

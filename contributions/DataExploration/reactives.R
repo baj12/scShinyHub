@@ -35,6 +35,7 @@ scaterPNG <- reactive({
   n <- min(nrow(scaterReads), 50)
   # use plotHighestExprs instead of plotQC
   # p1 <- scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by = "fixed", n = n)
+  rownames(scaterReads) = rowData(scaterReads)$symbol
   p1 <- scater::plotHighestExprs(scaterReads, colour_cells_by = "log10_total_counts", n=n)
   tryCatch(
     ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p1, width = myPNGwidth, height = myPNGheight, units = "in"),

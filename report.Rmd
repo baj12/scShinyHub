@@ -244,7 +244,12 @@ Creating  `r input$kNr` clusters.
 ```{r kmClustering, eval=TRUE, echo=FALSE}
 if (DEBUG) cat(file = stderr(), "kmClustering\n")
 seed <- 1
-kmClustering <- kmClusteringFunc(pca, seed, kNr = input$kNr)
+  # retVal <- kmClusteringFunc(pca, seed = seed, kNr = kNr)
+  retVal <- scranCluster(
+    pca, scEx_log, seed, clusterSource,
+    geneSelectionClustering, minClusterSize, clusterMethod, 
+    featureData
+  )
 
 if (DEBUG) cat(file = stderr(), "kmClustering:done\n")
 ```

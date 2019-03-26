@@ -2,11 +2,11 @@
 source ("moduleServer.R", local = TRUE)
 source ("reactives.R", local = TRUE)
 
-allowedColors = c("#8c510a","#d8b365","#f6e8c3","#c7eae5","#5ab4ac","#01665e","#c51b7d","#e9a3c9",
+allowedColors = unique(c("#8c510a","#d8b365","#f6e8c3","#c7eae5","#5ab4ac","#01665e","#c51b7d","#e9a3c9",
                   "#fde0ef","#e6f5d0","#a1d76a","#4d9221","#762a83","#af8dc3","#e7d4e8","#d9f0d3",
                   "#7fbf7b","#1b7837","#b35806","#f1a340","#fee0b6","#d8daeb","#998ec3","#542788",
                   "#b2182b","#ef8a62","#fddbc7","#d1e5f0","#67a9cf","#2166ac","#b2182b","#ef8a62",
-                  "#fddbc7","#e0e0e0","#999999","#4d4d4d")
+                  "#fddbc7","#e0e0e0","#999999","#4d4d4d"))
 
 # normalizationRadioButtonValue -------------------------------- Parameters / normalization
 output$normalizationRadioButtonValue <- renderPrint({
@@ -284,3 +284,15 @@ observeEvent(input$updateColors, {
   })
 })
 
+output$Nclusters <- renderText({
+  kmClustering = kmClustering()
+  if (is.null(kmClustering)) {
+    return(NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/Nclusters.RData", list = c(ls(), ls(envir = globalenv())))
+    cat(file = stderr(), paste0("observeEvent save done\n"))
+  }
+  # load(file="~/scShinyHubDebug/Nclusters.RData")
+  return(paste(levels(kmClustering$Cluster)))
+})
