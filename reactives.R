@@ -183,7 +183,8 @@ inputDataFunc <- function(inFile) {
   cat(file = stderr(), paste("===load data:done", difftime(end.time, start.time, units = "min"), " min\n"))
 
   inputFileStats$stats <- stats
-  exportTestValues(inputFileStats = { inputFileStats })
+  exportTestValues(inputFileStats = { inputFileStats$stats })
+  exportTestValues(exprsvals = { assays(dataTables$scEx)[["counts"]] })
   return(dataTables)
 }
 
@@ -215,6 +216,16 @@ inputData <- reactive({
   #   )
   # })
 
+  # reactives = ls(envir = globalenv())[which(unlist(lapply(ls(envir = globalenv()), function(x) class(get(x))[[1]][1]=="reactiveExpr")))]
+  # nullreactives = c()
+  # for (re in reactives) {
+  #   isolate({
+  #     if (is.null(get(paste0(re,"()")))) {
+  #       nullreactives = c(nullreactives, re)
+  #     }
+  #   })
+  # }
+  # save(file = "testReactive.Rdata", list = c(ls()))
   return(retVal)
 })
 
@@ -974,7 +985,18 @@ kmClustering <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===kmClustering:done", difftime(end.time, start.time, units = "min"), "\n")
   }
-
+  # reactives = ls(envir = globalenv())[which(unlist(lapply(ls(envir = globalenv()), function(x) class(get(x))[[1]][1]=="reactiveExpr")))]
+  # nullreactives = c()
+  # for (re in reactives) {
+  #   if (re == "kmClustering") next()
+  #   isolate({
+  #     if (is.null(get(re))) {
+  #       nullreactives = c(nullreactives, re)
+  #     }
+  #   })
+  # }
+  # save(file = "testReactive2.Rdata", list = c(ls()))
+  
   return(retVal)
 })
 
