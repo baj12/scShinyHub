@@ -2,6 +2,6 @@ library(shinytest)
 
 recordTest(".")
 
-testApp(".", "mytest.R")
+system.time(testApp(".", "mytest.R",compareImages = FALSE))
 
 snapshotUpdate(".", "mytest")

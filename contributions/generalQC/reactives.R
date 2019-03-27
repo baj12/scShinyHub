@@ -115,11 +115,11 @@ tsne <- reactive({
   }
   # load(file='~/scShinyHubDebug/tsne.RData')
   require(parallel)
-  
+  require(Rtsne)
+  np = dim(pca$x)[2]
   retval <- tryCatch({
-    cellrangerRkit::run_tsne(
-      pca,
-      dims = tsneDim,
+    Rtsne::Rtsne(
+      pca$x[,1:np], pca = FALSE,
       perplexity = tsnePerplexity,
       theta = tsneTheta,
       check_duplicates = FALSE, num_threads = detectCores()
@@ -138,8 +138,10 @@ tsne <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "tsne: done\n")
   }
+  exportTestValues(rtsne = { retval })
   return(retval)
 })
+
 tsne1 <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "tsne1\n")

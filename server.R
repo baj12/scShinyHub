@@ -32,6 +32,7 @@ library(SingleCellExperiment)
 library(Matrix)
 library(colourpicker)
 library(shinytest)
+library(scran)
 
 if (file.exists("defaultValues.R")) {
   base::source(file = "defaultValues.R")
