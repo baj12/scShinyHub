@@ -4,6 +4,7 @@ selectedDge <- reactiveValues(
 
 
 # TODO remove log2cpm change to scEx_log
+# TODO !!! remove DiffExpTest as it comes from somewhere else...
 dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2) {
   subsetData <- subset(projections, dbCluster %in% cl1)
   cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
@@ -12,6 +13,7 @@ dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2
   subsetExpression <- log2cpm[, union(cells.1, cells.2)]
 
   genes.use <- rownames(subsetExpression)
+  # expMean exponential mean
   data.1 <- apply(subsetExpression[genes.use, cells.1], 1, expMean)
   data.2 <- apply(subsetExpression[genes.use, cells.2], 1, expMean)
   total.diff <- (data.1 - data.2)

@@ -1,6 +1,6 @@
 # devtools::install_github("mul118/shinyMCE")
 
-# LIBRARY -----------------------------------------------------------------
+# LIBRARIES -----------------------------------------------------------------
 
 library(shiny)
 library(shinyTree)
@@ -110,16 +110,14 @@ shinyServer(function(input, output, session) {
 
 
 
-  # ------------------------------------------------------------------------------------------------------------
-  # load global reactives, modules, etc
+  # load global reactives, modules, etc ----
   # why not import them  earlier? I rember that there was an issue. could be documented
   base::source("reactives.R", local = TRUE)
   base::source("outputs.R", local = TRUE)
   base::source("modulesUI.R", local = TRUE)
   base::source("moduleServer.R", local = TRUE)
 
-  # ------------------------------------------------------------------------------------------------------------
-  # bookmarking
+  # bookmarking -----
   # setBookmarkExclude(c("bookmark1"))
   # observeEvent(input$bookmark1, {
   #   if (DEBUG) cat(file = stderr(), paste("bookmarking: \n"))
@@ -130,7 +128,7 @@ shinyServer(function(input, output, session) {
   # })
   # Need to exclude the buttons from themselves being bookmarked
 
-  # ------------------------------------------------------------------------------------------------------------
+  # load contribution reactives ----
   # load contribution reactives
   # parse all reactives.R files under contributions to include in application
   uiFiles <- base::dir(
@@ -167,8 +165,7 @@ shinyServer(function(input, output, session) {
   #   positiveCellsAll = NULL
   # )
 
-  # ------------------------------------------------------------------------------------------------------------
-  # handling expensive calcualtions
+  # handling expensive calcualtions ------
   forceCalc <- shiny::observe({
     input$goCalc
     start.time <- base::Sys.time()
@@ -193,7 +190,7 @@ shinyServer(function(input, output, session) {
     # updateMemUse$update <- isolate(updateMemUse$update) + 1
   })
 
-
+# download handler countscsv ----
   output$countscsv <- downloadHandler(
     filename = paste0("counts.", Sys.Date(), ".csv"),
     content = function(file) {
@@ -206,6 +203,7 @@ shinyServer(function(input, output, session) {
     }
   )
 
+  # download RDS ----
   output$RDSsave <- downloadHandler(
     filename = paste0("project.", Sys.Date(), ".Rds"),
     content = function(file) {
@@ -245,13 +243,12 @@ shinyServer(function(input, output, session) {
       tDir <- reportTempDir
       reactiveFiles <- ""
 
-      #-----------
-      # fixed files
+      # fixed files -----------
       tmpFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
       file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
       reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
 
-      #----- Projections
+      # Projections -----
       # projections can contain mannually annotated groups of cells and different normalizations.
       # to reduce complexity we are going to save those in a separate RData file
       tmpPrjFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
@@ -262,7 +259,6 @@ shinyServer(function(input, output, session) {
       gNames <- groupNames$namesDF
       base::save(file = tmpPrjFile, list = c("projections", "scEx_log", "gNames"))
 
-      # ------------------------------------------------------------------------------------------------------------
       # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
       # we copy them to the temp directory and load them in the markdown
       uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
@@ -280,7 +276,6 @@ shinyServer(function(input, output, session) {
 
 
 
-      # ------------------------------------------------------------------------------------------------------------
       # handle plugin reports
       # load contribution reports
       # parse all report.Rmd files under contributions to include in application

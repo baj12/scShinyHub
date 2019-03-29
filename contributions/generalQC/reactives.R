@@ -4,7 +4,7 @@ require(SingleCellExperiment)
 
 # here we define reactive values/variables
 
-# scaterReadsFunc <- function(scEx, scEx_log, fd){
+# scaterReadsFunc ----
 scaterReadsFunc <- function(scEx) {
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
@@ -33,9 +33,11 @@ scaterReadsFunc <- function(scEx) {
     # remove cells with unusual number of reads in MT genes
     # filter_by_MT
   )
+  
   return(scEx)
 }
 
+# scaterReads ----
 scaterReads <- reactive({
   if (DEBUG) cat(file = stderr(), "scaterReads\n")
   scEx <- scEx()
@@ -44,10 +46,14 @@ scaterReads <- reactive({
     return(NULL)
   }
   # return(scaterReadsFunc(scEx, scEx_log, fd))
-  return(scaterReadsFunc(scEx))
+  retVal <- scaterReadsFunc(scEx)
+  # TODO find out how to compare saved files
+  exportTestValues(scaterReadsFunc = { save(file = "scaterReadsFunc.Test.RDada", list = c("retVal")) })
+  return(retVal)
 })
 
 
+# sampleHistFunc ----
 sampleHistFunc <- function(samples, scols) {
   counts <- table(samples)
   barplot(counts,
@@ -63,6 +69,9 @@ sampleHistFunc <- function(samples, scols) {
   # )
 }
 
+###
+# inputTSNESample -----
+# input for tableSelectionServer
 inputTSNESample <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -85,6 +94,7 @@ inputTSNESample <- reactive({
   return(projections)
 })
 
+# tsne ----
 # TODO separate  function from reactive : done? run_tsne is already the function.
 # Maybe we need a normalized name like tsneFunc?
 tsne <- reactive({
@@ -208,7 +218,7 @@ tsne <- reactive({
 #   return(tsne.data$tsne5)
 # })
 
-
+# tsne.data ----
 tsne.data <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -240,6 +250,7 @@ tsne.data <- reactive({
   return(tsne.data)
 })
 
+# umapReact ----
 umapReact <- reactive({
   scEx_log <- scEx_log()
   
@@ -317,7 +328,7 @@ umapReact <- reactive({
 })
 
 
-
+# myProjections ----
 myProjections <- list(
   c("tsne", "tsne.data"),
   # c("tsne2", "tsne2"),
@@ -328,7 +339,7 @@ myProjections <- list(
   c("umap", "umapReact")
 )
 
-
+# myHeavyCalculations ----
 # declare function as heavy
 myHeavyCalculations <- list(
   c("scaterReads", "scaterReads"),

@@ -6,6 +6,8 @@
 #             plotOutput('plotUmiHist') %>% withSpinner()
 #           )))
 #   ))
+
+
 if (DEBUG) cat(file = stderr(), paste("parameters:", length(allTabs), " ", "\n"))
 
 normaliztionChoices <- list(raw = "rawNormalization")

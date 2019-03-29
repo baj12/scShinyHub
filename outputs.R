@@ -97,21 +97,26 @@ output$summaryStatsSideBar <- renderUI({
   line5 <- paste("Total number of reads: ", sum(assays(scEx)[["counts"]]))
   line6 <- paste("Memory used:", getMemoryUsed())
   line7 <- paste("Normalization used:", input$normalizationRadioButton)
-  HTML(paste0(
+  htmlOut <- paste0(
     "Summary statistics of this dataset:", "<br/>", "<br/>", line0, "<br/>",  line1, "<br/>", line2, "<br/>", line3, "<br/>", line4, "<br/>",
     line5, "<br/>", line6, "<br/>", line7
-  ))
+  )
+  exportTestValues(summaryStatsSideBar = { htmlOut })
+  
+  HTML(htmlOut)
 })
 
 
-# Select Genes ---------------------------------------------------------------- this is part of the basic functionality from this
+# Select Genes ----
+# this is part of the basic functionality from this
 # tools and thus, can stay in this file.
 output$geneListSelection <- renderTree({
   geneLists
 })
 
-
-# ONOFF TAB RENDER TABLE ALL CELLS ------------------------------------------------------------------ TODO module for DT this is part
+# selectedGenesTable ----
+# ONOFF TAB RENDER TABLE ALL CELLS 
+# TODO module for DT this is part
 # of the basic functionality from this tools and thus, can stay in this file.
 output$selectedGenesTable <- DT::renderDataTable({
   if (DEBUG) {
@@ -133,10 +138,12 @@ output$selectedGenesTable <- DT::renderDataTable({
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
   dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
   dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
+  exportTestValues(selectedGenesTable = { as.data.frame(dt) })
   DT::datatable(as.data.frame(dt))
 })
 
-# removedGenesTable -------------------------- TODO module for DT TODO move to were it belongs
+# removedGenesTable -------------------------- 
+# TODO module for DT TODO move to were it belongs
 output$removedGenesTable <- DT::renderDataTable({
   if (DEBUG) {
     cat(file = stderr(), "output$removedGenesTable\n")
@@ -158,10 +165,12 @@ output$removedGenesTable <- DT::renderDataTable({
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
   dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
   dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
+  exportTestValues(removedGenesTable = { as.data.frame(dt) })
   DT::datatable(as.data.frame(dt))
 })
 
-# gsSelectedGenes --------------------------- TODO module of DT with selected names above Print names of selected genes for gene
+# gsSelectedGenes --------------------------- 
+# TODO module of DT with selected names above Print names of selected genes for gene
 # selection above table
 output$gsSelectedGenes <- renderText({
   if (DEBUG) {
@@ -182,11 +191,13 @@ output$gsSelectedGenes <- renderText({
   # scEx <- as.matrix(exprs(dataTables$scEx))
   fd <- dataTables$featuredata
   dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-
-  paste0(dt$Associated.Gene.Name[selectedGenesTable_rows_selected], ",")
+  retVal <- paste0(dt$Associated.Gene.Name[selectedGenesTable_rows_selected], ",")
+  exportTestValues(gsSelectedGenes = { retVal })
+  return(retVal)
 })
 
-# gsrmGenes ----------------- Print names of removed genes for gene selection
+# gsrmGenes ----------------- 
+# Print names of removed genes for gene selection
 output$gsrmGenes <- renderText({
   if (DEBUG) {
     cat(file = stderr(), "gsrmGenes\n")
@@ -209,27 +220,31 @@ output$gsrmGenes <- renderText({
   if (DEBUG) {
     cat(file = stderr(), "gsrmGenes: done\n")
   }
-  paste0(dt$Associated.Gene.Name[removedGenesTable_rows_selected], ",")
+  retVal <-  paste0(dt$Associated.Gene.Name[removedGenesTable_rows_selected], ",")
+  exportTestValues(gsrmGenes = { retVal })
+  return(retVal)
 })
 
-
+# DEBUGSAVEstring ----
 output$DEBUGSAVEstring <- renderText({
+  if (DEBUG){
   DEBUGSAVE <<- input$DEBUGSAVE
+  } else {
+    NULL
+  }
 })
 
+# cellSelectionMod ----
 callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 
+# normalizationResult ----
 callModule(tableSelectionServer, "normalizationResult", scExLogMatrixDisplay)
 
 output$descriptOfWorkOutput <- renderPrint({
   input$descriptionOfWork
 })
 
-if (DEBUG) {
-  cat(file = stderr(), paste("end: outputs.R\n"))
-}
-
-
+# sampleColorSelection ----
 output$sampleColorSelection <- renderUI({ 
   scEx <- scEx()
   isolate({sampCol = sampleCols$colPal})
@@ -258,7 +273,7 @@ output$sampleColorSelection <- renderUI({
   })
 })
 
-
+# observe: input$updateColors ----
 observeEvent(input$updateColors, {
   cat(file = stderr(), paste0("observeEvent input$updateColors\n"))
   scExx <- scEx()
@@ -284,6 +299,7 @@ observeEvent(input$updateColors, {
   })
 })
 
+# Nclusters ----
 output$Nclusters <- renderText({
   kmClustering = kmClustering()
   if (is.null(kmClustering)) {
@@ -294,5 +310,13 @@ output$Nclusters <- renderText({
     cat(file = stderr(), paste0("observeEvent save done\n"))
   }
   # load(file="~/scShinyHubDebug/Nclusters.RData")
-  return(paste(levels(kmClustering$Cluster)))
+  retVal <- paste(levels(kmClustering$Cluster))
+  exportTestValues(Nclusters = { retVal })
+  return(retVal)
 })
+
+
+if (DEBUG) {
+  cat(file = stderr(), paste("end: outputs.R\n"))
+}
+
