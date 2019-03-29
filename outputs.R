@@ -248,7 +248,7 @@ output$sampleColorSelection <- renderUI({
   # New IDs "colX1" so that it partly coincide with input$select...
   lapply(seq_along(lev), function(i) {
     colourpicker::colourInput(inputId = paste0("sampleNamecol", lev[i]),
-                              label = paste0("Choose colour for sample ",sampCol[i], "\"", lev[i],"\""), 
+                              label = paste0("Choose colour for sample ","\"", lev[i],"\""), 
                               # value = "#762A83"
                               # ,
                               value = sampCol[i],

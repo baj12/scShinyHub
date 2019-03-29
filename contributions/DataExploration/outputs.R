@@ -351,7 +351,11 @@ output$tsne_plt <- renderPlotly({
 
   projections <- cbind(projections, expression)
   names(projections)[ncol(projections)] <- "values"
-
+  if (!all(c("tsne1", "tsne2", "tsne3") %in% colnames(projections))) {
+    showNotification("some tsne projections are not available.", id = "tsne_pltERROR", 
+                     duration = NULL, type = "error")
+  }
+  
   p <-
     plot_ly(
       projections,

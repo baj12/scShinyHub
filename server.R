@@ -189,7 +189,8 @@ shinyServer(function(input, output, session) {
     # tfmt <- "%Hh %Mm %Ss"
     # t1 <- strptime(end.time - start.time, format=tfmt)
     cat(file = stderr(), paste("this took: ", difftime(end.time, start.time, units = "min"), " min\n"))
-    updateMemUse$update <- isolate(updateMemUse$update) + 1
+    # not used anymore
+    # updateMemUse$update <- isolate(updateMemUse$update) + 1
   })
 
 
