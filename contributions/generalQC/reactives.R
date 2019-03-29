@@ -119,7 +119,7 @@ tsne <- reactive({
   np = dim(pca$x)[2]
   retval <- tryCatch({
     Rtsne::Rtsne(
-      pca$x[,1:np], pca = FALSE,
+      pca$x[,1:np], pca = FALSE, dims = tsneDim,
       perplexity = tsnePerplexity,
       theta = tsneTheta,
       check_duplicates = FALSE, num_threads = detectCores()
@@ -141,72 +141,72 @@ tsne <- reactive({
   exportTestValues(rtsne = { retval })
   return(retval)
 })
-
-tsne1 <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "tsne1\n")
-  }
-  tsne.data <- tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne1: NULL\n")
-    }
-    return(NULL)
-  }
-  return(tsne.data$tsne1)
-})
-tsne2 <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "tsne1\n")
-  }
-  tsne.data <- tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne2: NULL\n")
-    }
-    return(NULL)
-  }
-  return(tsne.data$tsne2)
-})
-tsne3 <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "tsne1\n")
-  }
-  tsne.data <- tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne3: NULL\n")
-    }
-    return(NULL)
-  }
-  return(tsne.data$tsne3)
-})
-tsne4 <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "tsne1\n")
-  }
-  tsne.data <- tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne4: NULL\n")
-    }
-    return(NULL)
-  }
-  return(tsne.data$tsne4)
-})
-tsne5 <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "tsne1\n")
-  }
-  tsne.data <- tsne.data()
-  if (is.null(tsne.data)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne5: NULL\n")
-    }
-    return(NULL)
-  }
-  return(tsne.data$tsne5)
-})
+# 
+# tsne1 <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "tsne1\n")
+#   }
+#   tsne.data <- tsne.data()
+#   if (is.null(tsne.data)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "tsne1: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   return(tsne.data$tsne1)
+# })
+# tsne2 <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "tsne2\n")
+#   }
+#   tsne.data <- tsne.data()
+#   if (is.null(tsne.data)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "tsne2: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   return(tsne.data$tsne2)
+# })
+# tsne3 <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "tsne3\n")
+#   }
+#   tsne.data <- tsne.data()
+#   if (is.null(tsne.data)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "tsne3: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   return(tsne.data$tsne3)
+# })
+# tsne4 <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "tsne4\n")
+#   }
+#   tsne.data <- tsne.data()
+#   if (is.null(tsne.data)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "tsne4: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   return(tsne.data$tsne4)
+# })
+# tsne5 <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "tsne5\n")
+#   }
+#   tsne.data <- tsne.data()
+#   if (is.null(tsne.data)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "tsne5: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   return(tsne.data$tsne5)
+# })
 
 
 tsne.data <- reactive({
@@ -319,11 +319,11 @@ umapReact <- reactive({
 
 
 myProjections <- list(
-  c("tsne1", "tsne1"),
-  c("tsne2", "tsne2"),
-  c("tsne3", "tsne3"),
-  c("tsne4", "tsne4"),
-  c("tsne5", "tsne5"),
+  c("tsne", "tsne.data"),
+  # c("tsne2", "tsne2"),
+  # c("tsne3", "tsne3"),
+  # c("tsne4", "tsne4"),
+  # c("tsne5", "tsne5"),
   c("dbCluster", "dbCluster"),
   c("umap", "umapReact")
 )
