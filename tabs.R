@@ -10,6 +10,7 @@ if (file.exists("defaultValues.R")) {
   defaultValueRegExGene <- ""
 }
 
+# inputTab ----
 inputTab <- tabItem(
   tabName = "input",
   fluidRow(div(h3("scShinyHub Input"), align = "center")),
@@ -50,7 +51,7 @@ inputTab <- tabItem(
   ))
 )
 
-
+# geneSelectionTab ----
 geneSelectionTab <- tabItem(
   tabName = "geneSelection",
   fluidRow(div(h3("Gene selection"), align = "center")),
@@ -113,6 +114,7 @@ geneSelectionTab <- tabItem(
   )
 )
 
+# generalParametersTab ----
 generalParametersTab <- tabItem(
   "generalParameters",
   fluidRow(div(h2("General parameters"), align = "center")),
@@ -163,6 +165,7 @@ generalParametersTab <- tabItem(
   # )
 )
 
+# cellSelectionTab ----
 cellSelectionTab <- tabItem(
   tabName = "cellSelection",
   fluidRow(div(h3("Cell selection"), align = "center")),
