@@ -2,11 +2,6 @@
 source ("moduleServer.R", local = TRUE)
 source ("reactives.R", local = TRUE)
 
-allowedColors = unique(c("#8c510a","#d8b365","#f6e8c3","#c7eae5","#5ab4ac","#01665e","#c51b7d","#e9a3c9",
-                  "#fde0ef","#e6f5d0","#a1d76a","#4d9221","#762a83","#af8dc3","#e7d4e8","#d9f0d3",
-                  "#7fbf7b","#1b7837","#b35806","#f1a340","#fee0b6","#d8daeb","#998ec3","#542788",
-                  "#b2182b","#ef8a62","#fddbc7","#d1e5f0","#67a9cf","#2166ac","#b2182b","#ef8a62",
-                  "#fddbc7","#e0e0e0","#999999","#4d4d4d"))
 
 # normalizationRadioButtonValue -------------------------------- Parameters / normalization
 output$normalizationRadioButtonValue <- renderPrint({
@@ -247,7 +242,7 @@ output$descriptOfWorkOutput <- renderPrint({
 # sampleColorSelection ----
 output$sampleColorSelection <- renderUI({ 
   scEx <- scEx()
-  isolate({sampCol = sampleCols$colPal})
+  sampCol = sampleCols$colPal
   
   if (is.null(scEx) ) {
     return(NULL)
@@ -272,6 +267,8 @@ output$sampleColorSelection <- renderUI({
     )        
   })
 })
+
+observe(scEx)
 
 # observe: input$updateColors ----
 observeEvent(input$updateColors, {
@@ -315,6 +312,177 @@ output$Nclusters <- renderText({
   return(retVal)
 })
 
+# download handler countscsv ----
+output$countscsv <- downloadHandler(
+  filename = paste0("counts.", Sys.Date(), ".csv"),
+  content = function(file) {
+    if (DEBUG) cat(file = stderr(), paste("countcsv: \n"))
+    scEx_log <- scEx_log()
+    if (is.null(scEx_log)) {
+      return(NULL)
+    }
+    write.csv(as.matrix(assays(scEx_log)[[1]]), file)
+  }
+)
+
+# download RDS ----
+output$RDSsave <- downloadHandler(
+  filename = paste0("project.", Sys.Date(), ".Rds"),
+  content = function(file) {
+    if (DEBUG) cat(file = stderr(), paste("RDSsave: \n"))
+    scEx <- scEx()
+    featuredata <- featureDataReact()
+    
+    if (is.null(scEx) | is.null(featuredata)) {
+      return(NULL)
+    }
+    if (DEBUGSAVE) {
+      save(file = "~/scShinyHubDebug/RDSsave.RData", list = c(ls(), ls(envir = globalenv())))
+    }
+    # load(file='~/scShinyHubDebug/RDSsave.RData')
+    
+    save(file = file, list = c("featuredata", "scEx"))
+    if (DEBUG) cat(file = stderr(), paste("RDSsave:done \n"))
+    
+    # write.csv(as.matrix(exprs(scEx)), file)
+  }
+)
+
+# Report creation ------------------------------------------------------------------
+output$report <- downloadHandler(
+  filename = "report.zip",
+  
+  content = function(file) {
+    start.time <- Sys.time()
+    if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("file", ls()))
+    # load('~/scShinyHubDebug/tempReport.1.RData')
+    
+    ip <- inputData()
+    if (is.null(ip)) {
+      if (DEBUG) cat(file = stderr(), "output$report:NULL\n")
+      return(NULL)
+    }
+    tDir <- reportTempDir
+    reactiveFiles <- ""
+    
+    # fixed files -----------
+    tmpFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
+    file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
+    reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
+    
+    # Projections -----
+    # projections can contain mannually annotated groups of cells and different normalizations.
+    # to reduce complexity we are going to save those in a separate RData file
+    tmpPrjFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".RData")
+    projections <- projections()
+    scEx_log <- scEx_log()
+    scEx <- scEx()
+    featuredata <- featureDataReact()
+    gNames <- groupNames$namesDF
+    base::save(file = tmpPrjFile, list = c("projections", "scEx_log", "gNames"))
+    
+    # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
+    # we copy them to the temp directory and load them in the markdown
+    uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+    for (fp in c("reactives.R", uiFiles)) {
+      if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+      tmpFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".R")
+      file.copy(fp, tmpFile, overwrite = TRUE)
+      reactiveFiles <- paste0(reactiveFiles, "source(\"", tmpFile, "\")\n", collapse = "\n")
+    }
+    # otherwise reactive might overwrite projections...
+    reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, "\")\n", collapse = "\n")
+    # encapsulte the load files in an R block
+    reactiveFiles <- paste0("\n\n```{r load-reactives, include=FALSE}\n", reactiveFiles, "\n```\n\n")
+    
+    
+    
+    
+    # handle plugin reports
+    # load contribution reports
+    # parse all report.Rmd files under contributions to include in application
+    uiFiles <- dir(path = "contributions", pattern = "report.Rmd", full.names = TRUE, recursive = TRUE)
+    pluginReportsString <- ""
+    fpRidx <- 1
+    for (fp in uiFiles) {
+      if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+      tmpFile <- tempfile(pattern = "file", tmpdir = tDir, fileext = ".Rmd")
+      file.copy(fp, tmpFile, overwrite = TRUE)
+      pluginReportsString <- paste0(
+        pluginReportsString,
+        "\n\n```{r child-report-", fpRidx, ", child = '", tmpFile, "'}\n```\n\n"
+      )
+      fpRidx <- fpRidx + 1
+    }
+    
+    
+    
+    # Copy the report file to a temporary directory before processing it, in
+    # case we don't have write permissions to the current working dir (which
+    # can happen when deployed).
+    tempReport <- file.path(tDir, "report.Rmd")
+    
+    tempServerFunctions <- file.path(tDir, "serverFunctions.R")
+    file.copy("serverFunctions.R", tempServerFunctions, overwrite = TRUE)
+    
+    # create a new list of all parameters that can be passed to the markdown doc.
+    inputNames <- names(input)
+    params <- list(
+      tempServerFunctions = tempServerFunctions,
+      # tempprivatePlotFunctions = tempprivatePlotFunctions,
+      calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
+      # save the outputfile name for others to use to save
+      # params$outputFile <- file$datapath[1]
+    )
+    for (idx in 1:length(names(input))) {
+      params[[inputNames[idx]]] <- input[[inputNames[idx]]]
+    }
+    params[["reportTempDir"]] <- reportTempDir
+    
+    file.copy("report.Rmd", tempReport, overwrite = TRUE)
+    
+    # read the template and replace parameters placeholder with list
+    # of paramters
+    x <- readLines(tempReport)
+    # x <- readLines("report.Rmd")
+    paramString <- paste0("  ", names(params), ": NA", collapse = "\n")
+    y <- gsub("#__PARAMPLACEHOLDER__", paramString, x)
+    y <- gsub("__CHILDREPORTS__", pluginReportsString, y)
+    y <- gsub("__LOAD_REACTIVES__", reactiveFiles, y)
+    # cat(y, file="tempReport.Rmd", sep="\n")
+    cat(y, file = tempReport, sep = "\n")
+    
+    if (DEBUG) cat(file = stderr(), "output$report:scEx:\n")
+    if (DEBUG) cat(file = stderr(), paste("\n", tempReport, "\n"))
+    # Knit the document, passing in the `params` list, and eval it in a
+    # child of the global environment (this isolates the code in the document
+    # from the code in this app)
+    renderEnv <- new.env(parent = globalenv())
+    if (DEBUG) file.copy(tempReport, "~/scShinyHubDebug/tempReport.Rmd")
+    myparams <- params # needed for saving as params is already taken by knitr
+    if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.RData", list = c("myparams", "renderEnv", ls(), "zippedReportFiles"))
+    # load(file = '~/scShinyHubDebug/tempReport.RData')
+    cat(file = stderr(), paste("workdir: ", getwd()))
+    rmarkdown::render(tempReport,
+                      output_file = "report.html",
+                      params = params,
+                      envir = renderEnv
+    )
+    tDir <- paste0(tDir, "/")
+    base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
+    write.csv(as.matrix(assays(scEx_log)[[1]]), file = paste0(reportTempDir, "/normalizedCounts.csv"))
+    base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("scEx", "projections"))
+    zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
+    zip(file, zippedReportFiles, flags = "-9Xj")
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("Report creation is done", id = "reportDone", duration = 10, type = "message")
+    }
+    if (DEBUG) {
+      end.time <- Sys.time()
+      cat(file = stderr(), "===Report:done", difftime(end.time, start.time, units = "min"), "\n")
+    }
+  }
+)
 
 if (DEBUG) {
   cat(file = stderr(), paste("end: outputs.R\n"))

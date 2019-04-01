@@ -29,6 +29,9 @@ geneName2Index <- function(g_id, featureData) {
   }
 
   geneid <- rownames(featureData[which(toupper(featureData$Associated.Gene.Name) %in% toupper(g_id)), ])
+  if (DEBUG) {
+    cat(file = stderr(), paste("done: geneName2Index\n"))
+  }
   return(geneid)
 }
 

@@ -4,7 +4,7 @@ source("reactives.R", local = TRUE)
 
 myZippedReportFiles <- c("gqcProjections.csv")
 
-
+# update3DInput ----
 update3DInput <- reactive({
   tsneData <- projections()
 
@@ -33,7 +33,7 @@ update3DInput <- reactive({
   )
 })
 
-
+# tsne_main ----
 output$tsne_main <- renderPlotly({
   upI <- update3DInput()
   if (DEBUG) cat(file = stderr(), "output$tsne_main\n")
@@ -46,7 +46,7 @@ output$tsne_main <- renderPlotly({
   dimY <- input$dim3D_y
   dimZ <- input$dim3D_z
   dimCol <- input$col3D
-
+  scols = sampleCols$colPal
 
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(), ls(envir = globalenv())))
@@ -57,6 +57,12 @@ output$tsne_main <- renderPlotly({
   # cat(stderr(),colnames(projections)[1:5])
   projections$dbCluster <- as.factor(projections$dbCluster)
 
+  if (dimCol == "sampleNames") {
+    myColors = scols
+  } else {
+    myColors = NULL
+  }
+  
   p <-
     plot_ly(
       projections,
@@ -65,6 +71,7 @@ output$tsne_main <- renderPlotly({
       z = formula(paste("~ ", dimZ)),
       type = "scatter3d",
       color = formula(paste("~ ", dimCol)),
+      colors = myColors, 
       hoverinfo = "text",
       text = paste("Cluster:", as.numeric(as.character(projections$dbCluster))),
       mode = "markers",
@@ -93,7 +100,7 @@ output$tsne_main <- renderPlotly({
 
 r <- callModule(tableSelectionServer, "cellSelectionTSNEMod", inputTSNESample)
 
-
+# plotUmiHist ----
 output$plotUmiHist <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output_plotUmiHist\n")
   scEx <- scEx()
