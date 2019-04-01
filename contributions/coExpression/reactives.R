@@ -108,8 +108,7 @@ heatmapSelectedReactive <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "output$heatmapSelectedReactive\n")
   }
-  featureData <- featureDataReact()
-  scEx_matrix <- assays(scEx())[["counts"]]
+  scEx <- scEx()
   projections <- projections()
   genesin <- input$heatmap_geneids2
   sc <- selctedCluster()
@@ -117,13 +116,12 @@ heatmapSelectedReactive <- reactive({
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
   sampCol = sampleCols$colPal
-
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
-  if (is.null(featureData) ||
-      is.null(scEx_matrix) ||
+  if (is.null(scEx) ||
       is.null(projections) || is.null(scCells) || length(scCells) == 0) {
     return(
       list(
@@ -135,6 +133,8 @@ heatmapSelectedReactive <- reactive({
       )
     )
   }
+  scEx_matrix <- assays(scEx)[["counts"]]
+  featureData <- rowData(scEx)
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
   }
@@ -144,18 +144,13 @@ heatmapSelectedReactive <- reactive({
   }
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   
-  # subsetData <-
-  #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
-  # cells.1 <- rownames(brushedPoints(subsetData, scBP))
-  cells.1 <- scCells
   retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin, 
-                            cells = cells.1, sampCol = sampCol)
+                            cells = scCells, sampCol = sampCol)
   return(retval)
 })
 
 topExpGenesTable <- reactive({
   if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
-  featureData <- featureDataReact()
   scEx_log <- scEx_log()
   coEtgPerc <- input$coEtgPerc
   coEtgminExpr <- input$coEtgMinExpr
@@ -164,15 +159,16 @@ topExpGenesTable <- reactive({
   # scBP = sc$brushedPs()
   scCells <- sc$selectedCells()
   
-  if (is.null(featureData) || is.null(scEx_log) || is.null(scCells)) {
+  if (is.null(scEx_log) || is.null(scCells)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
+  
+  featureData <- rowData(scEx_log)
   # we only work on cells that have been selected
-  # mat <- as.matrix(exprs(scEx_log))[, scCells]
   mat <- assays(scEx_log)[[1]][, scCells]
   # only genes that express at least coEtgminExpr UMIs
   mat[mat < coEtgminExpr] <- 0
@@ -363,6 +359,7 @@ somFunction <- function(iData, nSom, geneName) {
   return(simGenes)
 }
 
+# TODO: check that we are using only raw counts and not normalized
 heatmapSOMReactive <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -377,7 +374,6 @@ heatmapSOMReactive <- reactive({
   projections <- projections()
   genesin <- input$geneSOM
   nSOM <- input$dimSOM
-  featureData <- featureDataReact()
   sampCol = sampleCols$colPal
   
   if (is.null(scEx)) {
@@ -396,6 +392,7 @@ heatmapSOMReactive <- reactive({
   }
   # load(file="~/scShinyHubDebug/heatmapSOMReactive.RData")
   scEx_matrix <- as.matrix(assays(scEx)[["counts"]])
+  featureData <- rowData(scEx)
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)
   }

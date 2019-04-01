@@ -189,26 +189,6 @@ inputData <- reactive({
   }
   # load(file='~/scShinyHubDebug/inputData.RData')
   
-  # lapply(seq_along(lev), function(i) {
-  #   do.call(what = "updateColourInput",
-  #           args = list(
-  #             session = session,
-  #             inputId = paste0("sampleNamecol", lev[i]),
-  #             value = sampCol[i]
-  #           )
-  #   )
-  # })
-  
-  # reactives = ls(envir = globalenv())[which(unlist(lapply(ls(envir = globalenv()), function(x) class(get(x))[[1]][1]=="reactiveExpr")))]
-  # nullreactives = c()
-  # for (re in reactives) {
-  #   isolate({
-  #     if (is.null(get(paste0(re,"()")))) {
-  #       nullreactives = c(nullreactives, re)
-  #     }
-  #   })
-  # }
-  # save(file = "testReactive.Rdata", list = c(ls()))
   retVal <- inputDataFunc(inFile)
   end.time <- base::Sys.time()
   cat(file = stderr(), paste("this took: ", difftime(end.time, start.time, units = "min"), " min\n"))  
@@ -405,31 +385,31 @@ useCells <- reactive({
   return(retVal)
 })
 
-# TODO: check that it is ok that we use dataTables directly and not useGenes()
-featureDataReact <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "featureData\n")
-  }
-  dataTables <- inputData()
-  scEx <- scEx()
-  if (!exists("dataTables") | is.null(dataTables) | is.null(scEx)) {
-    if (DEBUG) {
-      cat(file = stderr(), "featureData:NULL\n")
-    }
-    return(NULL)
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/featureDataReact.Rdata", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load("~/scShinyHubDebug/featureDataReact.Rdata")
-  useGenes <- rownames(dataTables$featuredata) %in% rownames(scEx)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===featureData:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  return(dataTables$featuredata[useGenes, ])
-})
+# # TODO: check that it is ok that we use dataTables directly and not useGenes()
+# featureDataReact <- reactive({
+#   start.time <- Sys.time()
+#   if (DEBUG) {
+#     cat(file = stderr(), "featureData\n")
+#   }
+#   dataTables <- inputData()
+#   scEx <- scEx()
+#   if (!exists("dataTables") | is.null(dataTables) | is.null(scEx)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "featureData:NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   if (DEBUGSAVE) {
+#     save(file = "~/scShinyHubDebug/featureDataReact.Rdata", list = c(ls(), ls(envir = globalenv())))
+#   }
+#   # load("~/scShinyHubDebug/featureDataReact.Rdata")
+#   useGenes <- rownames(dataTables$featuredata) %in% rownames(scEx)
+#   if (DEBUG) {
+#     end.time <- Sys.time()
+#     cat(file = stderr(), "===featureData:done", difftime(end.time, start.time, units = "min"), "\n")
+#   }
+#   return(rowData(scEx))
+# })
 
 useGenesFunc <-
   function(dataTables,
@@ -926,8 +906,7 @@ kmClustering <- reactive({
   }
   pca <- pca()
   scEx_log <- scEx_log()
-  featureData <- featureDataReact()
-  
+
   seed <- input$seed
   kNr <- input$kNr
   clusterSource <- input$clusterSource
@@ -946,7 +925,9 @@ kmClustering <- reactive({
     save(file = "~/scShinyHubDebug/kmClustering.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/kmClustering.RData")
-  if (!is.null(getDefaultReactiveDomain())) {
+  
+  featureData <- rowData(scEx_log)
+   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("kmClustering", id = "kmClustering", duration = NULL)
   }
   

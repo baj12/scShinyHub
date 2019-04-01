@@ -54,13 +54,12 @@ heatmapReactive <- reactive({
       removeNotification(id = "heatmap")
   )
   if (DEBUG) cat(file = stderr(), "output$heatmap\n")
-  featureData <- featureDataReact()
   scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$heatmap_geneids
   sampCol = sampleCols$colPal
   
-  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
+  if (is.null(scEx_log) | is.null(projections)) {
     return(list(
       src = "empty.png",
       contentType = "image/png",
@@ -77,6 +76,7 @@ heatmapReactive <- reactive({
     save(file = "~/scShinyHubDebug/heatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/heatmap.RData")
+  featureData <- rowData(scEx_log)
   scEx_matrix <- as.matrix(assays(scEx_log)[["logcounts"]])
   retval <- coE_heatmapFunc(
     featureData = featureData, scEx_matrix = scEx_matrix,
@@ -136,7 +136,6 @@ output$geneGrp_vio_plot <- renderPlot({
   }
   # if (v$doPlot == FALSE)
   #   return()
-  featureData <- featureDataReact()
   projections <- projections()
   scEx <- scEx()
   geneListStr <- input$geneGrpVioIds
@@ -158,6 +157,7 @@ output$geneGrp_vio_plot <- renderPlot({
   }
   # load(file="~/scShinyHubDebug/geneGrp_vio_plot.RData")
 
+  featureData <- rowData(scEx)
   retVal <- geneGrp_vioFunc(
     genesin = geneListStr,
     projections = projections,

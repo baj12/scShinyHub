@@ -43,15 +43,11 @@ output$NumberOfGenesExclude <- renderText({
 # TODO module for violin plot  ??
 output$gene_vio_plot <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output$gene_vio_plot\n")
-  # if (v$doPlot == FALSE)
-  #   return()
-  featureData <- featureDataReact()
-  # log2cpm = log2cpm()
   scEx_log <- scEx_log()
   projections <- projections()
   g_id <- input$gene_id
 
-  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
+  if (is.null(scEx_log) | is.null(projections)) {
     if (DEBUG) cat(file = stderr(), "output$gene_vio_plot:NULL\n")
     return(NULL)
   }
@@ -60,6 +56,7 @@ output$gene_vio_plot <- renderPlot({
   }
   # load(file="~/scShinyHubDebug/gene_vio_plot.RData")
 
+  featureData <- rowData(scEx_log)
   geneid <- geneName2Index(g_id, featureData)
 
   if (length(geneid) == 0) {
@@ -113,26 +110,22 @@ output$gene_vio_plot <- renderPlot({
 })
 
 # EXPLORE TABL DOWNLOAD SELECTED WITH BRUSH ------------------------------------------------------------------
-# TODO move to were it belongs
 # TODO module for download?
-# TODO either integrate in module or use input$bi as selected cell names as a parameter/reactive/global variable.
-#      this function will not work as expected as of now
 output$downloadExpression <- downloadHandler(
   filename = function() {
     paste(input$cluster, "Selected_Expression_table.csv", sep = "_")
   },
   content = function(file) {
-    featureData <- featureDataReact()
-    # log2cpm = log2cpm()
     scEx_log <- scEx_log()
     projections <- projections()
-    if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
+    if (is.null(scEx_log) | is.null(projections)) {
       return(NULL)
     }
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/downloadExpression.RData", list = c(ls(), ls(envir = globalenv())))
     }
     # load(file="~/scShinyHubDebug/downloadExpression.RData")
+    featureData <- rowData(scEx_log)
     geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
       toupper(input$gene_id)), ])[1]
 
@@ -195,15 +188,14 @@ output$clusters4 <- renderUI({
   }
 })
 
+# TODO: expression values are not normalized, is this correct?
 output$panelPlot <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output$panelPlot\n")
 
-  featureData <- featureDataReact()
-  # log2cpm = log2cpm()
   scEx_log <- scEx_log()
   scEx <- scEx()
   projections <- projections()
-  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
+  if (is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
 
@@ -223,7 +215,8 @@ output$panelPlot <- renderPlot({
     save(file = "~/scShinyHubDebug/panelPlot.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/panelPlot.RData")
-
+  featureData <- rowData(scEx)
+  
   if (DEBUG) cat(file = stderr(), length(genesin))
   par(mfrow = c(ceiling(length(genesin) / 4), 4), mai = c(0., .3, .3, .3))
   rbPal <- colorRampPalette(c("#f0f0f0", "red"))
@@ -314,15 +307,11 @@ output$scaterQC <- renderImage({
 
 output$tsne_plt <- renderPlotly({
   if (DEBUG) cat(file = stderr(), "output$tsne_plt\n")
-  # if (v$doPlot == FALSE)
-  #   return()
-  featureData <- featureDataReact()
-  # log2cpm = log2cpm()
   scEx_log <- scEx_log()
   g_id <- input$gene_id
   projections <- projections()
 
-  if (is.null(featureData) | is.null(scEx_log) | is.null(projections)) {
+  if (is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -330,7 +319,7 @@ output$tsne_plt <- renderPlotly({
   }
   # load(file="~/scShinyHubDebug/tsne_plt.RData")
 
-
+  featureData <- rowData(scEx_log)
   geneid <- geneName2Index(g_id, featureData)
   if (length(geneid) == 0) {
     return(NULL)

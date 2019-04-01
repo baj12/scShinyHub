@@ -3,7 +3,8 @@ source ("moduleServer.R", local = TRUE)
 source ("reactives.R", local = TRUE)
 
 
-# normalizationRadioButtonValue -------------------------------- Parameters / normalization
+# normalizationRadioButtonValue -------------------------------- 
+# Parameters / normalization
 output$normalizationRadioButtonValue <- renderPrint({
   input$normalizationRadioButton
 })
@@ -235,6 +236,7 @@ callModule(tableSelectionServer, "cellSelectionMod", inputSample)
 # normalizationResult ----
 callModule(tableSelectionServer, "normalizationResult", scExLogMatrixDisplay)
 
+# descriptionOfWork ----
 output$descriptOfWorkOutput <- renderPrint({
   input$descriptionOfWork
 })
@@ -268,7 +270,6 @@ output$sampleColorSelection <- renderUI({
   })
 })
 
-observe(scEx)
 
 # observe: input$updateColors ----
 observeEvent(input$updateColors, {
@@ -331,9 +332,7 @@ output$RDSsave <- downloadHandler(
   content = function(file) {
     if (DEBUG) cat(file = stderr(), paste("RDSsave: \n"))
     scEx <- scEx()
-    featuredata <- featureDataReact()
-    
-    if (is.null(scEx) | is.null(featuredata)) {
+    if (is.null(scEx)) {
       return(NULL)
     }
     if (DEBUGSAVE) {
@@ -341,7 +340,7 @@ output$RDSsave <- downloadHandler(
     }
     # load(file='~/scShinyHubDebug/RDSsave.RData')
     
-    save(file = file, list = c("featuredata", "scEx"))
+    save(file = file, list = c("scEx"))
     if (DEBUG) cat(file = stderr(), paste("RDSsave:done \n"))
     
     # write.csv(as.matrix(exprs(scEx)), file)
@@ -377,7 +376,6 @@ output$report <- downloadHandler(
     projections <- projections()
     scEx_log <- scEx_log()
     scEx <- scEx()
-    featuredata <- featureDataReact()
     gNames <- groupNames$namesDF
     base::save(file = tmpPrjFile, list = c("projections", "scEx_log", "gNames"))
     
@@ -414,9 +412,7 @@ output$report <- downloadHandler(
       )
       fpRidx <- fpRidx + 1
     }
-    
-    
-    
+
     # Copy the report file to a temporary directory before processing it, in
     # case we don't have write permissions to the current working dir (which
     # can happen when deployed).

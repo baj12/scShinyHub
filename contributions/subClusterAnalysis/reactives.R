@@ -9,18 +9,18 @@ dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2
   subsetData <- subset(projections, dbCluster %in% cl1)
   cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
   cells.2 <- rownames(shiny::brushedPoints(subsetData, db2))
-
+  
   subsetExpression <- log2cpm[, union(cells.1, cells.2)]
-
+  
   genes.use <- rownames(subsetExpression)
   # expMean exponential mean
   data.1 <- apply(subsetExpression[genes.use, cells.1], 1, expMean)
   data.2 <- apply(subsetExpression[genes.use, cells.2], 1, expMean)
   total.diff <- (data.1 - data.2)
-
+  
   genes.diff <- names(which(abs(total.diff) > .2))
   genes.use <- ainb(genes.use, genes.diff)
-
+  
   toReturn <-
     DiffExpTest(subsetExpression, cells.1, cells.2, genes.use = genes.use)
   toReturn[, "avg_diff"] <- total.diff[rownames(toReturn)]
@@ -36,17 +36,16 @@ dge <- reactive({
       removeNotification(id = "dge")
   )
   if (DEBUG) cat(file = stderr(), "dge\n")
-  featureData <- featureDataReact()
   scEx_log <- scEx_log()
   prj <- projections()
   gn <- groupNames$namesDF
-
+  
   cl1 <- input$clusters1
   db1 <- input$db1
   db2 <- input$db2
-
+  
   # dbcl = dbCluster
-  if (is.null(featureData) | is.null(scEx_log) | is.null(prj)) {
+  if (is.null(scEx_log) | is.null(prj)) {
     return(NULL)
   }
   if (!is.null(getDefaultReactiveDomain())) {
@@ -55,12 +54,13 @@ dge <- reactive({
   if (length(gn) > 0) {
     prj <- cbind(prj, gn[rownames(prj), ] * 1)
   }
-
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/dge.RData')
-
+  
+  featureData <- rowData(scEx_log)
   toReturn <- dge_func(
     projections = prj, log2cpm = as.data.frame(as.matrix(assays(scEx_log)[[1]])),
     featureData = featureData,
@@ -77,6 +77,6 @@ dge <- reactive({
   selectedDge$dgeTable <- toReturn
   cat(stderr(), rownames(toReturn)[1:5])
   if (DEBUG) cat(file = stderr(), "dge: done\n")
-
+  
   return(toReturn)
 })

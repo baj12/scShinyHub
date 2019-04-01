@@ -94,7 +94,6 @@ clusterServer <- function(input, output, session,
     dimX <- input$dimension_x
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
-    featureData <- featureDataReact()
     scEx <- scEx()
     if (DEBUG) {
       cat(file = stderr(), "+++cluster: selectedCellNames\n")
@@ -111,6 +110,7 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/selectedCellNames.RData")
 
    
+    featureData <- rowData(scEx)
     geneid <- geneName2Index(geneNames, featureData)
     projections <- updateProjectionsWithUmiCount(
       dimX = dimX, dimY = dimY,
@@ -121,28 +121,13 @@ clusterServer <- function(input, output, session,
     )
 
     subsetData <- subset(projections, dbCluster %in% inpClusters)
-    # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
-    # it seems there is a bug in shiny::asNumber that returns 0 for false
-    # whereas in the brushed points this would be 1
-    # if (class(subsetData[, brushedPs$mapping$x]) == "logical") {
-    #   subsetData[, brushedPs$mapping$x] <- as.numeric(subsetData[, brushedPs$mapping$x]) + 1
-    # }
-    # if (class(subsetData[, brushedPs$mapping$y]) == "logical") {
-    #   subsetData[, brushedPs$mapping$y] <- as.numeric(subsetData[, brushedPs$mapping$y]) + 1
-    # }
     cells.names <- rownames(projections)[subset(brushedPs, curveNumber == 0)$pointNumber + 1]
     return(cells.names)
   })
 
-  # observe(selectedCellNames)
-
   returnValues <- reactiveValues(
     cluster = reactive(input$clusters),
-    # cellNames = ifelse(is.null(subsetData),
-    #                    NULL,
-    #                    rownames(brushedPoints(subsetData, reactive(input$b1)))
-    #                    ),
-    selectedCells = reactive({
+     selectedCells = reactive({
       if (DEBUG) {
         cat(file = stderr(), paste("clusterServers selectedCells\n"))
       }
@@ -162,7 +147,6 @@ clusterServer <- function(input, output, session,
       dimX <- input$dimension_x
       geneNames <- input$geneIds
       geneNames2 <- input$geneIds2
-      featureData <- featureDataReact()
       scEx <- scEx()
 
       if (DEBUGSAVE) {
@@ -170,6 +154,7 @@ clusterServer <- function(input, output, session,
         base::save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(), ls(envir = globalenv())))
       }
       # load(file="~/scShinyHubDebug/clusterServerreturnValues.RData")
+      featureData <- rowData(scEx)
       if (!is.null(projections)) {
         projections <- updateProjectionsWithUmiCount(
           dimX = dimX, dimY = dimY,
@@ -186,11 +171,8 @@ clusterServer <- function(input, output, session,
           return(grpVal)
         }
       }
-      # subsetData <-
-      #   subset(projections, as.numeric(as.character(projections$dbCluster)) %in% scCL)
-      # cells.1 <- rownames(brushedPoints(subsetData, scBP))
 
-      return(retVal)
+            return(retVal)
     })
   )
 
@@ -223,7 +205,6 @@ clusterServer <- function(input, output, session,
     if (DEBUG) {
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
-    featureData <- featureDataReact()
     scEx <- scEx()
     scEx_log <- scEx_log()
     projections <- tData()
@@ -242,11 +223,12 @@ clusterServer <- function(input, output, session,
     divXBy <- input$devideXBy
     divYBy <- input$devideYBy
 
-    if (is.null(featureData) | is.null(scEx) | is.null(scEx_log) | is.null(projections)) {
+    if (is.null(scEx) | is.null(scEx_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
 
+    featureData <- rowData(scEx)
     if (DEBUGSAVE) {
       cat(file = stderr(), paste("cluster plot saving\n"))
       save(
@@ -501,7 +483,6 @@ clusterServer <- function(input, output, session,
     geneNames2 <- input$geneIds2
     dimY <- input$dimension_y
     dimX <- input$dimension_x
-    featureData <- featureDataReact()
     scEx <- scEx()
 
     if (!myshowCells) {
@@ -521,6 +502,7 @@ clusterServer <- function(input, output, session,
     }
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection", "ns", ".RData", collapse = "."))
     # load(file=paste0("~/scShinyHubDebug/clustercellSelection"))
+    featureData <- rowData(scEx_log)
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     geneid <- geneName2Index(geneNames, featureData)
     subsetData <- updateProjectionsWithUmiCount(

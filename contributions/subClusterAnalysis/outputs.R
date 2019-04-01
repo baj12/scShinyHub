@@ -139,8 +139,8 @@ output$dge_plot2 <- renderPlot({
 
 output$dge <- DT::renderDataTable({
   if (DEBUG) cat(file = stderr(), "output$dge\n")
-  featureData <- featureDataReact()
-  if (is.null(featureData)) {
+  scEx <- scEx()
+  if (is.null(scEx)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -148,8 +148,9 @@ output$dge <- DT::renderDataTable({
   }
   # load(file="~/scShinyHubDebug/output_dge.RData")
 
-  # isolate({
   top.genes <- dge()
+  featureData <- rowData(scEx)
+  
   top.genes$Associated.Gene.Name <-
     featureData[rownames(top.genes), "Associated.Gene.Name"]
   if ("Description" %in% colnames(featureData)) {
@@ -166,7 +167,6 @@ output$dge <- DT::renderDataTable({
   } else {
     return(NULL)
   }
-  # })
 })
 
 
