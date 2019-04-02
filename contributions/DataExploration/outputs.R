@@ -204,10 +204,6 @@ output$panelPlot <- renderPlot({
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
   genesin <- genesin[[1]]
-<<<<<<< HEAD
-=======
-  genesin <- genesin[which(genesin %in% featureData$symbol)]
->>>>>>> c86de7b129b4917ff4f333ed87414681efd1bcf4
   cl4 <- input$clusters4
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
