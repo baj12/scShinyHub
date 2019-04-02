@@ -163,8 +163,8 @@ if (is.null(input$db1) | is.null(input$db2)) {
 
 
   top.genes <-  toReturn
-  top.genes$Associated.Gene.Name <-
-    featureData[rownames(top.genes), 'Associated.Gene.Name']
+  top.genes$symbol <-
+    featureData[rownames(top.genes), 'symbol']
 DT::datatable(top.genes,
                   options = list(
                     orderClasses = TRUE,

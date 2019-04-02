@@ -71,7 +71,7 @@ genesin <- input$heatmap_geneids
 sampCol = sampleCols$colPal
 
 genesin2 <- geneName2Index(genesin, featureData)
-genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
+genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"symbol"], collapse =",", sep=""))
 
 heatmapData <- coE_heatmapFunc(
   featureData = featureData, scEx_matrix = scEx_matrix,
@@ -245,7 +245,7 @@ if(!is.null(brushedPs)){
   
   if (dim(mat)[1] > 0) {
     mat <- mat[top.genesOrder, ]
-    fd <- featureData[rownames(mat), c("Associated.Gene.Name", "Description")]
+    fd <- featureData[rownames(mat), c("symbol", "Description")]
     matCV <- matCV[rownames(mat)]
     fd <- cbind(fd, matCV)
     colnames(fd) <- c("gene", "description", "CV")

@@ -24,8 +24,8 @@ dge_func <- function(projections, log2cpm, featureData, dbCluster, cl1, db1, db2
   toReturn <-
     DiffExpTest(subsetExpression, cells.1, cells.2, genes.use = genes.use)
   toReturn[, "avg_diff"] <- total.diff[rownames(toReturn)]
-  toReturn$Associated.Gene.Name <-
-    featureData[rownames(toReturn), "Associated.Gene.Name"]
+  toReturn$symbol <-
+    featureData[rownames(toReturn), "symbol"]
   return(toReturn)
 }
 

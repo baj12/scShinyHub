@@ -131,7 +131,7 @@ output$selectedGenesTable <- DT::renderDataTable({
   
   scEx <- assays(dataTables$scEx)[[1]]
   fd <- dataTables$featuredata
-  dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
+  dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
   dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
   exportTestValues(selectedGenesTable = { as.data.frame(dt) })
@@ -158,7 +158,7 @@ output$removedGenesTable <- DT::renderDataTable({
   # load("~/scShinyHubDebug/removedGenesTable.RData")
   scEx <- assays(dataTables$scEx)[[1]]
   fd <- dataTables$featuredata
-  dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
+  dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
   dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
   exportTestValues(removedGenesTable = { as.data.frame(dt) })
@@ -186,8 +186,8 @@ output$gsSelectedGenes <- renderText({
   
   # scEx <- as.matrix(exprs(dataTables$scEx))
   fd <- dataTables$featuredata
-  dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
-  retVal <- paste0(dt$Associated.Gene.Name[selectedGenesTable_rows_selected], ",")
+  dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
+  retVal <- paste0(dt$symbol[selectedGenesTable_rows_selected], ",")
   exportTestValues(gsSelectedGenes = { retVal })
   return(retVal)
 })
@@ -212,11 +212,11 @@ output$gsrmGenes <- renderText({
   
   # scEx <- as.matrix(exprs(dataTables$scEx))
   fd <- dataTables$featuredata
-  dt <- fd[useGenes, c("Associated.Gene.Name", "Gene.Biotype", "Description")]
+  dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   if (DEBUG) {
     cat(file = stderr(), "gsrmGenes: done\n")
   }
-  retVal <-  paste0(dt$Associated.Gene.Name[removedGenesTable_rows_selected], ",")
+  retVal <-  paste0(dt$symbol[removedGenesTable_rows_selected], ",")
   exportTestValues(gsrmGenes = { retVal })
   return(retVal)
 })

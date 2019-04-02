@@ -3,9 +3,18 @@ inputFileStats <- reactiveValues(
   stats = NULL
 )
 
+groupNames <- reactiveValues(
+  namesDF = data.frame()
+)
 
 sampleCols <- reactiveValues(
   colPal = allowedColors
+)
+
+# Here, we store projections that are created during the session. These can be selections of cells or other values that
+# are not possible to precalculate.
+sessionProjections <- reactiveValues(
+  prjs = data.frame()
 )
 
 # inputDataFunc ----
@@ -97,7 +106,7 @@ inputDataFunc <- function(inFile) {
   cat(stderr(), "Loaded")
   dataTables <- list()
   featuredata <- rowData(scEx)
-  featuredata$Associated.Gene.Name = toupper(featuredata$Associated.Gene.Name)
+  featuredata$symbol = toupper(featuredata$symbol)
   # dataTables$featuredataOrg <- rowData(scEx)
   dataTables$scEx <- scEx
   dataTables$featuredata <- featuredata
@@ -141,9 +150,9 @@ inputDataFunc <- function(inFile) {
     }
   }
   
-  if (!sum(c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
+  if (!sum(c("symbol", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
+      showNotification("featuredata - one of is missing: symbol, Gene.Biotype, Description)",
                        duration = NULL, type = "error"
       )
     }
@@ -153,7 +162,7 @@ inputDataFunc <- function(inFile) {
     if (!"Description" %in% colnames(featuredata)) {
       featuredata$"Description" <- "not given"
     }
-    featuredata$Associated.Gene.Name = toupper(featuredata$Associated.Gene.Name)
+    featuredata$symbol = toupper(featuredata$symbol)
     dataTables$featuredata <- featuredata
   }
   # if (is.null(rowData(dataTables$scEx)$symbol)){
@@ -222,6 +231,8 @@ medianENSG <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), paste("===medianENSG:done", difftime(end.time, start.time, units = "min"), "\n"))
   }
+  exportTestValues(medianENSG = { retVal })
+  
   return(retVal)
 })
 
@@ -253,6 +264,7 @@ medianUMI <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===medianUMI:done\n", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(medianUMI = { retVal })
   return(retVal)
 })
 
@@ -314,7 +326,7 @@ useCellsFunc <-
     # genes that have to be expressed at least in one of them.
     selCols <- rep(FALSE, length(goodCols))
     if (!length(genesin) == 0) {
-      ids <- which(toupper(dataTables$featuredata$Associated.Gene.Name) %in% genesin)
+      ids <- which(toupper(dataTables$featuredata$symbol) %in% genesin)
       if (length(ids) == 1) {
         selCols <- scEx[ids, ] > 0
       } else if (length(ids) == 0) {
@@ -382,6 +394,7 @@ useCells <- reactive({
     cat(file = stderr(), "===useCells:done", difftime(end.time, start.time, units = "min"), "\n")
   }
   
+  exportTestValues(useCells = { retVal })
   return(retVal)
 })
 
@@ -424,7 +437,7 @@ useGenesFunc <-
     # load(file='~/scShinyHubDebug/useGenesFunc.Rdata')
     # regular expression with gene names to be removed
     if (nchar(ipIDs) > 0) {
-      keepIDs <- !grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+      keepIDs <- !grepl(ipIDs, dataTables$featuredata$symbol)
     } else {
       keepIDs <- rep(TRUE, nrow(dataTables$scEx))
     }
@@ -432,9 +445,9 @@ useGenesFunc <-
     genesKeep <- gsub(" ", "", genesKeep, fixed = TRUE)
     genesKeep <- strsplit(genesKeep, ",")
     genesKeep <- genesKeep[[1]]
-    keepGeneIds <- which(dataTables$featuredata$Associated.Gene.Name %in% genesKeep)
+    keepGeneIds <- which(dataTables$featuredata$symbol %in% genesKeep)
     
-    # dataTables$featuredata$Associated.Gene.Name[keepIDs]
+    # dataTables$featuredata$symbol[keepIDs]
     # gene groups to be included
     if (!is.null(geneListSelection)) {
       selectedgeneList <- get_selected(geneListSelection)
@@ -467,7 +480,7 @@ beforeFilterCounts <- reactive({
   ipIDs <- input$selectIds # regular expression of genes to be removed
   if (!exists("dataTables") |
       is.null(dataTables) |
-      length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+      length(dataTables$featuredata$symbol) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "beforeFilterCounts: NULL\n")
     }
@@ -483,12 +496,15 @@ beforeFilterCounts <- reactive({
   
   geneIDs <- NULL
   if (nchar(ipIDs) > 0) {
-    geneIDs <- grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+    geneIDs <- grepl(ipIDs, dataTables$featuredata$symbol)
   }
   if (is.null(geneIDs)) {
     return(rep(0, nrow(dataTables$featuredata)))
   }
-  return(Matrix::colSums(assays(dataTables$scEx)[["counts"]][geneIDs, ]))
+  retVal = Matrix::colSums(assays(dataTables$scEx)[["counts"]][geneIDs, ])
+  exportTestValues(beforeFilterCounts = { retVal })
+  
+  return(retVal)
 })
 
 # collects information from all places where genes being removed or specified
@@ -511,7 +527,7 @@ useGenes <- reactive({
   
   if (!exists("dataTables") |
       is.null(dataTables) |
-      length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+      length(dataTables$featuredata$symbol) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "useGenes: NULL\n")
     }
@@ -525,6 +541,7 @@ useGenes <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===useGenes: done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(useGenes = { retVal })
   return(retVal)
 })
 
@@ -671,6 +688,7 @@ scEx <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===scEx:DONE", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(scEx = { list(rowData(retVal), colData(retVal)) })
   return(retVal)
 })
 
@@ -721,6 +739,7 @@ scEx_log <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===scEx_log:done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(scEx_log = { assays(scEx_log)["logcounts"] })
   return(scEx_log)
 })
 
@@ -837,6 +856,7 @@ pca <- reactive({
     cat(file = stderr(), "===pca:donedone", difftime(end.time, start.time, units = "min"), "\n")
   }
   
+  exportTestValues(pca = { retVal })
   return(retVal)
 })
 
@@ -964,6 +984,7 @@ kmClustering <- reactive({
   # }
   # save(file = "testReactive2.Rdata", list = c(ls()))
   
+  exportTestValues(kmClustering = { retVal })
   return(retVal)
 })
 
@@ -978,12 +999,7 @@ kmClustering <- reactive({
 # themselves as it is done here with tsne.data.
 
 
-# Here, we store projections that are created during the session. These can be selections of cells or other values that
-# are not possible to precalculate.
-sessionProjections <- reactiveValues(
-  prjs = data.frame()
-)
-
+# projections ----
 projections <- reactive({
   start.time <- Sys.time()
   # scEx is the fundamental variable with the raw data, which is available after loading
@@ -1078,31 +1094,12 @@ projections <- reactive({
   if (ncol(prjs) > 0 & nrow(prjs) == nrow(projections)) {
     projections <- cbind(projections, prjs)
   }
+  exportTestValues(projections = { projections })
   return(projections)
 })
 
-groupNames <- reactiveValues(
-  namesDF = data.frame()
-  # {
-  # if(DEBUG)
-  #   cat(file = stderr(), "groupNames\n")
-  # projections = projections()
-  # if(is.null(projections)){
-  #   return(NULL)
-  # }
-  # if (DEBUGSAVE)
-  #   save(file = "~/scShinyHubDebug/groupNames.RData", list = c(ls(),ls(envir = globalenv())))
-  # # load(file="~/scShinyHubDebug/groupNames.RData")
-  # retVal = c()
-  # for(cn in colnames(projections)){
-  #   if(class(projections[,cn])=="logical"){
-  #     retVal = c(retVal, cn)
-  #   }
-  # }
-  # return(retVal)
-  # }
-)
-
+# initializeGroupNames ----
+# TODO shouldn't this be an observer???
 initializeGroupNames <- reactive({
   if (DEBUG) {
     cat(file = stderr(), "initializeGroupNames\n")
@@ -1124,7 +1121,7 @@ initializeGroupNames <- reactive({
   })
 })
 
-
+# dbCluster ----
 dbCluster <- reactive({
   start.time <- Sys.time()
   
@@ -1153,6 +1150,7 @@ dbCluster <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===dbCluster:done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(dbCluster = { dbCluster })
   
   return(dbCluster)
 })
@@ -1196,6 +1194,7 @@ sample <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===sample:done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(sample = { retVal })
   retVal
   # return(sample)
 })
@@ -1220,6 +1219,7 @@ geneCount <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(geneCount = { retVal })
   return(retVal)
 })
 
@@ -1244,6 +1244,7 @@ beforeFilterPrj <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===beforeFilterPrj:done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(beforeFilterPrj = { retVal })
   return(retVal)
 })
 
@@ -1266,6 +1267,7 @@ umiCount <- reactive({
     end.time <- Sys.time()
     cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
   }
+  exportTestValues(umiCount = { retVal })
   return(retVal)
 })
 
@@ -1294,15 +1296,17 @@ sampleInfo <- reactive({
   }
   # load(file="~/scShinyHubDebug/sampleInfo.RData")
   
-  ret <- sampleInfoFunc(scEx)
+  retVal <- sampleInfoFunc(scEx)
   if (DEBUG) {
     cat(file = stderr(), "sampleInfo: done\n")
   }
-  return(ret)
+  exportTestValues(sampleInfo = { retVal })
+  return(retVal)
 })
 
 
 # table of input cells with sample information
+# TODO: used in tableSeletionServer table; should be divided into function and reactive
 inputSample <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
@@ -1342,10 +1346,6 @@ inputSample <- reactive({
   }
 })
 
-# updateMemUse <- reactiveValues(
-#   update = 1
-# )
-
 
 getMemoryUsed <- reactive({
   require(pryr)
@@ -1360,21 +1360,21 @@ getMemoryUsed <- reactive({
 
 # used in coExpression, subclusterAnalysis, moduleServer, generalQC, DataExploration
 # TODO change to scEx_log everywhere and remove
-log2cpm <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "log2cpm\n")
-  }
-  scEx_log <- scEx_log()
-  if (is.null(scEx_log)) {
-    if (DEBUG) {
-      cat(file = stderr(), "log2cpm: NULL\n")
-    }
-    return(NULL)
-  }
-  log2cpm <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
-  
-  return(log2cpm)
-})
+# log2cpm <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "log2cpm\n")
+#   }
+#   scEx_log <- scEx_log()
+#   if (is.null(scEx_log)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "log2cpm: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   log2cpm <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
+#   
+#   return(log2cpm)
+# })
 
 
 # dummy function to return NULL
@@ -1382,150 +1382,3 @@ returnNull <- function() {
   return(NULL)
 }
 
-#### plot2Dprojection ----------------
-# used in moduleServer and reports
-plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
-                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
-                             logx = FALSE, logy = FALSE, divXBy = "None", divYBy = "None") {
-  geneid <- geneName2Index(g_id, featureData)
-  
-  if (length(geneid) == 0) {
-    return(NULL)
-  }
-  # if (length(geneid) == 1) {
-  #   expression <- exprs(scEx_log)[geneid, ,drop=FALSE]
-  # } else {
-  expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, , drop = FALSE])
-  # }
-  validate(need(is.na(sum(expression)) != TRUE, ""))
-  # if (length(geneid) == 1) {
-  #   expression <- exprs(scEx_log)[geneid, ]
-  # } else {
-  #   expression <- Matrix::colSums(exprs(scEx_log)[geneid, ])
-  # }
-  # validate(need(is.na(sum(expression)) != TRUE, ""))
-  
-  # geneid <- geneName2Index(geneNames, featureData)
-  projections <- updateProjectionsWithUmiCount(
-    dimX = dimX, dimY = dimY,
-    geneNames = geneNames,
-    geneNames2 = geneNames2,
-    featureData = featureData,
-    scEx = scEx, projections = projections
-  )
-  
-  
-  projections <- cbind(projections, expression)
-  names(projections)[ncol(projections)] <- "exprs"
-  
-  if (DEBUG) {
-    cat(file = stderr(), paste("output$dge_plot1:---", clId[1], "---\n"))
-  }
-  subsetData <- subset(projections, dbCluster %in% clId)
-  # subsetData$dbCluster = factor(subsetData$dbCluster)
-  # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
-  # sample information
-  if (length(as.numeric(as.factor(subsetData$sample))) > 18) {
-    subsetData$shape <- as.factor(1)
-  } else {
-    subsetData$shape <- as.numeric(as.factor(subsetData$sample))
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
-    cat(file = stderr(), paste("plot2Dprojection saving done.\n"))
-  }
-  # load(file="~/scShinyHubDebug/clusterPlot.RData")
-  if (nrow(subsetData) == 0) return(NULL)
-  # subsetData$shape = as.factor(1)
-  gtitle <- paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")
-  if (nchar(gtitle) > 50) {
-    gtitle <- paste(substr(gtitle, 1, 50), "...")
-  }
-  
-  require(plotly)
-  f <- list(
-    family = "Courier New, monospace",
-    size = 18,
-    color = "#7f7f7f"
-  )
-  if (divXBy != "None") {
-    subsetData[, dimX] <- subsetData[, dimX] / subsetData[, divXBy]
-  }
-  if (divYBy != "None") {
-    subsetData[, dimY] <- subsetData[, dimY] / subsetData[, divYBy]
-  }
-  
-  typeX <- typeY <- "linear"
-  if (logx) {
-    typeX <- "log"
-  }
-  if (logy) {
-    typeY <- "log"
-  }
-  if (is.factor(subsetData[, dimX])) {
-    typeX <- NULL
-  }
-  if (is.factor(subsetData[, dimY])) {
-    typeY <- NULL
-  }
-  xAxis <- list(
-    title = dimX,
-    titlefont = f,
-    type = typeX
-  )
-  yAxis <- list(
-    title = dimY,
-    titlefont = f,
-    type = typeY
-  )
-  p1 <- plot_ly(data = subsetData, source = "subset") %>%
-    add_trace(
-      x = ~ get(dimX),
-      y = ~ get(dimY),
-      type = "scatter",
-      mode = "markers",
-      text = ~ paste(1:nrow(subsetData), " ", rownames(subsetData), "<br />", subsetData$exprs),
-      marker = list(
-        color = subsetData[, "exprs"],
-        size = 4
-      )
-    ) %>%
-    # add_trace() %>%
-    layout(
-      xaxis = xAxis,
-      yaxis = yAxis,
-      title = gtitle,
-      dragmode = "select"
-    )
-  
-  selectedCells <- NULL
-  if (length(grpN) > 0) {
-    if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {
-      grpNSub <- grpNs[rownames(subsetData), ]
-      selectedCells <- rownames(grpNSub[grpNSub[, grpN], ])
-    }
-  }
-  if (!is.null(selectedCells)) {
-    shape <- rep("a", nrow(subsetData))
-    selRows <- which(rownames(subsetData) %in% selectedCells)
-    shape[selRows] <- "b"
-    x1 <- subsetData[selectedCells, dimX, drop = FALSE]
-    y1 <- subsetData[selectedCells, dimY, drop = FALSE]
-    p1 <- p1 %>%
-      add_trace(
-        x = x1[, 1], y = y1[, 1],
-        marker = list(
-          color = rep("green", nrow(x1)),
-          size = 5
-        ),
-        text = ~ paste(
-          rownames(subsetData[selectedCells, ]),
-          "<br />", subsetData$exprs[selectedCells]
-        ),
-        type = "scatter",
-        mode = "markers",
-        name = "selected"
-      )
-  }
-  p1
-}

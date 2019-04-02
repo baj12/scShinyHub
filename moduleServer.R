@@ -240,7 +240,7 @@ clusterServer <- function(input, output, session,
 
     # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
     if (is.null(g_id) || nchar(g_id) == 0) {
-      g_id <- featureData$Associated.Gene.Name
+      g_id <- featureData$symbol
     }
     if (is.null(logx)) logx <- FALSE
     if (is.null(logy)) logy <- FALSE
@@ -714,7 +714,7 @@ tableSelectionServer <- function(input, output, session,
 #     scale = "row",
 #     fontsize_row = 14,
 #     labels_col = colnames(expression),
-#     labels_row = featureData[rownames(expression), "Associated.Gene.Name"],
+#     labels_row = featureData[rownames(expression), "symbol"],
 #     show_rownames = TRUE,
 #     annotation_col = annotation,
 #     show_colnames = FALSE,
