@@ -28,6 +28,7 @@ updateInputx4 <- reactive({
   return(TRUE)
 })
 
+# output$NumberOfGenesInclude ----
 output$NumberOfGenesInclude <- renderText({
   idx <- scGeneIdxInclude()
   paste("Number of genes to be included: ", length(idx))
@@ -167,8 +168,7 @@ output$downloadExpression <- downloadHandler(
   }
 )
 
-##############################
-### Panel Plot
+### Panel Plot ----
 # TODO as module
 # data expression panel plot
 output$clusters4 <- renderUI({
@@ -188,6 +188,7 @@ output$clusters4 <- renderUI({
   }
 })
 
+# panelPlot ----
 # TODO: expression values are not normalized, is this correct?
 output$panelPlot <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output$panelPlot\n")
@@ -204,10 +205,6 @@ output$panelPlot <- renderPlot({
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
   genesin <- genesin[[1]]
-<<<<<<< HEAD
-=======
-  genesin <- genesin[which(genesin %in% featureData$symbol)]
->>>>>>> c86de7b129b4917ff4f333ed87414681efd1bcf4
   cl4 <- input$clusters4
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
@@ -295,8 +292,7 @@ output$panelPlot <- renderPlot({
 })
 
 
-##############################
-### Scater QC
+### Scater QC ----
 
 
 output$scaterQC <- renderImage({

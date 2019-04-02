@@ -1,5 +1,6 @@
 require(ggplot2)
 
+# scaterPNG ----
 scaterPNG <- reactive({
   if (DEBUG) cat(file = stderr(), "scaterPNG\n")
   start.time <- base::Sys.time()

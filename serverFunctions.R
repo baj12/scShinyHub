@@ -1,3 +1,13 @@
+
+printTimeEnd <- function(start.time, messtr) {
+  end.time <- base::Sys.time()
+  if (DEBUG){
+  cat(file = stderr(), paste("---", messtr,":done", difftime(end.time, start.time, units = "min"), " min\n"))  
+  }
+}
+
+
+
 geneName2Index <- function(g_id, featureData) {
   if (DEBUG) {
     cat(file = stderr(), paste("geneName2Index\n"))

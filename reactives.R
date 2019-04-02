@@ -175,8 +175,6 @@ inputDataFunc <- function(inFile) {
   cat(file = stderr(), paste("===load data:done", difftime(end.time, start.time, units = "min"), " min\n"))
   
   inputFileStats$stats <- stats
-  exportTestValues(inputFileStats = { inputFileStats$stats })
-  exportTestValues(exprsvals = { assays(dataTables$scEx)[["counts"]] })
   return(dataTables)
 }
 
@@ -199,8 +197,9 @@ inputData <- reactive({
   # load(file='~/scShinyHubDebug/inputData.RData')
   
   retVal <- inputDataFunc(inFile)
-  end.time <- base::Sys.time()
-  cat(file = stderr(), paste("this took: ", difftime(end.time, start.time, units = "min"), " min\n"))  
+
+  printTimeEnd(start.time, "inputData")
+  exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
   return(retVal)
 })
 
@@ -209,6 +208,7 @@ medianENSGfunc <- function(scEx) {
   return(median(t(geneC)))
 }
 
+# medianENSG ----
 medianENSG <- reactive({
   start.time <- Sys.time()
   
@@ -227,10 +227,7 @@ medianENSG <- reactive({
     return(0)
   }
   retVal <- medianENSGfunc(scEx)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), paste("===medianENSG:done", difftime(end.time, start.time, units = "min"), "\n"))
-  }
+  printTimeEnd(start.time, "medianENSG")
   exportTestValues(medianENSG = { retVal })
   
   return(retVal)
@@ -241,6 +238,7 @@ medianUMIfunc <- function(scEx) {
   return(median(t(umiC)))
 }
 
+# medianUMI ----
 medianUMI <- reactive({
   start.time <- Sys.time()
   
@@ -260,10 +258,8 @@ medianUMI <- reactive({
   # load(file='~/scShinyHubDebug/medianUMI.RData')
   scEx <- assays(scEx)[["counts"]]
   retVal <- medianUMIfunc(scEx)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===medianUMI:done\n", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "medianUMI")
   exportTestValues(medianUMI = { retVal })
   return(retVal)
 })
@@ -353,6 +349,7 @@ useCellsFunc <-
     return(goodCols)
   }
 
+# useCells ----
 # works on cells only
 # internal, should not be used by plug-ins
 useCells <- reactive({
@@ -389,11 +386,8 @@ useCells <- reactive({
     keepCells,
     cellKeepOnly
   )
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===useCells:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  
+
+  printTimeEnd(start.time, "useCells")
   exportTestValues(useCells = { retVal })
   return(retVal)
 })
@@ -469,7 +463,7 @@ useGenesFunc <-
     return(keepIDs)
   }
 
-# before gene filtering
+# before gene filtering -----
 beforeFilterCounts <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
@@ -507,6 +501,7 @@ beforeFilterCounts <- reactive({
   return(retVal)
 })
 
+# useGenes ----
 # collects information from all places where genes being removed or specified
 useGenes <- reactive({
   on.exit(
@@ -537,10 +532,8 @@ useGenes <- reactive({
     showNotification("which genes to use", id = "useGenes", duration = NULL)
   }
   retVal <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===useGenes: done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "useGenes")
   exportTestValues(useGenes = { retVal })
   return(retVal)
 })
@@ -642,7 +635,7 @@ scExFunc <-
     return(scExNew)
   }
 
-
+# scEx ----
 # apply filters that depend on genes & cells
 # it is here that useCells and useGenes are combined and applied to select for
 scEx <- reactive({
@@ -684,14 +677,13 @@ scEx <- reactive({
     minG = minG,
     maxG = maxG
   )
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===scEx:DONE", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "scEx")
   exportTestValues(scEx = { list(rowData(retVal), colData(retVal)) })
   return(retVal)
 })
 
+# rawNormalization ----
 rawNormalization <- reactive({
   scEx <- scEx()
   if (DEBUG) {
@@ -700,7 +692,7 @@ rawNormalization <- reactive({
   return(scEx)
 })
 
-# individual values
+# scEx_log ----
 scEx_log <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
@@ -735,15 +727,12 @@ scEx_log <- reactive({
   
   # scEx rownames are ENSG numbers
   # dataTables$scEx_log[useGenes, useCells]
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===scEx_log:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  printTimeEnd(start.time, "scEx_log")
   exportTestValues(scEx_log = { assays(scEx_log)["logcounts"] })
   return(scEx_log)
 })
 
-
+# scExLogMatrixDisplay ----
 # scExLog matrix with symbol as first column
 # TODO
 # we should probably just rename the rows and then have an option to tableSelectionServer that shows (or not) rownames
@@ -785,10 +774,7 @@ scExLogMatrixDisplay <- reactive({
   retVal <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
   rownames(retVal) <- make.names(rowData(scEx_log)$symbol, unique = TRUE)
   
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===scExLogMatrixDisplay:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  printTimeEnd(start.time, "scExLogMatrixDisplay")
   return(retVal)
 })
 
@@ -812,6 +798,7 @@ pcaFunc <- function(scEx_log) {
       showNotification(
         "Problem with PCA, probably not enough cells?",
         type = "warning",
+        id = "pcawarning",
         duration = NULL
       )
     }
@@ -829,6 +816,7 @@ pcaFunc <- function(scEx_log) {
   ))
 }
 
+# pca ----
 pca <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
@@ -836,6 +824,9 @@ pca <- reactive({
     }
   )
   start.time <- Sys.time()
+  if (!is.null(getDefaultReactiveDomain())) {
+    removeNotification(id = "pcawarning")
+  }
   
   if (DEBUG) {
     cat(file = stderr(), "pca\n")
@@ -851,11 +842,8 @@ pca <- reactive({
     showNotification("pca", id = "pca", duration = NULL)
   }
   retVal <- pcaFunc(scEx_log)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===pca:donedone", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  
+
+  printTimeEnd(start.time, "pca")
   exportTestValues(pca = { retVal })
   return(retVal)
 })
@@ -968,22 +956,8 @@ kmClustering <- reactive({
     )
     
   }
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===kmClustering:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  # reactives = ls(envir = globalenv())[which(unlist(lapply(ls(envir = globalenv()), function(x) class(get(x))[[1]][1]=="reactiveExpr")))]
-  # nullreactives = c()
-  # for (re in reactives) {
-  #   if (re == "kmClustering") next()
-  #   isolate({
-  #     if (is.null(get(re))) {
-  #       nullreactives = c(nullreactives, re)
-  #     }
-  #   })
-  # }
-  # save(file = "testReactive2.Rdata", list = c(ls()))
-  
+
+  printTimeEnd(start.time, "kmClustering")
   exportTestValues(kmClustering = { retVal })
   return(retVal)
 })
@@ -1087,10 +1061,8 @@ projections <- reactive({
       projections[, pdIdx] <- pd[, pdIdx]
     }
   }
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===projections:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
+  printTimeEnd(start.time, "projections")
   if (ncol(prjs) > 0 & nrow(prjs) == nrow(projections)) {
     projections <- cbind(projections, prjs)
   }
@@ -1146,12 +1118,8 @@ dbCluster <- reactive({
   # dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
   dbCluster <- clustering$Cluster
   
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===dbCluster:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  printTimeEnd(start.time, "dbCluster")
   exportTestValues(dbCluster = { dbCluster })
-  
   return(dbCluster)
 })
 
@@ -1190,10 +1158,8 @@ sample <- reactive({
       retVal[, pdColName] <- factor(as.character(pd[, pdColName]))
     }
   }
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===sample:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "sample")
   exportTestValues(sample = { retVal })
   retVal
   # return(sample)
@@ -1215,10 +1181,8 @@ geneCount <- reactive({
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
   retVal <- Matrix::colSums(assays(scEx)[["counts"]] > 0)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "geneCount")
   exportTestValues(geneCount = { retVal })
   return(retVal)
 })
@@ -1240,10 +1204,8 @@ beforeFilterPrj <- reactive({
   # load(file="~/scShinyHubDebug/beforeFilterPrj.RData")
   cn <- colnames(scEx)
   retVal <- bfc[cn]
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===beforeFilterPrj:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "beforeFilterPrj")
   exportTestValues(beforeFilterPrj = { retVal })
   return(retVal)
 })
@@ -1263,10 +1225,8 @@ umiCount <- reactive({
   }
   # load(file="~/scShinyHubDebug/umiCount.RData")
   retVal <- Matrix::colSums(assays(scEx)[["counts"]])
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+
+  printTimeEnd(start.time, "umiCount")
   exportTestValues(umiCount = { retVal })
   return(retVal)
 })
@@ -1281,6 +1241,7 @@ sampleInfoFunc <- function(scEx) {
 # sampleInfo -------
 # sample information
 sampleInfo <- reactive({
+  start.time <- Sys.time()
   if (DEBUG) {
     cat(file = stderr(), "sampleInfo\n")
   }
@@ -1297,9 +1258,8 @@ sampleInfo <- reactive({
   # load(file="~/scShinyHubDebug/sampleInfo.RData")
   
   retVal <- sampleInfoFunc(scEx)
-  if (DEBUG) {
-    cat(file = stderr(), "sampleInfo: done\n")
-  }
+
+  printTimeEnd(start.time, "sampleInfo")
   exportTestValues(sampleInfo = { retVal })
   return(retVal)
 })
