@@ -78,7 +78,7 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
     scale = "row",
     fontsize_row = 14,
     labels_col = colnames(expression),
-    labels_row = featureData[rownames(expression), "Associated.Gene.Name"],
+    labels_row = featureData[rownames(expression), "symbol"],
     show_rownames = TRUE,
     annotation_col = annotation,
     show_colnames = FALSE,
@@ -185,7 +185,7 @@ topExpGenesTable <- reactive({
   top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
   if (dim(mat)[1] > 0) {
     mat <- mat[top.genesOrder, ]
-    fd <- featureData[rownames(mat), c("Associated.Gene.Name", "Description")]
+    fd <- featureData[rownames(mat), c("symbol", "Description")]
     matCV <- matCV[rownames(mat)]
     fd <- cbind(fd, matCV)
     colnames(fd) <- c("gene", "description", "CV")
@@ -214,7 +214,7 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
   # cat(file = stderr(), paste("===violin-", vIdx,"-", difftime(Sys.time(), start.time, units = "min"), " min\n")); vIdx = vIdx+1;start.time <- Sys.time()
   
   map <-
-    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin), ])
+    rownames(featureData[which(featureData$symbol %in% genesin), ])
   if (DEBUG) {
     cat(file = stderr(), length(map))
   }
@@ -256,7 +256,7 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
       comb <- combinations(xPerm, r, genesin)
       for (cIdx in 1:nrow(comb)) {
         map <-
-          rownames(featureData[which(featureData$Associated.Gene.Name %in% comb[cIdx, ]), ])
+          rownames(featureData[which(featureData$symbol %in% comb[cIdx, ]), ])
         # permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
         
         permIdx <- Matrix::colSums(assays(scEx)[["counts"]][map, ,drop=FALSE] >= minExpr) == length(comb[cIdx, ])
@@ -406,7 +406,7 @@ heatmapSOMReactive <- reactive({
   
   geneNames <- somFunction(iData = scEx_matrix, nSom = nSOM, geneName = genesin)
   output$somGenes <- renderText({
-    paste(featureData[geneNames, "Associated.Gene.Name"], collapse = ", ", sep = ",")
+    paste(featureData[geneNames, "symbol"], collapse = ", ", sep = ",")
   })
   if (length(geneNames) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
@@ -430,7 +430,7 @@ heatmapSOMReactive <- reactive({
     cluster_cols = TRUE,
     scale = "row",
     fontsize_row = 14,
-    labels_row = featureData[geneNames, "Associated.Gene.Name"],
+    labels_row = featureData[geneNames, "symbol"],
     show_rownames = TRUE,
     annotation_col = annotation,
     show_colnames = FALSE,

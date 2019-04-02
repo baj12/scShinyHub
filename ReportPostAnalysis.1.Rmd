@@ -63,7 +63,7 @@ scEx_matrix <- as.matrix(assays(scEx_log)[[1]])
 # genesin <- c("h2afx,cdkn2a,cdkn1a")
 
 genesin2 <- geneName2Index(genesin, featuredata)
-genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"Associated.Gene.Name"], collapse =",", sep=""))
+genesin = (paste0(featuredata[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"symbol"], collapse =",", sep=""))
 
 heatmapData <- coE_heatmapFunc(
   featureData = featuredata, scEx_matrix = scEx_matrix,
@@ -120,7 +120,7 @@ do.call(pheatmap, heatmapData)
   genesin <- strsplit(genesin, ",")
 
     map <-
-    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+    rownames(featureData[which(featureData$symbol %in% genesin[[1]]), ])
 expression <- Matrix::colSums(assays(scEx_log)[[1]][map, ] >= minExpr)
   
 

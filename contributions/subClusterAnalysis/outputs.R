@@ -151,8 +151,8 @@ output$dge <- DT::renderDataTable({
   top.genes <- dge()
   featureData <- rowData(scEx)
   
-  top.genes$Associated.Gene.Name <-
-    featureData[rownames(top.genes), "Associated.Gene.Name"]
+  top.genes$symbol <-
+    featureData[rownames(top.genes), "symbol"]
   if ("Description" %in% colnames(featureData)) {
     top.genes$Description <- featureData[rownames(top.genes), "Description"]
   }

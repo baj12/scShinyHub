@@ -11,8 +11,8 @@ geneName2Index <- function(g_id, featureData) {
   g_id <- strsplit(g_id, ",")
   g_id <- g_id[[1]]
 
-  notFound <- g_id[!g_id %in% toupper(featureData$Associated.Gene.Name)]
-  if (length(featureData$Associated.Gene.Name) == length(notFound)) {
+  notFound <- g_id[!g_id %in% toupper(featureData$symbol)]
+  if (length(featureData$symbol) == length(notFound)) {
     # in case there is only one gene that is not available.
     notFound <- g_id
   }
@@ -28,7 +28,7 @@ geneName2Index <- function(g_id, featureData) {
     }
   }
 
-  geneid <- rownames(featureData[which(toupper(featureData$Associated.Gene.Name) %in% toupper(g_id)), ])
+  geneid <- rownames(featureData[which(toupper(featureData$symbol) %in% toupper(g_id)), ])
   if (DEBUG) {
     cat(file = stderr(), paste("done: geneName2Index\n"))
   }

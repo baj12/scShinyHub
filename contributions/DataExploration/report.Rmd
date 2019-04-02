@@ -109,15 +109,15 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
 ## VIOLIN PLOT 
 
 ```{r bj-DE-gene_vio_plot, eval=TRUE, echo=FALSE}
-# geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+# geneid <- rownames(featureData[which(featureData$symbol %in%
 #                                        toupper(input$gene_id)), ])[1]
   genesin <- toupper(input$gene_id)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
-  geneid <- rownames(featureData[which(featureData$Associated.Gene.Name %in%
+  geneid <- rownames(featureData[which(featureData$symbol %in%
                                        genesin[[1]]), ])
   map <-
-    rownames(featureData[which(featureData$Associated.Gene.Name %in% genesin[[1]]), ])
+    rownames(featureData[which(featureData$symbol %in% genesin[[1]]), ])
   
  # expression <- Matrix::colSums(exprs(scEx[map, ]) >= minExpr)
  expression <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr)
@@ -201,7 +201,7 @@ if (input$clusters4 == 'All')
         cut(
           as.numeric(
             log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
+              rownames(featureData[which(featureData$symbol==genesin[i]),])
               ,]
           ),breaks = 10))]
     plot(projections[,input$dimension_x4],projections[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
@@ -217,7 +217,7 @@ if (input$clusters4 == 'All')
         cut(
           as.numeric(
             log2cpm[
-              rownames(featureData[which(featureData$Associated.Gene.Name==genesin[i]),])
+              rownames(featureData[which(featureData$symbol==genesin[i]),])
               ,]
           ),breaks = 10))]
     
@@ -237,7 +237,7 @@ if (input$clusters4 == 'All')
 
 ```{r bj-DE-tsne_plt, eval=TRUE, echo=FALSE}
 if(DEBUG)cat(file=stderr(), "output$tsne_plt\n")
-geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+geneid <- rownames(featureData[which(featureData$symbol ==
                                        toupper(input$gene_id)), ])[1]
 
 expression <- log2cpm[geneid, ]

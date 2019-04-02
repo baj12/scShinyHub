@@ -62,7 +62,7 @@ output$gene_vio_plot <- renderPlot({
   if (length(geneid) == 0) {
     return(NULL)
   }
-  # geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+  # geneid <- rownames(featureData[which(featureData$symbol ==
   #                                        toupper(input$gene_id)), ])[1]
 
   # expression <- exprs(scEx_log)[geneid, ]
@@ -103,7 +103,7 @@ output$gene_vio_plot <- renderPlot({
     ) +
     xlab("Cluster") +
     ylab("Expression") +
-    ggtitle(paste(toupper(featureData[geneid, "Associated.Gene.Name"]), collapse = ", "))
+    ggtitle(paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
   if (DEBUG) cat(file = stderr(), "output$gene_vio_plot:done\n")
   return(p1)
   # })
@@ -126,7 +126,7 @@ output$downloadExpression <- downloadHandler(
     }
     # load(file="~/scShinyHubDebug/downloadExpression.RData")
     featureData <- rowData(scEx_log)
-    geneid <- rownames(featureData[which(featureData$Associated.Gene.Name ==
+    geneid <- rownames(featureData[which(featureData$symbol ==
       toupper(input$gene_id)), ])[1]
 
     expression <- assays(scEx_log)[[1]][geneid, ]
@@ -151,16 +151,16 @@ output$downloadExpression <- downloadHandler(
       subsetExpression <-
         as.data.frame(subsetExpression, row.names = rownames(scEx_log))
       colnames(subsetExpression) <- cells
-      subsetExpression$Associated.Gene.Name <-
-        featureData[rownames(subsetExpression), "Associated.Gene.Name"]
+      subsetExpression$symbol <-
+        featureData[rownames(subsetExpression), "symbol"]
       write.csv(subsetExpression, file)
     }
     else {
       subsetExpression <- assays(scEx_log)[[1]][, cells]
       # cat(stderr(),colnames(subsetExpression)[1:5])
 
-      subsetExpression$Associated.Gene.Name <-
-        featureData[rownames(subsetExpression), "Associated.Gene.Name"]
+      subsetExpression$symbol <-
+        featureData[rownames(subsetExpression), "symbol"]
       # cat(stderr(),colnames(subsetExpression))
       write.csv(subsetExpression, file)
     }
@@ -204,7 +204,7 @@ output$panelPlot <- renderPlot({
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
   genesin <- genesin[[1]]
-  genesin <- genesin[which(genesin %in% featureData$Associated.Gene.Name)]
+  genesin <- genesin[which(genesin %in% featureData$symbol)]
   cl4 <- input$clusters4
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
@@ -225,14 +225,14 @@ output$panelPlot <- renderPlot({
   if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
     ymax <- 0
     for (i in 1:length(genesin)) {
-      geneIdx <- which(featureData$Associated.Gene.Name == genesin[i])
+      geneIdx <- which(featureData$symbol == genesin[i])
       ymax <- max(ymax, max(Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])))
     }
     ylim <- c(0, ymax)
   }
   if (cl4 == "All") {
     for (i in 1:length(genesin)) {
-      geneIdx <- which(featureData$Associated.Gene.Name == genesin[i])
+      geneIdx <- which(featureData$symbol == genesin[i])
       Col <- rbPal(10)[
         as.numeric(
           cut(
@@ -257,7 +257,7 @@ output$panelPlot <- renderPlot({
     }
   } else {
     for (i in 1:length(genesin)) {
-      geneIdx <- which(featureData$Associated.Gene.Name == genesin[i])
+      geneIdx <- which(featureData$symbol == genesin[i])
       subsetTSNE <- subset(projections, dbCluster == cl4)
 
       Col <- rbPal(10)[
@@ -362,6 +362,6 @@ output$tsne_plt <- renderPlotly({
         colors = "Greens"
       )
     )
-  layout(p, title = paste(toupper(featureData[geneid, "Associated.Gene.Name"]), collapse = ", "))
+  layout(p, title = paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
   # })
 })

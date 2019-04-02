@@ -97,7 +97,7 @@ inputDataFunc <- function(inFile) {
   cat(stderr(), "Loaded")
   dataTables <- list()
   featuredata <- rowData(scEx)
-  featuredata$Associated.Gene.Name = toupper(featuredata$Associated.Gene.Name)
+  featuredata$symbol = toupper(featuredata$symbol)
   # dataTables$featuredataOrg <- rowData(scEx)
   dataTables$scEx <- scEx
   dataTables$featuredata <- featuredata
@@ -141,9 +141,9 @@ inputDataFunc <- function(inFile) {
     }
   }
   
-  if (!sum(c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
+  if (!sum(c("symbol", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
+      showNotification("featuredata - one of is missing: symbol, Gene.Biotype, Description)",
                        duration = NULL, type = "error"
       )
     }
@@ -153,7 +153,7 @@ inputDataFunc <- function(inFile) {
     if (!"Description" %in% colnames(featuredata)) {
       featuredata$"Description" <- "not given"
     }
-    featuredata$Associated.Gene.Name = toupper(featuredata$Associated.Gene.Name)
+    featuredata$symbol = toupper(featuredata$symbol)
     dataTables$featuredata <- featuredata
   }
   # if (is.null(rowData(dataTables$scEx)$symbol)){
@@ -314,7 +314,7 @@ useCellsFunc <-
     # genes that have to be expressed at least in one of them.
     selCols <- rep(FALSE, length(goodCols))
     if (!length(genesin) == 0) {
-      ids <- which(toupper(dataTables$featuredata$Associated.Gene.Name) %in% genesin)
+      ids <- which(toupper(dataTables$featuredata$symbol) %in% genesin)
       if (length(ids) == 1) {
         selCols <- scEx[ids, ] > 0
       } else if (length(ids) == 0) {
@@ -424,7 +424,7 @@ useGenesFunc <-
     # load(file='~/scShinyHubDebug/useGenesFunc.Rdata')
     # regular expression with gene names to be removed
     if (nchar(ipIDs) > 0) {
-      keepIDs <- !grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+      keepIDs <- !grepl(ipIDs, dataTables$featuredata$symbol)
     } else {
       keepIDs <- rep(TRUE, nrow(dataTables$scEx))
     }
@@ -432,9 +432,9 @@ useGenesFunc <-
     genesKeep <- gsub(" ", "", genesKeep, fixed = TRUE)
     genesKeep <- strsplit(genesKeep, ",")
     genesKeep <- genesKeep[[1]]
-    keepGeneIds <- which(dataTables$featuredata$Associated.Gene.Name %in% genesKeep)
+    keepGeneIds <- which(dataTables$featuredata$symbol %in% genesKeep)
     
-    # dataTables$featuredata$Associated.Gene.Name[keepIDs]
+    # dataTables$featuredata$symbol[keepIDs]
     # gene groups to be included
     if (!is.null(geneListSelection)) {
       selectedgeneList <- get_selected(geneListSelection)
@@ -467,7 +467,7 @@ beforeFilterCounts <- reactive({
   ipIDs <- input$selectIds # regular expression of genes to be removed
   if (!exists("dataTables") |
       is.null(dataTables) |
-      length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+      length(dataTables$featuredata$symbol) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "beforeFilterCounts: NULL\n")
     }
@@ -483,7 +483,7 @@ beforeFilterCounts <- reactive({
   
   geneIDs <- NULL
   if (nchar(ipIDs) > 0) {
-    geneIDs <- grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+    geneIDs <- grepl(ipIDs, dataTables$featuredata$symbol)
   }
   if (is.null(geneIDs)) {
     return(rep(0, nrow(dataTables$featuredata)))
@@ -511,7 +511,7 @@ useGenes <- reactive({
   
   if (!exists("dataTables") |
       is.null(dataTables) |
-      length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+      length(dataTables$featuredata$symbol) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "useGenes: NULL\n")
     }

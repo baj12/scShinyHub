@@ -24,7 +24,7 @@ if (length(infRows) > 0) {
 mat <- mat[rownames(mat) %in% rownames(featuredata), ]
 fd <- featuredata[rownames(mat), ]
 gbm <- newGeneBCMatrix(mat = as(mat, "dgTMatrix"), fd = fd, pd = pd)
-fData(gbm)$symbol <- fData(gbm)$Associated.Gene.Name
+fData(gbm)$symbol <- fData(gbm)$symbol
 fData(gbm)$id <- rownames(fData(gbm))
 save(file = "Examples/PBMC-Apheresis.new.Rds", list = c("featuredata", "gbm"))
 
@@ -43,7 +43,7 @@ if (length(infRows) > 0) {
 }
 fd <- featuredata[rownames(mat), ]
 gbm <- newGeneBCMatrix(mat = as(mat, "dgTMatrix"), fd = fd, pd = pd)
-fData(gbm)$symbol <- fData(gbm)$Associated.Gene.Name
+fData(gbm)$symbol <- fData(gbm)$symbol
 fData(gbm)$id <- rownames(fData(gbm))
 gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
 gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
