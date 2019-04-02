@@ -124,9 +124,7 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
 
   projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){
-  n_fun <- function(x) {
-  return(data.frame(y = -.5, label = paste0(length(x), "\ncells")))
-}
+  
 
   p1 <-
     ggplot(projections, aes_string(factor(projections[, "dbCluster"]), "coExpVal", fill = factor(projections[, "dbCluster"]))) +
