@@ -84,7 +84,7 @@ tabList <- list(
     fluidRow(
       column(
         2,
-        uiOutput("clusters4")
+        uiOutput("clusterSelectionPanelPlot")
       ),
       column(
         2,

@@ -1,8 +1,8 @@
 
 myZippedReportFiles <- c("DGE.csv")
 
-
-updateInputx1 <- reactive({
+# subcluster axes ----
+updateInputSubclusterAxes <- reactive({
   projections <- projections()
   # we combine the group names with the projections to add ability to select groups
   gn <- groupNames$namesDF
@@ -11,9 +11,9 @@ updateInputx1 <- reactive({
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/updateInputx1.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/updateInputSubclusterAxes.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/updateInputx1.RData")
+  # load(file="~/scShinyHubDebug/updateInputSubclusterAxes.RData")
   if (length(gn) > 0) {
     projections <- cbind(projections, gn[rownames(projections), ] * 1)
   }
@@ -34,7 +34,7 @@ updateInputx1 <- reactive({
 # TODO module?
 output$dge_plot1 <- renderPlot({
   projections <- projections()
-  up1 <- updateInputx1()
+  up1 <- updateInputSubclusterAxes()
   x1 <- input$dimension_x1
   y1 <- input$dimension_y1
   c1 <- input$clusters1
@@ -191,7 +191,7 @@ output$clusters1 <- renderUI({
   }
   # load(file="~/scShinyHubDebug/clusters1_dge.RData")
   projections <- projections()
-  up1 <- updateInputx1()
+  up1 <- updateInputSubclusterAxes()
   if (is.null(projections)) {
     HTML("Please load data first")
   } else {

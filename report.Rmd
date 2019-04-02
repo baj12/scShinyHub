@@ -119,8 +119,8 @@ if (is.null(input$clusters3)) {
   input$clusters3 <- "0"
   print("Warning: setting clusters4 to 0")
 }
-if (is.null(input$clusters4)) {
-  input$clusters4 <- "All"
+if (is.null(input$clusterSelectionPanelPlot)) {
+  input$clusterSelectionPanelPlot <- "All"
   print("Warning: setting clusters4 to All")
 }
 ```

@@ -5,8 +5,7 @@ source("reactives.R")
 # Expression ------------------------------------------------------------------
 expCluster <- callModule(clusterServer, "expclusters", projections, reactive(input$gene_id))
 
-# these observes should be independant of projections since this will be then executed by default for any changes
-updateInputx4 <- reactive({
+updateInputExpPanel <- reactive({
   tsneData <- projections()
 
   # Can use character(0) to remove all choices
@@ -171,16 +170,16 @@ output$downloadExpression <- downloadHandler(
 ### Panel Plot ----
 # TODO as module
 # data expression panel plot
-output$clusters4 <- renderUI({
-  if (DEBUG) cat(file = stderr(), "output$clusters4\n")
+output$clusterSelectionPanelPlot <- renderUI({
+  if (DEBUG) cat(file = stderr(), "output$clusterSelectionPanelPlot\n")
   projections <- projections()
-  upI <- updateInputx4()
+  upI <- updateInputExpPanel()
   if (is.null(projections)) {
     HTML("Please load data firts")
   } else {
     noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
     selectInput(
-      "clusters4",
+      "clusterSelectionPanelPlot",
       label = "Cluster",
       choices = c(c("All"), c(1:noOfClusters)),
       selected = "All"
@@ -205,7 +204,7 @@ output$panelPlot <- renderPlot({
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
   genesin <- genesin[[1]]
-  cl4 <- input$clusters4
+  cl4 <- input$clusterSelectionPanelPlot
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
   

@@ -3,11 +3,18 @@ inputFileStats <- reactiveValues(
   stats = NULL
 )
 
+# store cell groups that are defined on the fly using the modular 2D plot
 groupNames <- reactiveValues(
   namesDF = data.frame()
 )
 
+# colors for samples
 sampleCols <- reactiveValues(
+  colPal = allowedColors
+)
+
+# colors for clusters
+clusterCols <- reactiveValues(
   colPal = allowedColors
 )
 
@@ -18,8 +25,8 @@ sessionProjections <- reactiveValues(
 )
 
 # inputDataFunc ----
-# should only hold original data
-# internal, should not be used by plug-ins
+# loads singleCellExperiment
+#   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
@@ -35,10 +42,7 @@ inputDataFunc <- function(inFile) {
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
-  start.time <- Sys.time()
-  
-  # load("test.RData")
-  
+
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
   stats$nFeatures <- 0
@@ -177,6 +181,8 @@ inputDataFunc <- function(inFile) {
   inputFileStats$stats <- stats
   return(dataTables)
 }
+
+
 
 # inputData ----
 # internal, should not be used by plug-ins
@@ -981,7 +987,7 @@ projections <- reactive({
   # input data being loaded
   scEx <- scEx()
   pca <- pca()
-  prjs <- (sessionProjections$prjs)
+  prjs <- sessionProjections$prjs
   if (!exists("scEx") | is.null(scEx) | !exists("pca") | is.null(pca)) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
