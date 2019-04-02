@@ -10,6 +10,7 @@ DummyReactive <- reactive({
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "DummyFunc")
   )
+  start.time <- base::Sys.time()
   
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "pca\n")
