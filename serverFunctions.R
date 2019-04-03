@@ -2,8 +2,8 @@
 #' print on the console the duration relative to the start time
 printTimeEnd <- function(start.time, messtr) {
   end.time <- base::Sys.time()
-  if (DEBUG){
-  cat(file = stderr(), paste("---", messtr,":done", difftime(end.time, start.time, units = "min"), " min\n"))  
+  if (DEBUG) {
+    cat(file = stderr(), paste("---", messtr, ":done", difftime(end.time, start.time, units = "min"), " min\n"))
   }
 }
 
@@ -14,21 +14,25 @@ printTimeEnd <- function(start.time, messtr) {
 #' g_id is a character string that with the symbol names separated by ","
 #' spaces are ignored
 #' case is ignored.
-geneName2Index <- function(g_id, featureData, symbolCol="symbol") {
+geneName2Index <- function(g_id, featureData, symbolCol = "symbol") {
   if (DEBUG) {
     cat(file = stderr(), paste("geneName2Index\n"))
   }
-  if(is.null(g_id)){
+  if (is.null(g_id)) {
     return(NULL)
   }
-  
+
   g_id <- toupper(g_id)
   g_id <- gsub(" ", "", g_id, fixed = TRUE)
   g_id <- strsplit(g_id, ",")
   g_id <- g_id[[1]]
 
-  notFound <- g_id[!g_id %in% toupper(featureData[symbolCol])]
-  if (length(featureData[symbolCol]) == length(notFound)) {
+  save(file = "test.RData", list = ls())
+  if (length(g_id) == 0) {
+    return(NULL)
+  }
+  notFound <- g_id[!g_id %in% toupper(featureData[,symbolCol])]
+  if (length(featureData[,symbolCol]) == length(notFound)) {
     # in case there is only one gene that is not available.
     notFound <- g_id
   }
@@ -44,7 +48,7 @@ geneName2Index <- function(g_id, featureData, symbolCol="symbol") {
     }
   }
 
-  geneid <- rownames(featureData[which(toupper(featureData[symbolCol]) %in% toupper(g_id)), ])
+  geneid <- rownames(featureData[which(toupper(featureData[,symbolCol]) %in% toupper(g_id)), ])
   if (DEBUG) {
     cat(file = stderr(), paste("done: geneName2Index\n"))
   }
@@ -53,7 +57,7 @@ geneName2Index <- function(g_id, featureData, symbolCol="symbol") {
 
 #' updateProjectionsWithUmiCount
 #' in the projections table the column UmiCountPerGenes(2) is populated with the sum of counts for the genes in geneNames
-#' geneNames is a character string (see geneName2Index) 
+#' geneNames is a character string (see geneName2Index)
 #' This is used in the 2D plot module to show the non-normalized counts for a given list of genes
 updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NULL, featureData, scEx, projections) {
   if ((dimY == "UmiCountPerGenes") | (dimX == "UmiCountPerGenes")) {
@@ -85,7 +89,7 @@ updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NU
 
 
 #' appendHeavyCalculations
-#' append to the list heavyCalculations 
+#' append to the list heavyCalculations
 appendHeavyCalculations <- function(myHeavyCalculations, heavyCalculations) {
   for (hc in myHeavyCalculations) {
     if (length(hc) == 2 & is.character(hc[1]) & is.character(hc[2])) {
@@ -108,7 +112,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
                              logx = FALSE, logy = FALSE, divXBy = "None", divYBy = "None") {
   geneid <- geneName2Index(g_id, featureData)
-  
+
   if (length(geneid) == 0) {
     return(NULL)
   }
@@ -128,7 +132,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   )
   projections <- cbind(projections, expression)
   names(projections)[ncol(projections)] <- "exprs"
-  
+
   subsetData <- subset(projections, dbCluster %in% clId)
   # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
   # sample information
@@ -151,7 +155,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   if (nchar(gtitle) > 50) {
     gtitle <- paste(substr(gtitle, 1, 50), "...")
   }
-  
+
   require(plotly)
   f <- list(
     family = "Courier New, monospace",
@@ -165,7 +169,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   if (divYBy != "None") {
     subsetData[, dimY] <- subsetData[, dimY] / subsetData[, divYBy]
   }
-  
+
   # tranform data
   typeX <- typeY <- "linear"
   if (logx) {
@@ -174,7 +178,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   if (logy) {
     typeY <- "log"
   }
-  
+
   if (is.factor(subsetData[, dimX])) {
     typeX <- NULL
   }
@@ -210,7 +214,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
       title = gtitle,
       dragmode = "select"
     )
-  
+
   selectedCells <- NULL
   if (length(grpN) > 0) {
     if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {
