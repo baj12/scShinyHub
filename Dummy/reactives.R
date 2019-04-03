@@ -18,19 +18,10 @@ DummyReactive <- reactive({
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "DummyFunc")
   )
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "DummyFunc", duration = NULL)
   }
-<<<<<<< HEAD
-=======
-=======
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "DummyFuncPerm")
@@ -51,24 +42,14 @@ DummyReactive <- reactive({
     if (DEBUG) cat(file = stderr(), "pca:NULL\n")
     return(NULL)
   }
-<<<<<<< HEAD
 
   # for development and debugging purposes
   # this is run after loading all reactive values
-=======
-<<<<<<< HEAD
-  
-  # for development and debugging purposes
-  # this is run after loading all reactive values
-=======
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "DummyFunc", duration = NULL)
   }
   
-  # for development and debugging purposes
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/DummyReactive.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -84,28 +65,13 @@ DummyReactive <- reactive({
   }
   
   # print debugging information on the console
-<<<<<<< HEAD
   printTimeEnd(start.time, "DummyReactive")
   # for automated shiny testing using shinytest
   exportTestValues(DummyReactive = {retVal})  
-=======
-<<<<<<< HEAD
-  printTimeEnd(start.time, "DummyReactive")
-  # for automated shiny testing using shinytest
-  exportTestValues(DummyReactive = {retVal})  
-=======
-  printTimeEnd(start.time, "inputData")
-  # for automated shiny testing using shinytest
-  exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   # I prefer calling return to return a value, this way I know what is happeing... (Am I too old?)
   return(retVal)
 })
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 
 
 
@@ -131,22 +97,6 @@ DummyReactive <- reactive({
 
 
 
-# myHeavyCalculations ----
-#' declare heavy calculations
-#' these are run when clicking on the button "force calculations"
-myHeavyCalculations <- list(c("running DummyReactive", "DummyReactive"))
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
-
-=======
-# myHeavyCalculations ----
-#' declare heavy calculations
-#' these are run when clicking on the button "force calculations"
-myHeavyCalculations <- list(c("running DummyReactive", "DummyReactive"))
-
-<<<<<<< HEAD
-=======
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
 # imageDummyPrecompute ----
 #' imageDummyPrecompute
 #' this is an example of calculating an image to a file and returning the local reference
