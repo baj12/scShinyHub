@@ -42,7 +42,7 @@ DummyReactive <- reactive({
     if (DEBUG) cat(file = stderr(), "pca:NULL\n")
     return(NULL)
   }
-  
+
   # for development and debugging purposes
   # this is run after loading all reactive values
   if (DEBUGSAVE) {
@@ -68,30 +68,6 @@ DummyReactive <- reactive({
 })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # myHeavyCalculations ----
 #' declare heavy calculations
 #' these are run when clicking on the button "force calculations"
@@ -112,7 +88,7 @@ imageDummyPrecompute <- reactive({
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "imageDummyPrecomputePerm")
-  
+
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "imageDummyPrecompute started.\n")
   
@@ -178,11 +154,7 @@ imageDummyPrecompute <- reactive({
   
   ### actual work is done
   
-  # print debugging information on the console
   printTimeEnd(start.time, "inputData")
-  # for automated shiny testing using shinytest
   exportTestValues(imageDummyPrecompute = {retVal})  
-
-
   return(retVal)
 })
