@@ -107,41 +107,17 @@ imageDummyPrecompute <- reactive({
   # remove any notification on exit that we don't want
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-<<<<<<< HEAD
       removeNotification(id = "imageDummyPrecompute")
   )
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "imageDummyPrecomputePerm")
 
-=======
-<<<<<<< HEAD
-      removeNotification(id = "imageDummyPrecompute")
-  )
-  # remove any permanant notification if we rerun reactive
-  if (!is.null(getDefaultReactiveDomain()))
-    removeNotification(id = "imageDummyPrecomputePerm")
-=======
-      removeNotification(id = "DummyFunc")
-  )
-  # remove any permanant notification if we rerun reactive
-  if (!is.null(getDefaultReactiveDomain()))
-    removeNotification(id = "DummyFuncPerm")
->>>>>>> af45f672176938a59207f4376371e312eb817234
-  
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "imageDummyPrecompute started.\n")
   
   # call dependancies (reactives)
-<<<<<<< HEAD
   # pick the ones that are needed and remove others
-=======
-<<<<<<< HEAD
-  # pick the ones that are needed and remove others
-=======
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   scEx <- scEx()                 # raw data, filtered by genes/cells
   scEx_log <- scEx_log()         # normalized data
   prj <- projections()           # projections, includes manually set groups
@@ -156,15 +132,7 @@ imageDummyPrecompute <- reactive({
   }
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
-<<<<<<< HEAD
     showNotification("preparing", id = "imageDummyPrecompute", duration = NULL)
-=======
-<<<<<<< HEAD
-    showNotification("preparing", id = "imageDummyPrecompute", duration = NULL)
-=======
-    showNotification("loading", id = "DummyFunc", duration = NULL)
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
   }
   
   # for development and debugging purposes
@@ -200,23 +168,7 @@ imageDummyPrecompute <- reactive({
   p <- ggplot(m, aes(V1)) + geom_bar()
   ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p, width = myPNGwidth, height = myPNGheight, units = "in")
 
-<<<<<<< HEAD
   retVal <-  list(
-=======
-<<<<<<< HEAD
-  retVal <-  list(
-=======
-  ### actual work is done
-  
-  # print debugging information on the console
-  printTimeEnd(start.time, "inputData")
-  # for automated shiny testing using shinytest
-  exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
-
-
-  return(list(
->>>>>>> af45f672176938a59207f4376371e312eb817234
->>>>>>> db41db72941ac78612a4406508fcf8eae4a76734
     src = normalizePath(outfile, mustWork = FALSE),
     contentType = "image/png",
     width = width,
