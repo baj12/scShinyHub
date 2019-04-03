@@ -18,10 +18,13 @@ DummyReactive <- reactive({
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "DummyFunc")
   )
+<<<<<<< HEAD
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "DummyFunc", duration = NULL)
   }
+=======
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "DummyFuncPerm")
@@ -42,9 +45,18 @@ DummyReactive <- reactive({
     if (DEBUG) cat(file = stderr(), "pca:NULL\n")
     return(NULL)
   }
+<<<<<<< HEAD
   
   # for development and debugging purposes
   # this is run after loading all reactive values
+=======
+  # show in the app that this is running
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("loading", id = "DummyFunc", duration = NULL)
+  }
+  
+  # for development and debugging purposes
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/DummyReactive.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -60,13 +72,20 @@ DummyReactive <- reactive({
   }
   
   # print debugging information on the console
+<<<<<<< HEAD
   printTimeEnd(start.time, "DummyReactive")
   # for automated shiny testing using shinytest
   exportTestValues(DummyReactive = {retVal})  
+=======
+  printTimeEnd(start.time, "inputData")
+  # for automated shiny testing using shinytest
+  exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   # I prefer calling return to return a value, this way I know what is happeing... (Am I too old?)
   return(retVal)
 })
 
+<<<<<<< HEAD
 
 
 
@@ -97,6 +116,13 @@ DummyReactive <- reactive({
 #' these are run when clicking on the button "force calculations"
 myHeavyCalculations <- list(c("running DummyReactive", "DummyReactive"))
 
+=======
+# myHeavyCalculations ----
+#' declare heavy calculations
+#' these are run when clicking on the button "force calculations"
+myHeavyCalculations <- list(c("running DummyReactive", "DummyReactive"))
+
+>>>>>>> af45f672176938a59207f4376371e312eb817234
 # imageDummyPrecompute ----
 #' imageDummyPrecompute
 #' this is an example of calculating an image to a file and returning the local reference
@@ -107,17 +133,28 @@ imageDummyPrecompute <- reactive({
   # remove any notification on exit that we don't want
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
+<<<<<<< HEAD
       removeNotification(id = "imageDummyPrecompute")
   )
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "imageDummyPrecomputePerm")
+=======
+      removeNotification(id = "DummyFunc")
+  )
+  # remove any permanant notification if we rerun reactive
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "DummyFuncPerm")
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "imageDummyPrecompute started.\n")
   
   # call dependancies (reactives)
+<<<<<<< HEAD
   # pick the ones that are needed and remove others
+=======
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   scEx <- scEx()                 # raw data, filtered by genes/cells
   scEx_log <- scEx_log()         # normalized data
   prj <- projections()           # projections, includes manually set groups
@@ -132,7 +169,11 @@ imageDummyPrecompute <- reactive({
   }
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
+<<<<<<< HEAD
     showNotification("preparing", id = "imageDummyPrecompute", duration = NULL)
+=======
+    showNotification("loading", id = "DummyFunc", duration = NULL)
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   }
   
   # for development and debugging purposes
@@ -168,7 +209,19 @@ imageDummyPrecompute <- reactive({
   p <- ggplot(m, aes(V1)) + geom_bar()
   ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p, width = myPNGwidth, height = myPNGheight, units = "in")
 
+<<<<<<< HEAD
   retVal <-  list(
+=======
+  ### actual work is done
+  
+  # print debugging information on the console
+  printTimeEnd(start.time, "inputData")
+  # for automated shiny testing using shinytest
+  exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
+
+
+  return(list(
+>>>>>>> af45f672176938a59207f4376371e312eb817234
     src = normalizePath(outfile, mustWork = FALSE),
     contentType = "image/png",
     width = width,

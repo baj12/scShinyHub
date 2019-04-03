@@ -3,9 +3,14 @@ myZippedReportFiles <- c("dummyTableOutput.csv")
 
 
 # The output type has to be in line with the tablist item. I.e. plotOutput in this case
+<<<<<<< HEAD
 #' here, we prepare the data in the DummyReactive and just provide the plot 
 output$Dummy_plot <- renderPlot({
   # load reactive data
+=======
+#' prepare 
+output$Dummy_plot <- renderPlot({
+>>>>>>> af45f672176938a59207f4376371e312eb817234
   dummyNRow <- DummyReactive()
   # return if nothing to be computed
   if (is.null(projections) | is.null(dummyNRow)) {
