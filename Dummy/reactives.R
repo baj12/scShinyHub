@@ -112,7 +112,7 @@ imageDummyPrecompute <- reactive({
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "imageDummyPrecomputePerm")
-
+  
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "imageDummyPrecompute started.\n")
   
