@@ -1,6 +1,6 @@
 # The output type has to be in line with the tablist item. I.e. plotOutput in this case
+#' prepare 
 output$Dummy_plot <- renderPlot({
-  projections <- projections()
   dummyNRow <- DummyReactive()
   if (is.null(projections) | is.null(dummyNRow)) {
     return(NULL)
