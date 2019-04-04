@@ -1,23 +1,4 @@
 
-# sub menue items for the parameter tab
-# myPparameters = list(
-#   menuSubItem("Normalization2", tabName = "mynormalizations")
-# )
-
-# tab content
-
-# tabList = list(
-#   tabItem("mynormalizations",list(
-#     tags$h3("Test"),
-#     fluidRow(column(10,
-#                     tags$h4("h4 text as test")
-#                     # 10, offset = 1,
-#                     # plotOutput('plotUmiHist') %>% withSpinner()
-#     ))
-#   )
-#   )
-# )
-
 # normalization parameters
 
 # choice for the radio buttion
