@@ -22,5 +22,3 @@ tabList <- list(
   )
 )
 
-# declare heavy calculations
-myHeavyCalculations <- NULL

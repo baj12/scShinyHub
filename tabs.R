@@ -13,7 +13,6 @@ if (file.exists("defaultValues.R")) {
 # inputTab ----
 inputTab <- tabItem(
   tabName = "input",
-  # id = paste0("shiny-tab-", tabName)
   fluidRow(div(h3("scShinyHub Input"), align = "center")),
   br(),
   fluidRow(div(

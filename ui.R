@@ -40,7 +40,7 @@ source("parameters.R", local = TRUE)
 # Basic menu Items
 allMenus <- list(
   menuItem("input", tabName = "input", icon = icon("dashboard")),
-  menuItem("Parameters", tabName = "parameters", icon = icon("dashboard"), parameterItems),
+  menuItem("Parametes", tabName = "parameters", icon = icon("dashboard"), parameterItems),
   menuItem("Cell selection", tabName = "cellSelection", icon = icon("dashboard")),
   menuItem("Gene selection", tabName = "geneSelection", icon = icon("dashboard"))
 )
