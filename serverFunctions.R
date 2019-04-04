@@ -1,38 +1,28 @@
-#' printTimeEnd
-#' print on the console the duration relative to the start time
+
 printTimeEnd <- function(start.time, messtr) {
   end.time <- base::Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), paste("---", messtr, ":done", difftime(end.time, start.time, units = "min"), " min\n"))
+  if (DEBUG){
+  cat(file = stderr(), paste("---", messtr,":done", difftime(end.time, start.time, units = "min"), " min\n"))  
   }
 }
 
 
-#' geneName2Index
-#' featureData holds a column called symbol, which is used to index the rownames of the featureData table
-#' a notification is displayed if in a shiny environment for genes that are not found
-#' g_id is a character string that with the symbol names separated by ","
-#' spaces are ignored
-#' case is ignored.
-geneName2Index <- function(g_id, featureData, symbolCol = "symbol") {
+
+geneName2Index <- function(g_id, featureData) {
   if (DEBUG) {
     cat(file = stderr(), paste("geneName2Index\n"))
   }
-  if (is.null(g_id)) {
+  if(is.null(g_id)){
     return(NULL)
   }
-
+  
   g_id <- toupper(g_id)
   g_id <- gsub(" ", "", g_id, fixed = TRUE)
   g_id <- strsplit(g_id, ",")
   g_id <- g_id[[1]]
 
-  save(file = "test.RData", list = ls())
-  if (length(g_id) == 0) {
-    return(NULL)
-  }
-  notFound <- g_id[!g_id %in% toupper(featureData[,symbolCol])]
-  if (length(featureData[,symbolCol]) == length(notFound)) {
+  notFound <- g_id[!g_id %in% toupper(featureData$symbol)]
+  if (length(featureData$symbol) == length(notFound)) {
     # in case there is only one gene that is not available.
     notFound <- g_id
   }
@@ -48,17 +38,14 @@ geneName2Index <- function(g_id, featureData, symbolCol = "symbol") {
     }
   }
 
-  geneid <- rownames(featureData[which(toupper(featureData[,symbolCol]) %in% toupper(g_id)), ])
+  geneid <- rownames(featureData[which(toupper(featureData$symbol) %in% toupper(g_id)), ])
   if (DEBUG) {
     cat(file = stderr(), paste("done: geneName2Index\n"))
   }
   return(geneid)
 }
 
-#' updateProjectionsWithUmiCount
-#' in the projections table the column UmiCountPerGenes(2) is populated with the sum of counts for the genes in geneNames
-#' geneNames is a character string (see geneName2Index)
-#' This is used in the 2D plot module to show the non-normalized counts for a given list of genes
+
 updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NULL, featureData, scEx, projections) {
   if ((dimY == "UmiCountPerGenes") | (dimX == "UmiCountPerGenes")) {
     geneNames <- geneName2Index(geneNames, featureData)
@@ -88,8 +75,7 @@ updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NU
 }
 
 
-#' appendHeavyCalculations
-#' append to the list heavyCalculations
+# append to heavyCalculations
 appendHeavyCalculations <- function(myHeavyCalculations, heavyCalculations) {
   for (hc in myHeavyCalculations) {
     if (length(hc) == 2 & is.character(hc[1]) & is.character(hc[2])) {
@@ -101,28 +87,30 @@ appendHeavyCalculations <- function(myHeavyCalculations, heavyCalculations) {
   return(heavyCalculations)
 }
 
-#' plot2Dprojection ----------------
-#' used in moduleServer and reports
-#' using projections$sample for shape
-#'   max 18 samples displayed!!!
-#' expression (normalized)/color based on genes supplied via g_id
-#' handles transformation (log) and/or division by
-#' handles group selections (grpN)
+#### plot2Dprojection ----------------
+# used in moduleServer and reports
 plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
                              logx = FALSE, logy = FALSE, divXBy = "None", divYBy = "None") {
   geneid <- geneName2Index(g_id, featureData)
-
+  
   if (length(geneid) == 0) {
     return(NULL)
   }
-  if (DEBUG) {
-    cat(file = stderr(), paste("plot2Dprojection\n"))
-  }
+  # if (length(geneid) == 1) {
+  #   expression <- exprs(scEx_log)[geneid, ,drop=FALSE]
+  # } else {
   expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, , drop = FALSE])
-
+  # }
   validate(need(is.na(sum(expression)) != TRUE, ""))
-
+  # if (length(geneid) == 1) {
+  #   expression <- exprs(scEx_log)[geneid, ]
+  # } else {
+  #   expression <- Matrix::colSums(exprs(scEx_log)[geneid, ])
+  # }
+  # validate(need(is.na(sum(expression)) != TRUE, ""))
+  
+  # geneid <- geneName2Index(geneNames, featureData)
   projections <- updateProjectionsWithUmiCount(
     dimX = dimX, dimY = dimY,
     geneNames = geneNames,
@@ -130,10 +118,16 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
     featureData = featureData,
     scEx = scEx, projections = projections
   )
+  
+  
   projections <- cbind(projections, expression)
   names(projections)[ncol(projections)] <- "exprs"
-
+  
+  if (DEBUG) {
+    cat(file = stderr(), paste("output$dge_plot1:---", clId[1], "---\n"))
+  }
   subsetData <- subset(projections, dbCluster %in% clId)
+  # subsetData$dbCluster = factor(subsetData$dbCluster)
   # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
   # sample information
   if (length(as.numeric(as.factor(subsetData$sample))) > 18) {
@@ -142,35 +136,30 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
     subsetData$shape <- as.numeric(as.factor(subsetData$sample))
   }
   if (DEBUGSAVE) {
-    cat(file = stderr(), paste(" saving plot2Dprojection\n"))
     save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
     cat(file = stderr(), paste("plot2Dprojection saving done.\n"))
   }
   # load(file="~/scShinyHubDebug/clusterPlot.RData")
-
   if (nrow(subsetData) == 0) return(NULL)
-
-  # handle long title
+  # subsetData$shape = as.factor(1)
   gtitle <- paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")
   if (nchar(gtitle) > 50) {
     gtitle <- paste(substr(gtitle, 1, 50), "...")
   }
-
+  
   require(plotly)
   f <- list(
     family = "Courier New, monospace",
     size = 18,
     color = "#7f7f7f"
   )
-  # normalize data?
   if (divXBy != "None") {
     subsetData[, dimX] <- subsetData[, dimX] / subsetData[, divXBy]
   }
   if (divYBy != "None") {
     subsetData[, dimY] <- subsetData[, dimY] / subsetData[, divYBy]
   }
-
-  # tranform data
+  
   typeX <- typeY <- "linear"
   if (logx) {
     typeX <- "log"
@@ -178,7 +167,6 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   if (logy) {
     typeY <- "log"
   }
-
   if (is.factor(subsetData[, dimX])) {
     typeX <- NULL
   }
@@ -214,7 +202,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
       title = gtitle,
       dragmode = "select"
     )
-
+  
   selectedCells <- NULL
   if (length(grpN) > 0) {
     if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {
@@ -247,20 +235,13 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   p1
 }
 
-#' n_fun
-#' used in DataExploration/outputs.R and coExpression/reactives.R
-#' for stat_summary for ggplot
+
+# functions should go in external file
+
 n_fun <- function(x) {
   return(data.frame(y = -0.5, label = paste0(length(x), "\ncells")))
 }
 
-
-
-# functions from cellviewer ----
-
-#' diffLRT
-#' binomial distribution
-#' used in DiffExpTest
 diffLRT <- function(x, y, xmin = 1) {
   lrtX <- bimodLikData(x)
   lrtY <- bimodLikData(y)
@@ -269,9 +250,6 @@ diffLRT <- function(x, y, xmin = 1) {
   return(pchisq(lrt_diff, 3, lower.tail = F))
 }
 
-#' bimodLikData
-#' binominal likelyhood
-#' used in diffLRT
 bimodLikData <- function(x, xmin = 0) {
   x1 <- x[x <= xmin]
   x2 <- x[x > xmin]
@@ -285,27 +263,17 @@ bimodLikData <- function(x, xmin = 0) {
   return(likA + likB)
 }
 
-#' ainb
-#' return all a that are also in b
-#' used in subCluserAnalysis/reactives.R
 ainb <- function(a, b) {
   a2 <- a[a %in% b]
   return(a2)
 }
 
-#' minmax
-#' fold data to min and max
-#' used in bimodLikData
 minmax <- function(data, min, max) {
   data2 <- data
   data2[data2 > max] <- max
   data2[data2 < min] <- min
   return(data2)
 }
-
-#' set.ifnull
-#' equal y if x is null
-#' used in DiffExpTest below
 set.ifnull <- function(x, y) {
   if (is.null(x)) {
     return(y)
@@ -313,16 +281,11 @@ set.ifnull <- function(x, y) {
   return(x)
 }
 
-#' expMean
-#' exponential Mean
-#' used in subCluserAnalysis/reactives.R
 expMean <- function(x) {
   return(log(mean(exp(x) - 1) + 1))
 }
 
-#' DiffExpTest
-#' differential gene expression test
-#' used in subCluserAnalysis/reactives.R
+
 DiffExpTest <- function(expression, cells.1, cells.2, genes.use = NULL, print.bar = TRUE) {
   cat(file = stderr(), "DiffExpTest\n")
   genes.use <- set.ifnull(genes.use, rownames(expression))
