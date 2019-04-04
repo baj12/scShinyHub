@@ -81,6 +81,7 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
   return(retVal)
 }
 
+output$heatmapNull = NULL
 
 # heatmapSelectedReactive ----
 # reactive function for selected heatmap
@@ -108,6 +109,7 @@ heatmapSelectedReactive <- reactive({
   
   if (is.null(scEx) ||
       is.null(projections) || is.null(scCells) || length(scCells) == 0) {
+    output$heatmapNull = renderUI(tags$h3(tags$span(style="color:red", "please select some cells")))
     return(
       list(
         src = "empty.png",
@@ -117,6 +119,8 @@ heatmapSelectedReactive <- reactive({
         alt = "heatmap should be here"
       )
     )
+  } else {
+    output$heatmapNull = NULL
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
@@ -372,6 +376,8 @@ heatmapSOMReactive <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)
   }
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "heatmapWarning")
   if (DEBUG) cat(file = stderr(), "output$somReactive\n")
   
   scEx <- scEx()

@@ -12,6 +12,9 @@ myNormalizationParameters <- list(
   scEx_log = h5("no Parameters implemented")
 )
 
+# scEx_logNormalization ----
+#' scEx_logNormalization
+#' reactive for normalizing data according to seurat
 scEx_logNormalization <- reactive({
   start.time <- base::Sys.time()
   on.exit(
@@ -37,8 +40,8 @@ scEx_logNormalization <- reactive({
   # load(file="~/scShinyHubDebug/scEx_logNormalization.RData")
   
   # TODO ?? define scaling factor somewhere else???
-  
-  retVal <- scEx_logNormalizationfunc(scEx)
+  sfactor = max(max(assays(scEx)[["counts"]]),1000)
+  retVal <- scEx_logNormalizationfunc(scEx, scalingFactor = sfactor)
   
   printTimeEnd(start.time, "scEx_logNormalization")
   exportTestValues(scEx_logNormalization = {assays(retVal)[["logcounts"]]})  
@@ -55,16 +58,10 @@ scEx_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
   median_sum <- median(bc_sums)
   A <- as(assays(scEx)[["counts"]], "dgCMatrix")
   A@x <- A@x / Matrix::colSums(A)[assays(scEx)[["counts"]]@j + 1L]
-  # new_matrix <- sweep(exprs(scEx), 2, median_sum/bc_sums, "*")
-  # scEx_bcnorm <- (newGeneBCMatrix(A, fData(scEx), pData(scEx),
-  #   template = scEx
-  # ))
   scEx_bcnorm <- SingleCellExperiment(assay = list(logcounts = as(A,"dgTMatrix")),
                                       colData = colData(scEx),
                                       rowData = rowData(scEx))
   
-  # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-  # gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
   x <- uniqTsparse(assays(scEx_bcnorm)[[1]])
   slot(x, "x") <- log(1 + slot(x, "x"), base = 2) * scalingFactor
   assays(scEx_bcnorm)[[1]] <- x

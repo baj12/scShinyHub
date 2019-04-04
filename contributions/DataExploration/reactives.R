@@ -1,6 +1,12 @@
 require(ggplot2)
 
 # scaterPNG ----
+#' scaterPNG 
+#' reactive to plot highest expressed genes
+#' take quite some time to compute, but since we normally don't need it 
+#' it is not in the heavyCalculations list.
+#' TODO
+#' maybe in a future version there can be a button to enable caclulations
 scaterPNG <- reactive({
   start.time <- base::Sys.time()
   on.exit(
@@ -26,7 +32,7 @@ scaterPNG <- reactive({
   }
   # load(file='~/scShinyHubDebug/scater.Rmd')
 
-# calculations
+  # calculations
   if (is.null(width)) {
     width <- 96 * 7
   }
@@ -42,8 +48,7 @@ scaterPNG <- reactive({
   if (DEBUG) cat(file = stderr(), paste("output file: ", outfile, "\n"))
   if (DEBUG) cat(file = stderr(), paste("output file normalized: ", normalizePath(outfile, mustWork = FALSE), "\n"))
   n <- min(nrow(scaterReads), 50)
-  # use plotHighestExprs instead of plotQC
-  # p1 <- scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by = "fixed", n = n)
+
   rownames(scaterReads) = rowData(scaterReads)$symbol
   p1 <- scater::plotHighestExprs(scaterReads, colour_cells_by = "log10_total_counts", n=n)
   tryCatch(
@@ -68,3 +73,54 @@ scaterPNG <- reactive({
   exportTestValues(scaterPNG = {retVal})  
   return(retVal)
 })
+
+# dataExpltSNEPlot ---
+#' dataExpltSNEPlot
+#' plot 3D tSNE in DataExploration - Expression
+#' Here, only the expression of a gene or gene list is shown, compared to the other tSNE plot 
+#' in General QC - tSNE
+dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
+  featureData <- rowData(scEx_log)
+  geneid <- geneName2Index(g_id, featureData)
+  if (length(geneid) == 0) {
+    return(NULL)
+  }
+  if (length(geneid) == 1) {
+    expression <- assays(scEx_log)[[1]][geneid, ]
+  } else {
+    expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, ])
+  }
+  
+  validate(need(
+    is.na(sum(expression)) != TRUE,
+    "Gene symbol incorrect or gene not expressed"
+  ))
+  
+  projections <- cbind(projections, expression)
+  names(projections)[ncol(projections)] <- "values"
+  if (!all(c("tsne1", "tsne2", "tsne3") %in% colnames(projections))) {
+    showNotification("some tsne projections are not available.",
+                     id = "tsne_pltERROR",
+                     duration = NULL, type = "error"
+    )
+  }
+  
+  p <-
+    plot_ly(
+      projections,
+      x = ~tsne1,
+      y = ~tsne2,
+      z = ~tsne3,
+      type = "scatter3d",
+      hoverinfo = "text",
+      text = paste("Cluster:", as.numeric(as.character(projections$dbCluster))),
+      mode = "markers",
+      marker = list(
+        size = 2,
+        line = list(width = 0),
+        color = ~values,
+        colors = "Greens"
+      )
+    )
+  layout(p, title = paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
+}

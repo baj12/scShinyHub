@@ -44,15 +44,6 @@ tabList <- list(
           column(
             4,
             textInput("gene_id", "Enter gene", value = defaultValueSingleGene)
-          ),
-
-          column(
-            2,
-            div(
-              align = "right",
-              style = "margin-center:50px; margin-top:25px",
-              downloadButton("downloadExpression", "Download Expression")
-            )
           )
         ),
         jqui_resizable(plotlyOutput("tsne_plt"))

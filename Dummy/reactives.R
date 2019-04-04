@@ -3,7 +3,7 @@
 #' being used below for the shiny widget and in the report.
 #' in the report all reactives that have been used before will be accessible by name
 DummyFunc <- function(scEx_log) {
-   nrow(scEx_log)
+  nrow(scEx_log)
 }
 
 # DummyReactive ----
@@ -28,28 +28,24 @@ DummyReactive <- reactive({
   
   # some debugging messages
   if (DEBUG) cat(file = stderr(), "DummyReactive started.\n")
-
+  
   # call dependancies (reactives)
   scEx <- scEx()                 # raw data, filtered by genes/cells
   scEx_log <- scEx_log()         # normalized data
   prj <- projections()           # projections, includes manually set groups
   inputData <- inputData()       # raw, unfiltered data
   pca <- pca()                   # pca projections, loadings...
+  tsne <- tsne()                 # tSNE projections
   dbCluster <- dbCluster()       # clustering results, also available through projections
-  
+  scaterReads <- scaterReads()   #singleCellExperiment object/reactive with QC metrix
   # check if they are available
   if (is.null(scEx_log)) {
     if (DEBUG) cat(file = stderr(), "pca:NULL\n")
     return(NULL)
   }
-
+  
   # for development and debugging purposes
   # this is run after loading all reactive values
-  # show in the app that this is running
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("loading", id = "DummyFunc", duration = NULL)
-  }
-  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/DummyReactive.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -140,7 +136,7 @@ imageDummyPrecompute <- reactive({
     save(file = "~/scShinyHubDebug/DummyReactive.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/DummyReactive.RData')
-
+  
   ### actual work is done starting here
   width  <- session$clientData$output_plot_width
   height <- session$clientData$output_plot_height
@@ -167,7 +163,7 @@ imageDummyPrecompute <- reactive({
   m <- data.frame("V1" = Matrix::colSums(assays(scEx)[["counts"]]))
   p <- ggplot(m, aes(V1)) + geom_bar()
   ggsave(file = normalizePath(outfile, mustWork = FALSE), plot = p, width = myPNGwidth, height = myPNGheight, units = "in")
-
+  
   retVal <-  list(
     src = normalizePath(outfile, mustWork = FALSE),
     contentType = "image/png",

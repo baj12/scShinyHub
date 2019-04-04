@@ -5,12 +5,10 @@ require(SingleCellExperiment)
 # here we define reactive values/variables
 
 # scaterReadsFunc ----
+#' scaterReadsFunc
+#' calculate the QC metrix and return updated singleCellExperiment object
 scaterReadsFunc <- function(scEx) {
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/scaterReadsFunc.Rmd", list = c(ls()))
-  }
-  # load("~/scShinyHubDebug/scaterReadsFunc.Rmd")
-  # not sure, but this works on another with dgTMatrix
+
   if (class(assays(scEx)[["counts"]]) == "dgTMatrix") {
     assays(scEx)[["counts"]] = as(assays(scEx)[["counts"]], "dgCMatrix")
   }
@@ -38,22 +36,35 @@ scaterReadsFunc <- function(scEx) {
 }
 
 # scaterReads ----
+#' scaterReads
+#' singleCellExperiment object/reactive with QC metrix
 scaterReads <- reactive({
+  start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scaterReads")
+  )
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scaterReads", id = "scaterReads", duration = NULL)
+  }
   if (DEBUG) cat(file = stderr(), "scaterReads\n")
+  
   scEx <- scEx()
   # scEx_log = scEx_log()
   if (is.null(scEx)) {
     return(NULL)
   }
-  # return(scaterReadsFunc(scEx, scEx_log, fd))
   retVal <- scaterReadsFunc(scEx)
-  # TODO find out how to compare saved files
-  exportTestValues(scaterReadsFunc = { save(file = "scaterReadsFunc.Test.RDada", list = c("retVal")) })
+
+  printTimeEnd(start.time, "scaterReads")
+  exportTestValues(scaterReads = {str(retVal)})  
   return(retVal)
 })
 
 
 # sampleHistFunc ----
+#' sampleHistFunc
+#' create a histogram from samples
 sampleHistFunc <- function(samples, scols) {
   counts <- table(samples)
   barplot(counts,
@@ -61,64 +72,73 @@ sampleHistFunc <- function(samples, scols) {
           xlab = "Samples",
           col=scols
   )
-  # x <- hist(as.integer(as.factor(samples)),
-  #   main = "histogram of number of cell per sample",
-  #   labels = levels(as.factor(samples)),
-  #   breaks = 0:length(levels(as.factor(samples))),
-  #   xlab = "Samples"
-  # )
 }
 
-###
-# inputTSNESample -----
-# input for tableSelectionServer
-inputTSNESample <- reactive({
+
+# projectionTable -----
+#' projectionTable
+#' input for tableSelectionServer
+#' presents all projections
+projectionTable <- reactive({
+  start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "inputTSNESample")
+      removeNotification(id = "projectionTable")
   )
-  if (DEBUG) cat(file = stderr(), "inputTSNESample\n")
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("projectionTable", id = "projectionTable", duration = NULL)
+  }
+  if (DEBUG) cat(file = stderr(), "projectionTable\n")
+  
   projections <- projections()
+  
   if (is.null(projections)) {
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("inputTSNESample", id = "inputTSNESample", duration = NULL)
-  }
-  
+
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/inputTSNESample.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/projectionTable.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file = "~/scShinyHubDebug/inputTSNESample.RData")
+  # load(file = "~/scShinyHubDebug/projectionTable.RData")
   
+  printTimeEnd(start.time, "projectionTable")
+  exportTestValues(projectionTable = {projections})  
   return(projections)
 })
 
 # tsne ----
-# TODO separate  function from reactive : done? run_tsne is already the function.
-# Maybe we need a normalized name like tsneFunc?
+#' tsne
+#' reactive calculating the tSNE projections
 tsne <- reactive({
+  start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "tsne")
   )
-  if (DEBUG) {
-    cat(file = stderr(), "tsne\n")
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("tsne", id = "tsne", duration = NULL)
   }
+  if (DEBUG) cat(file = stderr(), "tsne\n")
+  
   pca <- pca()
   tsneDim <- input$tsneDim
   tsnePerplexity <- input$tsnePerplexity
   tsneTheta <- input$tsneTheta
   tsneSeed <- input$tsneSeed
+  
   if (is.null(pca)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne: NULL\n")
-    }
+    if (DEBUG) cat(file = stderr(), "tsne: NULL\n")
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne", id = "tsne", duration = NULL)
-  }
+  
+  retVal <- tsneFunc(pca, tsneDim, tsnePerplexity, tsneTheta, tsneSeed)
+
+  printTimeEnd(start.time, "tsne")
+  exportTestValues(tsne = {retVal})  
+  return(retVal)
+})
+
+tsneFunc <- function(pca, tsneDim, tsnePerplexity, tsneTheta, tsneSeed) {
   set.seed(seed = tsneSeed)
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(), ls(envir = globalenv())))
@@ -127,7 +147,7 @@ tsne <- reactive({
   require(parallel)
   require(Rtsne)
   np = dim(pca$x)[2]
-  retval <- tryCatch({
+  tsne <- tryCatch({
     Rtsne::Rtsne(
       pca$x[,1:np], pca = FALSE, dims = tsneDim,
       perplexity = tsnePerplexity,
@@ -145,117 +165,28 @@ tsne <- reactive({
     return(NULL)
   }
   )
-  if (DEBUG) {
-    cat(file = stderr(), "tsne: done\n")
-  }
-  exportTestValues(rtsne = { retval })
-  return(retval)
-})
-# 
-# tsne1 <- reactive({
-#   if (DEBUG) {
-#     cat(file = stderr(), "tsne1\n")
-#   }
-#   tsne.data <- tsne.data()
-#   if (is.null(tsne.data)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "tsne1: NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   return(tsne.data$tsne1)
-# })
-# tsne2 <- reactive({
-#   if (DEBUG) {
-#     cat(file = stderr(), "tsne2\n")
-#   }
-#   tsne.data <- tsne.data()
-#   if (is.null(tsne.data)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "tsne2: NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   return(tsne.data$tsne2)
-# })
-# tsne3 <- reactive({
-#   if (DEBUG) {
-#     cat(file = stderr(), "tsne3\n")
-#   }
-#   tsne.data <- tsne.data()
-#   if (is.null(tsne.data)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "tsne3: NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   return(tsne.data$tsne3)
-# })
-# tsne4 <- reactive({
-#   if (DEBUG) {
-#     cat(file = stderr(), "tsne4\n")
-#   }
-#   tsne.data <- tsne.data()
-#   if (is.null(tsne.data)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "tsne4: NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   return(tsne.data$tsne4)
-# })
-# tsne5 <- reactive({
-#   if (DEBUG) {
-#     cat(file = stderr(), "tsne5\n")
-#   }
-#   tsne.data <- tsne.data()
-#   if (is.null(tsne.data)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "tsne5: NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   return(tsne.data$tsne5)
-# })
+  retVal <- data.frame(tsne$Y)
+  colnames(retVal) <- paste0("tsne", c(1:ncol(retVal)))
+  return(retVal)
+}
 
-# tsne.data ----
-tsne.data <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "tsne.data")
-  )
-  if (DEBUG) {
-    cat(file = stderr(), "tsne.data\n")
-  }
-  tsne <- tsne()
-  if (is.null(tsne)) {
-    if (DEBUG) {
-      cat(file = stderr(), "tsne.data: NULL\n")
-    }
-    return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne.data", id = "tsne.data", duration = NULL)
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/tsne.data.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/tsne.data.RData")
-  tsne.data <- data.frame(tsne$Y)
-  colnames(tsne.data) <- paste0("tsne", c(1:ncol(tsne.data)))
-  
-  if (DEBUG) {
-    cat(file = stderr(), "tsne.data: done\n")
-  }
-  return(tsne.data)
-})
 
 # umapReact ----
+#' umapReact
+#' reactive for calculating UMAP projection
 umapReact <- reactive({
-  scEx_log <- scEx_log()
-  
   start.time <- base::Sys.time()
-  set.seed(input$um_randSeed)
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "umapReact")
+  )
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("umapReact", id = "umapReact", duration = NULL)
+  }
+  if (DEBUG) cat(file = stderr(), "umapReact started.\n")
+  
+  scEx_log <- scEx_log()
+  myseed <- input$um_randSeed
   xaxis <- input$um_xaxis
   yaxis <- input$um_yaxis
   cellT <- input$um_ct
@@ -281,9 +212,6 @@ umapReact <- reactive({
   metric <- input$um_metric
   spread <- as.numeric(input$um_spread)
   
-  
-  
-  
   if (is.null(scEx_log)) {
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")
     return(NULL)
@@ -302,6 +230,7 @@ umapReact <- reactive({
   # TODO it might be possible to reuse nearest neighbor information to speeed up recomputations
   # with eg. new seed
   
+  set.seed(myseed)
   embedding <- uwot::umap(t(as.matrix(assays(scEx_log)[[1]])),
                           n_neighbors = n_neighbors,
                           n_components = n_components, n_epochs = n_epochs,
@@ -321,20 +250,15 @@ umapReact <- reactive({
   colnames(embedding) = paste0("UMAP", 1:n_components)
   rownames(embedding) = colnames(scEx_log)
   
-  end.time <- Sys.time()
-  if (DEBUG)
-    cat(file = stderr(), paste("umap took: ", difftime(end.time, start.time, units = "min"), " min\n"))
+  printTimeEnd(start.time, "umapReact")
+  exportTestValues(umapReact = {embedding})  
   return(embedding)
 })
 
 
 # myProjections ----
 myProjections <- list(
-  c("tsne", "tsne.data"),
-  # c("tsne2", "tsne2"),
-  # c("tsne3", "tsne3"),
-  # c("tsne4", "tsne4"),
-  # c("tsne5", "tsne5"),
+  c("tsne", "tsne"),
   c("dbCluster", "dbCluster"),
   c("umap", "umapReact")
 )

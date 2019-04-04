@@ -60,6 +60,11 @@ tabList <- list(
     )),
     fluidRow(column(
       12,
+      offset = 1,
+      uiOutput("heatmapNull")
+    )),
+    fluidRow(column(
+      12,
       offset = 0,
       pHeatMapUI("heatmapSelectedModule")
     )), 

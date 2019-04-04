@@ -1,48 +1,60 @@
 source("reactives.R")
 
+# since scaterPNG is not used frequently it is not included in the heavyCalculations
+# list
 # myHeavyCalculations = list(c("scaterPNG", "scaterPNG"))
 
 # Expression ------------------------------------------------------------------
-expCluster <- callModule(clusterServer, "expclusters", projections, reactive(input$gene_id))
+expCluster <- callModule(
+  clusterServer,
+  "expclusters",
+  projections,
+  reactive(input$gene_id)
+)
 
+# updateInputExpPanel ----
+#' updateInputExpPanel
+#' update x/y coordinates that can be chosen based on available
+#' projections
 updateInputExpPanel <- reactive({
-  tsneData <- projections()
+  projections <- projections()
 
   # Can use character(0) to remove all choices
-  if (is.null(tsneData)) {
+  if (is.null(projections)) {
     return(NULL)
   }
 
   # Can also set the label and select items
   updateSelectInput(session, "dimension_x4",
-    choices = colnames(tsneData),
-    selected = colnames(tsneData)[1]
+    choices = colnames(projections),
+    selected = colnames(projections)[1]
   )
 
   # Can also set the label and select items
   updateSelectInput(session, "dimension_y4",
-    choices = colnames(tsneData),
-    selected = colnames(tsneData)[2]
+    choices = colnames(projections),
+    selected = colnames(projections)[2]
   )
   return(TRUE)
 })
 
-# output$NumberOfGenesInclude ----
-output$NumberOfGenesInclude <- renderText({
-  idx <- scGeneIdxInclude()
-  paste("Number of genes to be included: ", length(idx))
-})
-
-output$NumberOfGenesExclude <- renderText({
-  idx <- scGeneIdxExclude()
-  paste("Number of genes to be included: ", length(idx))
-})
 
 
-# EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
+# EXPLORE TAB VIOLIN PLOT ----
 # TODO module for violin plot  ??
 output$gene_vio_plot <- renderPlot({
+  start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "gene_vio_plot")
+    }
+  )
+  # show in the app that this is running
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gene_vio_plot", id = "gene_vio_plot", duration = NULL)
+  }
   if (DEBUG) cat(file = stderr(), "output$gene_vio_plot\n")
+
   scEx_log <- scEx_log()
   projections <- projections()
   g_id <- input$gene_id
@@ -55,6 +67,7 @@ output$gene_vio_plot <- renderPlot({
     save(file = "~/scShinyHubDebug/gene_vio_plot.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/gene_vio_plot.RData")
+
 
   featureData <- rowData(scEx_log)
   geneid <- geneName2Index(g_id, featureData)
@@ -104,78 +117,27 @@ output$gene_vio_plot <- renderPlot({
     xlab("Cluster") +
     ylab("Expression") +
     ggtitle(paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
-  if (DEBUG) cat(file = stderr(), "output$gene_vio_plot:done\n")
+
+  printTimeEnd(start.time, "gene_vio_plot")
+  exportTestValues(gene_vio_plot = {
+    p1
+  })
   return(p1)
-  # })
 })
 
-# EXPLORE TABL DOWNLOAD SELECTED WITH BRUSH ------------------------------------------------------------------
-# TODO module for download?
-output$downloadExpression <- downloadHandler(
-  filename = function() {
-    paste(input$cluster, "Selected_Expression_table.csv", sep = "_")
-  },
-  content = function(file) {
-    scEx_log <- scEx_log()
-    projections <- projections()
-    if (is.null(scEx_log) | is.null(projections)) {
-      return(NULL)
-    }
-    if (DEBUGSAVE) {
-      save(file = "~/scShinyHubDebug/downloadExpression.RData", list = c(ls(), ls(envir = globalenv())))
-    }
-    # load(file="~/scShinyHubDebug/downloadExpression.RData")
-    featureData <- rowData(scEx_log)
-    geneid <- rownames(featureData[which(featureData$symbol ==
-      toupper(input$gene_id)), ])[1]
-
-    expression <- assays(scEx_log)[[1]][geneid, ]
-    # cat(stderr(),colnames(expression)[1:5])
-    projections <- cbind(projections, t(expression))
-    # if(DEBUG)cat(file=stderr(),grep('^T_',rownames(projections)))
-
-    names(projections)[names(projections) == geneid] <- "values"
-
-    # if(DEBUG)cat(file=stderr(),grep('^T_',rownames(projections)))
-
-    subsetData <- subset(projections, dbCluster == input$cluster)
-    # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
-    cells.names <- brushedPoints(subsetData, input$b1, allRows = T)
-    # if(DEBUG)cat(file=stderr(),colnames(cells.names))
-    cells <-
-      rownames(subsetData[which(cells.names$selected_ == TRUE), ])
-    # if(DEBUG)cat(file=stderr(),cells[1:5])
-
-    if (length(cells) == 1) {
-      subsetExpression <- assays(scEx_log)[[1]][, cells]
-      subsetExpression <-
-        as.data.frame(subsetExpression, row.names = rownames(scEx_log))
-      colnames(subsetExpression) <- cells
-      subsetExpression$symbol <-
-        featureData[rownames(subsetExpression), "symbol"]
-      write.csv(subsetExpression, file)
-    }
-    else {
-      subsetExpression <- assays(scEx_log)[[1]][, cells]
-      # cat(stderr(),colnames(subsetExpression)[1:5])
-
-      subsetExpression$symbol <-
-        featureData[rownames(subsetExpression), "symbol"]
-      # cat(stderr(),colnames(subsetExpression))
-      write.csv(subsetExpression, file)
-    }
-  }
-)
 
 ### Panel Plot ----
-# TODO as module
-# data expression panel plot
+#' clusterSelectionPanelPlot
+#' update selection options for clusters
+#' since we allow also "all" we have to have a different strategy for the input
+#' it is debateable whether this is usefull to have a different strategy, but for now
+#' we leave it as it.
 output$clusterSelectionPanelPlot <- renderUI({
   if (DEBUG) cat(file = stderr(), "output$clusterSelectionPanelPlot\n")
   projections <- projections()
   upI <- updateInputExpPanel()
   if (is.null(projections)) {
-    HTML("Please load data firts")
+    HTML("Please load data")
   } else {
     noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
     selectInput(
@@ -188,45 +150,54 @@ output$clusterSelectionPanelPlot <- renderUI({
 })
 
 # panelPlot ----
-# TODO: expression values are not normalized, is this correct?
+#' panelPlot
+#' plot multiple panels for a given list of genes
+#' If the x-axis is a categorical value and the y-axis is UMI.counts the y-axis related to 
+#' the count for that gene. Otherwise, all genes are used.
+#' normalized counts are used for plotting
 output$panelPlot <- renderPlot({
-  if (DEBUG) cat(file = stderr(), "output$panelPlot\n")
-
-  scEx_log <- scEx_log()
-  scEx <- scEx()
-  projections <- projections()
-  if (is.null(scEx_log) | is.null(projections)) {
-    return(NULL)
+  start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "panelPlot")
+  )
+  # show in the app that this is running
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("panelPlot", id = "panelPlot", duration = NULL)
   }
-
+  if (DEBUG) cat(file = stderr(), "output$panelPlot\n")
+  
+  scEx_log <- scEx_log()
+  projections <- projections()
   genesin <- input$panelplotids
-  genesin <- toupper(genesin)
-  genesin <- gsub(" ", "", genesin, fixed = TRUE)
-  genesin <- strsplit(genesin, ",")
-  genesin <- genesin[[1]]
   cl4 <- input$clusterSelectionPanelPlot
   dimx4 <- input$dimension_x4
   dimy4 <- input$dimension_y4
   
-  if (is.null(cl4)) return(NULL)
-  
+  if (is.null(scEx_log) | is.null(projections) | is.null(cl4)) {
+    return(NULL)
+  }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/panelPlot.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/panelPlot.RData")
-  featureData <- rowData(scEx)
-  genesin <- genesin[which(genesin %in% featureData$symbol)]
   
-  if (DEBUG) cat(file = stderr(), length(genesin))
+  genesin <- toupper(genesin)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ",")
+  genesin <- genesin[[1]]
+ 
+  featureData <- rowData(scEx_log)
+  genesin <- genesin[which(genesin %in% featureData$symbol)]
+
   par(mfrow = c(ceiling(length(genesin) / 4), 4), mai = c(0., .3, .3, .3))
   rbPal <- colorRampPalette(c("#f0f0f0", "red"))
-  if (DEBUG) cat(file = stderr(), cl4)
   ylim <- c(min(projections[, dimy4]), max(projections[, dimy4]))
   if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
     ymax <- 0
     for (i in 1:length(genesin)) {
       geneIdx <- which(featureData$symbol == genesin[i])
-      ymax <- max(ymax, max(Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])))
+      ymax <- max(ymax, max(Matrix::colSums(assays(scEx_log)[["logcounts"]][geneIdx, , drop = FALSE])))
     }
     ylim <- c(0, ymax)
   }
@@ -246,7 +217,7 @@ output$panelPlot <- renderPlot({
         )
       ]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])
+        projections[, dimy4] <- Matrix::colSums(assays(scEx_log)[["logcounts"]][geneIdx, , drop = FALSE])
       }
 
       plot(projections[, dimx4], projections[, dimy4],
@@ -276,7 +247,7 @@ output$panelPlot <- renderPlot({
       names(Col) <- rownames(projections)
       plotCol <- Col[rownames(subsetTSNE)]
       if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
-        projections[, dimy4] <- Matrix::colSums(assays(scEx)[["counts"]][geneIdx, , drop = FALSE])
+        projections[, dimy4] <- Matrix::colSums(assays(scEx_log)[["logcounts"]][geneIdx, , drop = FALSE])
         subsetTSNE <- subset(projections, dbCluster == cl4)
       }
 
@@ -288,12 +259,14 @@ output$panelPlot <- renderPlot({
       if (DEBUG) cat(file = stderr(), cl4)
     }
   }
+  
+  printTimeEnd(start.time, "panelPlot")
+  exportTestValues(panelPlot = {ls()})  
+  
 })
 
 
-### Scater QC ----
-
-
+# Scater QC ----
 output$scaterQC <- renderImage({
   if (DEBUG) cat(file = stderr(), "output$scaterQC\n")
   scaterReads <- scaterReads()
@@ -304,8 +277,19 @@ output$scaterQC <- renderImage({
   scaterPNG()
 })
 
+# tsne_plt ----
+# tSNE plot within Data exploration - Expressoin
 output$tsne_plt <- renderPlotly({
+  start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "tsne_plt")
+  )
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("tsne_plt", id = "tsne_plt", duration = NULL)
+  }
   if (DEBUG) cat(file = stderr(), "output$tsne_plt\n")
+  
   scEx_log <- scEx_log()
   g_id <- input$gene_id
   projections <- projections()
@@ -318,49 +302,11 @@ output$tsne_plt <- renderPlotly({
   }
   # load(file="~/scShinyHubDebug/tsne_plt.RData")
 
-  featureData <- rowData(scEx_log)
-  geneid <- geneName2Index(g_id, featureData)
-  if (length(geneid) == 0) {
-    return(NULL)
-  }
-  if (length(geneid) == 1) {
-    expression <- assays(scEx_log)[[1]][geneid, ]
-  } else {
-    expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, ])
-  }
+  retVal <- dataExpltSNEPlot(scEx_log, g_id, projections)
 
-  # expression <- log2cpm[geneid, ]
-  # cat(file = stderr(), rownames(expression))
-
-  validate(need(
-    is.na(sum(expression)) != TRUE,
-    "Gene symbol incorrect or gene not expressed"
-  ))
-
-  projections <- cbind(projections, expression)
-  names(projections)[ncol(projections)] <- "values"
-  if (!all(c("tsne1", "tsne2", "tsne3") %in% colnames(projections))) {
-    showNotification("some tsne projections are not available.", id = "tsne_pltERROR", 
-                     duration = NULL, type = "error")
-  }
-  
-  p <-
-    plot_ly(
-      projections,
-      x = ~tsne1,
-      y = ~tsne2,
-      z = ~tsne3,
-      type = "scatter3d",
-      hoverinfo = "text",
-      text = paste("Cluster:", as.numeric(as.character(projections$dbCluster))),
-      mode = "markers",
-      marker = list(
-        size = 2,
-        line = list(width = 0),
-        color = ~values,
-        colors = "Greens"
-      )
-    )
-  layout(p, title = paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
-  # })
+  printTimeEnd(start.time, "dataExpltSNEPlot")
+  exportTestValues(dataExpltSNEPlot = {str(retVal)})  
+  return(retVal)
 })
+
+

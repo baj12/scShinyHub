@@ -115,7 +115,7 @@ tabList <- list(
     fluidRow(column(
       10,
       offset = 1,
-      tableSelectionUi("cellSelectionTSNEMod")
+      tableSelectionUi("projectionTableMod")
     ))
   ),
   umapTab <- tabItem(
