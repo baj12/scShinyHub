@@ -2,8 +2,16 @@ require(ggplot2)
 
 # scaterPNG ----
 scaterPNG <- reactive({
-  if (DEBUG) cat(file = stderr(), "scaterPNG\n")
   start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scaterPNG")
+  )
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scaterPNG", id = "scaterPNG", duration = NULL)
+  }
+  if (DEBUG) cat(file = stderr(), "scaterPNG\n")
+
   scaterReads <- scaterReads()
   if (is.null(scaterReads)) {
     return(NULL)
@@ -18,7 +26,7 @@ scaterPNG <- reactive({
   }
   # load(file='~/scShinyHubDebug/scater.Rmd')
 
-
+# calculations
   if (is.null(width)) {
     width <- 96 * 7
   }
@@ -47,16 +55,16 @@ scaterPNG <- reactive({
       return(NULL)
     }
   )
-
-  if (DEBUG) cat(file = stderr(), "done:scaterPNG\n")
-  end.time <- base::Sys.time()
-  cat(file = stderr(), paste("this took: ", difftime(end.time, start.time, units = "min"), " min\n"))
-  
-  return(list(
+  retVal <- list(
     src = normalizePath(outfile, mustWork = FALSE),
     contentType = "image/png",
     width = width,
     height = height,
     alt = "Scater plot should be here"
-  ))
+  )
+  # end calculation
+  
+  printTimeEnd(start.time, "scaterPNG")
+  exportTestValues(scaterPNG = {retVal})  
+  return(retVal)
 })

@@ -33,6 +33,9 @@ Dummy_Normalization <- reactive({
   # remove any permanant notification if we rerun reactive
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "Dummy_NormalizationPerm")
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("Dummy_Normalization", id = "Dummy_Normalization", duration = NULL)
+  }
   
   
   # just devide by number of cells and scale

@@ -16,9 +16,12 @@ scEx_logNormalization <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "Dummy_Normalization")
+      removeNotification(id = "scEx_logNormalization")
   )
   if (DEBUG) cat(file = stderr(), "scEx_logNormalization\n")
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scEx_logNormalization", id = "scEx_logNormalization", duration = NULL)
+  }
   
   scEx <- scEx()
   
@@ -37,9 +40,8 @@ scEx_logNormalization <- reactive({
   
   retVal <- scEx_logNormalizationfunc(scEx)
   
-  if (DEBUG) {
-    cat(file = stderr(), "scEx_logNormalization:Done\n")
-  }
+  printTimeEnd(start.time, "scEx_logNormalization")
+  exportTestValues(scEx_logNormalization = {assays(retVal)[["logcounts"]]})  
   return(retVal)
 })
 
