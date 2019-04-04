@@ -42,7 +42,7 @@ inputDataFunc <- function(inFile) {
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "inputDataFunc", duration = NULL)
   }
-
+  
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
   stats$nFeatures <- 0
@@ -112,9 +112,11 @@ inputDataFunc <- function(inFile) {
   dataTables <- list()
   featuredata <- rowData(scEx)
   # handle different extreme cases for the symbol column (already encountered)
-  if (is.factor(featuredata$symbol) & levels(featuredata$symbol) == "NA") {
-    featuredata$symbol = toupper(rownames(featuredata))
-    rowData(scEx) <- featuredata
+  if (is.factor(featuredata$symbol)) {
+    if (levels(featuredata$symbol) == "NA") {
+      featuredata$symbol = toupper(rownames(featuredata))
+      rowData(scEx) <- featuredata
+    }
   }
   if ("symbol" %in% colnames(featuredata)) {
     featuredata$symbol = toupper(featuredata$symbol)
@@ -212,7 +214,7 @@ inputData <- reactive({
   # load(file='~/scShinyHubDebug/inputData.RData')
   
   retVal <- inputDataFunc(inFile)
-
+  
   printTimeEnd(start.time, "inputData")
   exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
   return(retVal)
@@ -273,7 +275,7 @@ medianUMI <- reactive({
   # load(file='~/scShinyHubDebug/medianUMI.RData')
   scEx <- assays(scEx)[["counts"]]
   retVal <- medianUMIfunc(scEx)
-
+  
   printTimeEnd(start.time, "medianUMI")
   exportTestValues(medianUMI = { retVal })
   return(retVal)
@@ -401,7 +403,7 @@ useCells <- reactive({
     keepCells,
     cellKeepOnly
   )
-
+  
   printTimeEnd(start.time, "useCells")
   exportTestValues(useCells = { retVal })
   return(retVal)
@@ -547,7 +549,7 @@ useGenes <- reactive({
     showNotification("which genes to use", id = "useGenes", duration = NULL)
   }
   retVal <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
-
+  
   printTimeEnd(start.time, "useGenes")
   exportTestValues(useGenes = { retVal })
   return(retVal)
@@ -692,7 +694,7 @@ scEx <- reactive({
     minG = minG,
     maxG = maxG
   )
-
+  
   printTimeEnd(start.time, "scEx")
   exportTestValues(scEx = { list(rowData(retVal), colData(retVal)) })
   return(retVal)
@@ -857,7 +859,7 @@ pca <- reactive({
     showNotification("pca", id = "pca", duration = NULL)
   }
   retVal <- pcaFunc(scEx_log)
-
+  
   printTimeEnd(start.time, "pca")
   exportTestValues(pca = { retVal })
   return(retVal)
@@ -929,7 +931,7 @@ kmClustering <- reactive({
   }
   pca <- pca()
   scEx_log <- scEx_log()
-
+  
   seed <- input$seed
   kNr <- input$kNr
   clusterSource <- input$clusterSource
@@ -950,7 +952,7 @@ kmClustering <- reactive({
   # load(file="~/scShinyHubDebug/kmClustering.RData")
   
   featureData <- rowData(scEx_log)
-   if (!is.null(getDefaultReactiveDomain())) {
+  if (!is.null(getDefaultReactiveDomain())) {
     showNotification("kmClustering", id = "kmClustering", duration = NULL)
   }
   
@@ -971,7 +973,7 @@ kmClustering <- reactive({
     )
     
   }
-
+  
   printTimeEnd(start.time, "kmClustering")
   exportTestValues(kmClustering = { retVal })
   return(retVal)
@@ -1173,7 +1175,7 @@ sample <- reactive({
       retVal[, pdColName] <- factor(as.character(pd[, pdColName]))
     }
   }
-
+  
   printTimeEnd(start.time, "sample")
   exportTestValues(sample = { retVal })
   retVal
@@ -1196,7 +1198,7 @@ geneCount <- reactive({
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
   retVal <- Matrix::colSums(assays(scEx)[["counts"]] > 0)
-
+  
   printTimeEnd(start.time, "geneCount")
   exportTestValues(geneCount = { retVal })
   return(retVal)
@@ -1219,7 +1221,7 @@ beforeFilterPrj <- reactive({
   # load(file="~/scShinyHubDebug/beforeFilterPrj.RData")
   cn <- colnames(scEx)
   retVal <- bfc[cn]
-
+  
   printTimeEnd(start.time, "beforeFilterPrj")
   exportTestValues(beforeFilterPrj = { retVal })
   return(retVal)
@@ -1240,7 +1242,7 @@ umiCount <- reactive({
   }
   # load(file="~/scShinyHubDebug/umiCount.RData")
   retVal <- Matrix::colSums(assays(scEx)[["counts"]])
-
+  
   printTimeEnd(start.time, "umiCount")
   exportTestValues(umiCount = { retVal })
   return(retVal)
@@ -1273,7 +1275,7 @@ sampleInfo <- reactive({
   # load(file="~/scShinyHubDebug/sampleInfo.RData")
   
   retVal <- sampleInfoFunc(scEx)
-
+  
   printTimeEnd(start.time, "sampleInfo")
   exportTestValues(sampleInfo = { retVal })
   return(retVal)

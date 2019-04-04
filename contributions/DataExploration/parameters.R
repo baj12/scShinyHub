@@ -9,15 +9,17 @@ myNormalizationChoices <- list(
 # value should be of class shiny.tag
 # will be displayed via renderUI
 myNormalizationParameters <- list(
-  scEx_log = h4("no Parameters implemented")
+  scEx_log = h5("no Parameters implemented")
 )
 
 scEx_logNormalization <- reactive({
-  # TODO ?? define scaling factor somewhere else???
-  scalingFactor = 10000
-  if (DEBUG) {
-    cat(file = stderr(), "scEx_logNormalization\n")
-  }
+  start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "Dummy_Normalization")
+  )
+  if (DEBUG) cat(file = stderr(), "scEx_logNormalization\n")
+  
   scEx <- scEx()
   
   if (is.null(scEx)) {
@@ -31,7 +33,19 @@ scEx_logNormalization <- reactive({
   }
   # load(file="~/scShinyHubDebug/scEx_logNormalization.RData")
   
-  # use_genes <- get_nonzero_genes(scEx)
+  # TODO ?? define scaling factor somewhere else???
+  
+  retVal <- scEx_logNormalizationfunc(scEx)
+  
+  if (DEBUG) {
+    cat(file = stderr(), "scEx_logNormalization:Done\n")
+  }
+  return(retVal)
+})
+
+#' scEx_logNormalizationfunc
+#' actual computation of the normalization as it is done in seurat
+scEx_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
   use_genes <- sort(unique(1 + slot(as(assays(scEx)[["counts"]], "dgTMatrix"), 
                                     "i")))
   
@@ -52,9 +66,5 @@ scEx_logNormalization <- reactive({
   x <- uniqTsparse(assays(scEx_bcnorm)[[1]])
   slot(x, "x") <- log(1 + slot(x, "x"), base = 2) * scalingFactor
   assays(scEx_bcnorm)[[1]] <- x
-  
-  if (DEBUG) {
-    cat(file = stderr(), "scEx_logNormalization:Done\n")
-  }
   return(scEx_bcnorm)
-})
+}
