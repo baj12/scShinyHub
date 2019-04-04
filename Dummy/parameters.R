@@ -36,7 +36,6 @@ Dummy_Normalization <- reactive({
   
   
   # just devide by number of cells and scale
-  scalingFactor = 10000
   if (DEBUG) cat(file = stderr(), "Dummy_Normalization\n")
 
   # obviously you only want to use scEx and not scEx_log...
@@ -64,7 +63,7 @@ Dummy_Normalization <- reactive({
 })
 
 
-Dummy_NormalizationFunc <- function(scEx){
+Dummy_NormalizationFunc <- function(scEx, scalingFactor = 10000){
   bc_sums <- Matrix::colSums((assays(scEx)[["counts"]]>0)*1)
   A <- as(assays(scEx)[["counts"]], "dgCMatrix")
   A@x <- A@x / bc_sums[assays(scEx)[["counts"]]@j + 1L]
@@ -73,6 +72,7 @@ Dummy_NormalizationFunc <- function(scEx){
                                       rowData = rowData(scEx))
   
   x <- uniqTsparse(assays(scEx_bcnorm)[[1]])
+  rownames(x) = rownames(scEx)
   slot(x, "x") <- slot(x, "x") * scalingFactor
   assays(scEx_bcnorm)[[1]] <- x
   return(scEx_bcnorm)

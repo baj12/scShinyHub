@@ -52,6 +52,7 @@ inputDataFunc <- function(inFile) {
   cat(file = stderr(), paste("reading", inFile$name[1], "\n"))
   fp <- inFile$datapath[1]
   # fp ="scEx.Rds"
+  # fp ="../scShinyHubData/patty1A.v2.Rds"
   fpLs <- load(fp)
   scExFound <- FALSE
   for (varName in fpLs) {
@@ -110,7 +111,15 @@ inputDataFunc <- function(inFile) {
   cat(stderr(), "Loaded")
   dataTables <- list()
   featuredata <- rowData(scEx)
-  featuredata$symbol = toupper(featuredata$symbol)
+  # handle different extreme cases for the symbol column (already encountered)
+  if (is.factor(featuredata$symbol) & levels(featuredata$symbol) == "NA") {
+    featuredata$symbol = toupper(rownames(featuredata))
+    rowData(scEx) <- featuredata
+  }
+  if ("symbol" %in% colnames(featuredata)) {
+    featuredata$symbol = toupper(featuredata$symbol)
+  }
+  
   # dataTables$featuredataOrg <- rowData(scEx)
   dataTables$scEx <- scEx
   dataTables$featuredata <- featuredata

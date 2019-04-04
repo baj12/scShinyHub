@@ -142,6 +142,12 @@ heatmapSelectedReactive <- reactive({
   return(retval)
 })
 
+# topExpGenesTable ----
+#' topExpGenesTable
+#' in coexpressionSelected tab, showing the table of top expressed genes for a given 
+#' selection
+#' coEtgPerc = genes shown have to be expressed in at least X % of cells
+#' coEtgMinExpr = genes shown have at least to X UMIs expressed 
 topExpGenesTable <- reactive({
   start.time <- base::Sys.time()
   on.exit(
