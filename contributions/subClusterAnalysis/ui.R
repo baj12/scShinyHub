@@ -38,7 +38,7 @@ tabList <- list(
       column(
         2,
         selectInput(
-          "dimension_x1",
+          "subscluster_x1",
           label = "X",
           choice = c("tsne1", "tsne2", "tsne3"),
           selected = "tsne1"
@@ -47,7 +47,7 @@ tabList <- list(
       column(
         2,
         selectInput(
-          "dimension_y1",
+          "subscluster_y1",
           label = "Y",
           choice = c("tsne1", "tsne2", "tsne3"),
           selected = "tsne2"
@@ -71,6 +71,30 @@ tabList <- list(
         )) %>% withSpinner()
       )
     ),
+    tabItem(
+      "diffExpMethod",
+      list(
+        tags$h3("Method to use for differential gene expression analysis"),
+        fluidRow(column(
+          10,
+          radioButtons(
+            inputId = "dgeRadioButton",
+            label = "Method to use",
+            choices = "dgeChoices",
+            selected = "scEx_logNormalization",
+            width = "100%"
+          )
+          # 10, offset = 1,
+          # plotOutput('plotUmiHist') %>% withSpinner()
+        )),
+        fluidRow(column(10, verbatimTextOutput("dgeRadioButtonValue"))),
+        wellPanel(
+          # This outputs the dynamic UI component
+          uiOutput("dgeParametersDynamic")
+        )
+      )
+    ),
+    
     fluidRow(column(11,
       offset = 1,
       h4("Selected genes"), br(),
@@ -79,7 +103,7 @@ tabList <- list(
     fluidRow(column(11,
       offset = 1,
       h4("Top Differentially Expressed Genes", offset = 1),
-      DT::dataTableOutput("dge") %>% withSpinner()
+      DT::dataTableOutput("dgeTable") %>% withSpinner()
     )), br(),
     fluidRow(
       div(

@@ -74,7 +74,7 @@ output$tsne_main <- renderPlotly({
 
 #' tsnePlot
 #' function that plots in 3D the tsne projection
-tsnePlot <- function() {
+tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols) {
   projections <- as.data.frame(projections)
   projections$dbCluster <- as.factor(projections$dbCluster)
   

@@ -567,8 +567,6 @@ scExFunc <-
            minGene,
            minG,
            maxG) {
-    save(file = "~/scShinyHubDebug/scExFunc.RData", list = ls())
-    # load(file="~/scShinyHubDebug/scExFunc.RData")
     if (DEBUG) {
       cat(file = stderr(), "scExFunc\n")
     }

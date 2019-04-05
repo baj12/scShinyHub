@@ -96,6 +96,10 @@ shinyServer(function(input, output, session) {
     c("before filter", "beforeFilterPrj")
   )
   
+  # differential expression functions
+  # used in subcluster analysis
+  diffExpFunctions <<- list()
+  
   # load global reactives, modules, etc ----
   base::source("reactives.R", local = TRUE)
   base::source("outputs.R", local = TRUE)
@@ -124,10 +128,12 @@ shinyServer(function(input, output, session) {
     if (DEBUG) base::cat(file = stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations <- NULL
     myProjections <- NULL
+    myDiffExpFunctions <- NULL
     base::source(fp, local = TRUE)
     # TODO rename appendHeavyCalculations to append2list
     heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <- appendHeavyCalculations(myProjections, projectionFunctions)
+    diffExpFunctions <- appendHeavyCalculations(myDiffExpFunctions, diffExpFunctions)
   }
   
   # load contribution outputs ----
