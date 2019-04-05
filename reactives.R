@@ -28,20 +28,6 @@ sessionProjections <- reactiveValues(
 # loads singleCellExperiment
 #   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "inputDataFunc")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "DEBUG:inputData\n")
-    save(file = "inputDataFunc.RData", list = c("inFile"))
-  }
-  # load("inputDataFunc.RData")
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("loading", id = "inputDataFunc", duration = NULL)
-  }
   
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
@@ -64,13 +50,13 @@ inputDataFunc <- function(inFile) {
   if (!scExFound) {
     return(NULL)
   }
-  # fd <- featuredata
   fdAll <- rowData(scEx)
   pdAll <- colData(scEx)
   exAll <- assays(scEx)[["counts"]]
   stats[1, "nFeatures"] <- nrow(fdAll)
   stats[1, "nCells"] <- nrow(pdAll)
   
+  # read multiple files
   if (length(inFile$datapath) > 1) {
     for (fpIdx in 2:length(inFile$datapath)) {
       cat(file = stderr(), paste("reading", inFile$name[fpIdx], "\n"))
@@ -183,12 +169,7 @@ inputDataFunc <- function(inFile) {
   # if (is.null(rowData(dataTables$scEx)$symbol)){
   #
   # }
-  if (DEBUG) {
-    cat(file = stderr(), "inputData: done\n")
-  }
-  end.time <- Sys.time()
-  cat(file = stderr(), paste("===load data:done", difftime(end.time, start.time, units = "min"), " min\n"))
-  
+
   inputFileStats$stats <- stats
   return(dataTables)
 }
@@ -199,15 +180,18 @@ inputDataFunc <- function(inFile) {
 # internal, should not be used by plug-ins
 inputData <- reactive({
   start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "inputDataFunc")
+    }
+  )
+  if (DEBUG) cat(file = stderr(), "DEBUG:inputData\n")
   
   inFile <- input$file1
   if (is.null(inFile)) {
-    if (DEBUG) {
-      cat(file = stderr(), "inputData: NULL\n")
-    }
+    if (DEBUG) cat(file = stderr(), "inputData: NULL\n")
     return(NULL)
   }
-  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/inputData.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -567,8 +551,6 @@ scExFunc <-
            minGene,
            minG,
            maxG) {
-    save(file = "~/scShinyHubDebug/scExFunc.RData", list = ls())
-    # load(file="~/scShinyHubDebug/scExFunc.RData")
     if (DEBUG) {
       cat(file = stderr(), "scExFunc\n")
     }
@@ -940,7 +922,7 @@ kmClustering <- reactive({
   clusterMethod <- input$clusterMethod
   
   # kNr = 10
-  if (is.null(pca) | is.null(scEx_log)) {
+  if (is.null(pca) | is.null(scEx_log) | is.na(minClusterSize)) {
     if (DEBUG) {
       cat(file = stderr(), "kmClustering:NULL\n")
     }
@@ -1132,7 +1114,6 @@ dbCluster <- reactive({
     return(NULL)
   }
   
-  # dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
   dbCluster <- clustering$Cluster
   
   printTimeEnd(start.time, "dbCluster")

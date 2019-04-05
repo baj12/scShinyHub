@@ -4,8 +4,26 @@
 # TODO: verify that this anything and then integrate in DUMMY
 myZippedReportFiles <- c("gqcProjections.csv")
 
+
+
+gqcX1 <<- "tsne1"
+gqcX2 <<- "tsne2"
+gqcX3 <<- "tsne3"
+gqcCol <<- "sampleNames"
+observe({
+  gqcX1 <<- input$dim3D_x
+})
+observe({
+  gqcX2 <<- input$dim3D_y
+})
+observe({
+  gqcX3 <<- input$dim3D_z
+})
+observe({
+  gqcCol <<- input$col3D
+})
+
 # update3DInput ----
-# TODO see module on how to remember selections
 #' update3DInput
 #' update axes for tsne display
 update3DInput <- reactive({
@@ -15,24 +33,25 @@ update3DInput <- reactive({
   if (is.null(projections)) {
     return(NULL)
   }
-  
+  # choices = colnames(projections)[unlist(lapply(colnames(projections), function(x) !is.factor(projections[,x])))]
+  choices = colnames(projections)
   # Can also set the label and select items
   updateSelectInput(session, "dim3D_x",
-                    choices = colnames(projections),
-                    selected = colnames(projections)[1]
+                    choices = choices,
+                    selected = gqcX1
   )
   
   updateSelectInput(session, "dim3D_y",
-                    choices = colnames(projections),
-                    selected = colnames(projections)[2]
+                    choices = choices,
+                    selected = gqcX2
   )
   updateSelectInput(session, "dim3D_z",
-                    choices = colnames(projections),
-                    selected = colnames(projections)[3]
+                    choices = choices,
+                    selected = gqcX3
   )
   updateSelectInput(session, "col3D",
                     choices = colnames(projections),
-                    selected = colnames(projections)[3]
+                    selected = gqcCol
   )
 })
 
@@ -67,14 +86,14 @@ output$tsne_main <- renderPlotly({
   
   retVal <- tsnePlot(projections, dimX, dimY, dimZ, dimCol, scols)
   
-  printTimeEnd(tsnePlot, "tsnePlot")
+  printTimeEnd(start.time, "tsnePlot")
   exportTestValues(tsnePlot = {str(retVal)})  
   return(layout(retVal))
 })
 
 #' tsnePlot
 #' function that plots in 3D the tsne projection
-tsnePlot <- function() {
+tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols) {
   projections <- as.data.frame(projections)
   projections$dbCluster <- as.factor(projections$dbCluster)
   

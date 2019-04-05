@@ -152,7 +152,6 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
     ) +
     xlab("dbCluster") +
     ylab("number genes from list")
-if(DEBUG)cat(file=stderr(), "output$gene_vio_plot:done\n")
 p1
 
 ```
@@ -164,7 +163,7 @@ input$clusterSelectionPanelPlot : `r input$clusterSelectionPanelPlot`
 
 input$panelplotids : `r input$panelplotids`
 
-input$dimension_x4 : `r input$dimension_x4`
+input$de_dim_x : `r input$de_dim_x`
 
 input$dimension_y4 : `r input$dimension_y4`
 
@@ -202,7 +201,7 @@ if (input$clusterSelectionPanelPlot == 'All')
               rownames(featureData[which(featureData$symbol==genesin[i]),])
               ,]
           ),breaks = 10))]
-    plot(projections[,input$dimension_x4],projections[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+    plot(projections[,input$de_dim_x],projections[,input$dimension_y4],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
     title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
   }
 }else{
@@ -221,7 +220,7 @@ if (input$clusterSelectionPanelPlot == 'All')
     
     names(Col)<-rownames(projections)
     plotCol<-Col[rownames(subsetTSNE)]
-    plot(subsetTSNE[,input$dimension_x4],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
+    plot(subsetTSNE[,input$de_dim_x],subsetTSNE[,input$dimension_y4],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
     title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
     
   }

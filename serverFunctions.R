@@ -287,7 +287,6 @@ expMean <- function(x) {
 
 
 DiffExpTest <- function(expression, cells.1, cells.2, genes.use = NULL, print.bar = TRUE) {
-  cat(file = stderr(), "DiffExpTest\n")
   genes.use <- set.ifnull(genes.use, rownames(expression))
   p_val <- unlist(lapply(genes.use, function(x) diffLRT(as.numeric(expression[x, cells.1]), as.numeric(expression[x, cells.2]))))
   to.return <- data.frame(p_val, row.names = genes.use)

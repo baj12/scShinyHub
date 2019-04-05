@@ -33,12 +33,12 @@ tabList <- list(
     fluidRow(
       column(
         2,
-        uiOutput("clusters1") %>% withSpinner()
+        uiOutput("dgeClustersSelection")
       ),
       column(
         2,
         selectInput(
-          "dimension_x1",
+          "subscluster_x1",
           label = "X",
           choice = c("tsne1", "tsne2", "tsne3"),
           selected = "tsne1"
@@ -47,7 +47,7 @@ tabList <- list(
       column(
         2,
         selectInput(
-          "dimension_y1",
+          "subscluster_y1",
           label = "Y",
           choice = c("tsne1", "tsne2", "tsne3"),
           selected = "tsne2"
@@ -71,22 +71,46 @@ tabList <- list(
         )) %>% withSpinner()
       )
     ),
-    fluidRow(column(11,
-      offset = 1,
-      h4("Selected genes"), br(),
-      textOutput("crSelectedGenes", inline = FALSE)
-    )), br(),
-    fluidRow(column(11,
-      offset = 1,
-      h4("Top Differentially Expressed Genes", offset = 1),
-      DT::dataTableOutput("dge") %>% withSpinner()
-    )), br(),
-    fluidRow(
-      div(
-        align = "right",
-        style = "margin-right:15px; margin-bottom:10px",
-        downloadButton("download_dge_table", "Download DGE Table")
+    tabItem(
+      "diffExpMethod",
+      list(
+        tags$h3("Method to use for differential gene expression analysis"),
+        fluidRow(column(
+          10,
+          radioButtons(
+            inputId = "dgeRadioButton",
+            label = "Method to use",
+            choices = "dgeChoices",
+            selected = "scEx_logNormalization",
+            width = "100%"
+          )
+          # 10, offset = 1,
+          # plotOutput('plotUmiHist') %>% withSpinner()
+        )),
+        fluidRow(column(10, verbatimTextOutput("dgeRadioButtonValue"))),
+        wellPanel(
+          # This outputs the dynamic UI component
+          uiOutput("dgeParametersDynamic")
+        )
       )
-    )
+    ),
+    
+    # fluidRow(column(11,
+    #   offset = 1,
+    #   h4("Selected genes"), br(),
+    #   textOutput("crSelectedGenes", inline = FALSE)
+    # )), br(),
+    fluidRow(column(11,
+      offset = 0,
+      h4("Differentially Expressed Genes", offset = 1),
+      tableSelectionUi("dgeTable")
+    ))#, br(),
+    # fluidRow(
+    #   div(
+    #     align = "right",
+    #     style = "margin-right:15px; margin-bottom:10px",
+    #     downloadButton("download_dge_table", "Download DGE Table")
+    #   )
+    # )
   )
 )

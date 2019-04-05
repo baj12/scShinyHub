@@ -25,7 +25,7 @@ updateInputExpPanel <- reactive({
   }
 
   # Can also set the label and select items
-  updateSelectInput(session, "dimension_x4",
+  updateSelectInput(session, "de_dim_x",
     choices = colnames(projections),
     selected = colnames(projections)[1]
   )
@@ -37,6 +37,13 @@ updateInputExpPanel <- reactive({
   )
   return(TRUE)
 })
+
+de_X1 <<- "tsne1"
+observe({
+  de_X1 <<- input$de_dim_x
+})
+
+
 
 
 
@@ -139,11 +146,11 @@ output$clusterSelectionPanelPlot <- renderUI({
   if (is.null(projections)) {
     HTML("Please load data")
   } else {
-    noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
+    noOfClusters <- levels(as.factor(projections$dbCluster))
     selectInput(
       "clusterSelectionPanelPlot",
       label = "Cluster",
-      choices = c(c("All"), c(1:noOfClusters)),
+      choices = c(c("All"), noOfClusters),
       selected = "All"
     )
   }
@@ -171,7 +178,7 @@ output$panelPlot <- renderPlot({
   projections <- projections()
   genesin <- input$panelplotids
   cl4 <- input$clusterSelectionPanelPlot
-  dimx4 <- input$dimension_x4
+  dimx4 <- input$de_dim_x
   dimy4 <- input$dimension_y4
   
   if (is.null(scEx_log) | is.null(projections) | is.null(cl4)) {

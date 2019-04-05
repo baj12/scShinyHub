@@ -107,9 +107,9 @@ if (is.null(input$clusters)) {
   input$clusters <- "0"
   print("Warning: setting clusters to 0")
 }
-if (is.null(input$clusters1)) {
-  input$clusters1 <- "0"
-  print("Warning: setting clusters1 to All")
+if (is.null(input$dgeClustersSelection)) {
+  input$dgeClustersSelection <- "0"
+  print("Warning: setting dgeClustersSelection to All")
 }
 if (is.null(input$clusters2)) {
   input$clusters2 <- "0"

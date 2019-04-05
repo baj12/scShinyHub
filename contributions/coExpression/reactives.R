@@ -325,7 +325,6 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
     scale_y_continuous(breaks = 1:length(permsNames), labels = str_wrap(permsNames)) +
     ylab(ylabText)
   
-  if (DEBUG) cat(file = stderr(), "output$gene_vio_plot:done\n")
   return(p1)
 }
 

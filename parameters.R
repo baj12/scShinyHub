@@ -56,9 +56,7 @@ allTabs[[length(allTabs) + 1]] <- list(
           selected = "scEx_logNormalization",
           width = "100%"
         )
-        # 10, offset = 1,
-        # plotOutput('plotUmiHist') %>% withSpinner()
-      )),
+       )),
       fluidRow(column(10, verbatimTextOutput("normalizationRadioButtonValue"))),
       wellPanel(
         # This outputs the dynamic UI component

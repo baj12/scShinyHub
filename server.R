@@ -96,6 +96,10 @@ shinyServer(function(input, output, session) {
     c("before filter", "beforeFilterPrj")
   )
   
+  # differential expression functions
+  # used in subcluster analysis
+  diffExpFunctions <<- list()
+  
   # load global reactives, modules, etc ----
   base::source("reactives.R", local = TRUE)
   base::source("outputs.R", local = TRUE)
@@ -124,11 +128,31 @@ shinyServer(function(input, output, session) {
     if (DEBUG) base::cat(file = stderr(), paste("loading: ", fp, "\n"))
     myHeavyCalculations <- NULL
     myProjections <- NULL
+    myDiffExpFunctions <- NULL
     base::source(fp, local = TRUE)
     # TODO rename appendHeavyCalculations to append2list
     heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
     projectionFunctions <- appendHeavyCalculations(myProjections, projectionFunctions)
+    diffExpFunctions <- appendHeavyCalculations(myDiffExpFunctions, diffExpFunctions)
   }
+  
+  # update diffExpression radiobutton
+  dgeChoices = c()
+  if (length(diffExpFunctions) > 0) {
+    for (li in 1:length(diffExpFunctions)) {
+      liVal <- diffExpFunctions[[li]]
+      if (length(liVal) == 2) {
+        dgeChoices = c(dgeChoices, liVal[1])
+      } else {
+        # shouldn't happen
+        error("number of values for normalization function is not 2\n")
+      }
+    }
+  }
+  updateRadioButtons(session = session, inputId = "dgeRadioButton",
+                     choices = dgeChoices)
+  # make variable global
+  diffExpFunctions <<- diffExpFunctions
   
   # load contribution outputs ----
   # parse all outputs.R files under contributions to include in application

@@ -196,13 +196,14 @@ clusterServer <- function(input, output, session,
     if (is.null(projections)) {
       HTML("Please load data first")
     } else {
-      noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
+      noOfClusters <- levels(as.factor(projections$dbCluster))
+      # noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
       si <- selectizeInput(
         ns("clusters"),
         label = "Cluster",
-        choices = c(1:noOfClusters),
+        choices = noOfClusters,
         # selected = input$clusters, # not working because of stack, too slow and possible to create infinite loop
-        selected = c(1:noOfClusters),
+        selected = noOfClusters,
         multiple = TRUE
       )
     }
