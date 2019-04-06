@@ -47,7 +47,6 @@ dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
   return(retVal)
 }
 
-# <<<<<<< HEAD
 #' dge_ttest
 #' t-test on selected cells
 dge_ttest <- function(scEx_log, cells.1, cells.2) {
