@@ -89,7 +89,7 @@ tabList <- list(
       column(
         2,
         selectInput(
-          "dimension_y4",
+          "de_dim_y",
           label = "Y",
           choice = c("tsne1", "tsne2", "tsne3"),
           selected = "tsne2"

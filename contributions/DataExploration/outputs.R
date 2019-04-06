@@ -31,7 +31,7 @@ updateInputExpPanel <- reactive({
   )
 
   # Can also set the label and select items
-  updateSelectInput(session, "dimension_y4",
+  updateSelectInput(session, "de_dim_y",
     choices = colnames(projections),
     selected = colnames(projections)[2]
   )
@@ -179,7 +179,7 @@ output$panelPlot <- renderPlot({
   genesin <- input$panelplotids
   cl4 <- input$clusterSelectionPanelPlot
   dimx4 <- input$de_dim_x
-  dimy4 <- input$dimension_y4
+  dimy4 <- input$de_dim_y
   
   if (is.null(scEx_log) | is.null(projections) | is.null(cl4)) {
     return(NULL)
