@@ -5,16 +5,10 @@ selectedDge <- reactiveValues(
   dgeTable = data.frame()
 )
 
-<<<<<<< HEAD
 #' getCells
 #' get list of cells from selctions 
 getCells <- function(projections, cl1, db1, db2) {
   dbCluster = projections$dbCluster
-=======
-
-# 
-dge_func <- function(projections, scEx_log, dbCluster, cl1, db1, db2) {
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
   subsetData <- subset(projections, dbCluster %in% cl1)
   cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
   cells.2 <- rownames(shiny::brushedPoints(subsetData, db2))
@@ -53,7 +47,7 @@ dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
   return(retVal)
 }
 
-<<<<<<< HEAD
+# <<<<<<< HEAD
 #' dge_ttest
 #' t-test on selected cells
 dge_ttest <- function(scEx_log, cells.1, cells.2) {
@@ -71,11 +65,6 @@ dge_ttest <- function(scEx_log, cells.1, cells.2) {
 
 #' dge
 #' manage calculation for differential expression analysis
-=======
-#' dge
-#' calculate differential expression analysis
-#' based on 
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
 dge <- reactive({
   start.time <- base::Sys.time()
   on.exit(
@@ -89,13 +78,7 @@ dge <- reactive({
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "dgewarning")
   if (DEBUG) cat(file = stderr(), "dge\n")
-<<<<<<< HEAD
-=======
-  
-  scEx_log <- scEx_log()
-  prj <- projections()
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
-  
+
   scEx_log <- scEx_log()
   projections <- projections()
   cl1 <- input$dgeClustersSelection
@@ -103,41 +86,26 @@ dge <- reactive({
   db2 <- input$db2
   method <- input$dgeRadioButton
   
-<<<<<<< HEAD
   if (is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
-=======
-  if (is.null(scEx_log) | is.null(prj)) {
-    return(NULL)
-  }
-  
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/dge.RData')
   
-<<<<<<< HEAD
   methodIdx <- ceiling(which(unlist(diffExpFunctions)== method)/2)
   dgeFunc <- diffExpFunctions[[methodIdx]][2]
   gCells <- getCells(projections, cl1, db1, db2)
   retVal <- do.call(dgeFunc, args = list(scEx_log = scEx_log,
                                          cells.1 = gCells$c1, cells.2 = gCells$c2))
-=======
-  retVal <- dge_func(
-    projections = prj, scEx_log = scEx_log,
-    dbCluster = prj$dbCluster, cl1 = cl1, db1 = db1, db2 = db2
-  )
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
-  
+
   if (nrow(retVal) == 0) {
     if (DEBUG) cat(file = stderr(), "dge: nothing found\n")
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("dge: nothing found", id = "dgewarning", duration = 10, type = "warning")
     }
   }
-<<<<<<< HEAD
   # update reactiveValue
   selectedDge$dgeTable <- retVal
   
@@ -227,86 +195,6 @@ output$dgeClustersSelection <- renderUI({
     )
   }
 })
-=======
-  selectedDge$dgeTable <- retVal
-  
-  printTimeEnd(start.time, "dge")
-  exportTestValues(dge = {retVal})  
-  return(retVal)
-})
-
-# using these global variables allows us to store a set values even when the projections are changing
-subClusterDim1 <- "PC1"
-subClusterDim2 <- "PC2"
-subClusterClusters <- "1"
-observe({
-  subClusterDim1 <<- input$subscluster_x1
-})
-observe({
-  subClusterDim2 <<- input$subscluster_y1
-})
-observe({
-  subClusterClusters <<- input$clusters1
-})
-
-
-# subcluster axes ----
-# update axes in subcluster analysis
-updateInputSubclusterAxes <- reactive({
-  projections <- projections()
-  # we combine the group names with the projections to add ability to select groups
-  # gn <- groupNames$namesDF
-  # Can use character(0) to remove all choices
-  if (is.null(projections)) {
-    return(NULL)
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/updateInputSubclusterAxes.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/updateInputSubclusterAxes.RData")
-  # if (length(gn) > 0) {
-  #   projections <- cbind(projections, gn[rownames(projections), ] * 1)
-  # }
-  # Can also set the label and select items
-  updateSelectInput(session, "subscluster_x1",
-                    choices = colnames(projections),
-                    selected = subClusterDim1
-  )
-  
-  updateSelectInput(session, "subscluster_y1",
-                    choices = colnames(projections),
-                    selected = subClusterDim2
-  )
-})
-
-
-# sub cluster analysis ( used for 2 panels )
-output$clusters1 <- renderUI({
-  
-  projections <- projections()
-  up1 <- updateInputSubclusterAxes()
-  
-  if (DEBUG) cat(file = stderr(), "output$clusters1\n")
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/clusters1_dge.RData", list = c(ls(envir = globalenv(), ls(), "subClusterClusters")))
-  }
-  # load(file="~/scShinyHubDebug/clusters1_dge.RData")
-  
-  
-  if (is.null(projections)) {
-    HTML("Please load data first")
-  } else {
-    noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
-    selectizeInput(
-      "clusters1",
-      label = "Cluster",
-      choices = c(1:noOfClusters),
-      selected = subClusterClusters,
-      multiple = TRUE
-    )
-  }
-})
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
 
 
 #' subCluster2Dplot
@@ -319,12 +207,8 @@ subCluster2Dplot <- function() {
     projections <- projections()
     x1 <- input$subscluster_x1
     y1 <- input$subscluster_y1
-<<<<<<< HEAD
     c1 <- input$dgeClustersSelection
-=======
-    c1 <- input$clusters1
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
-    
+
     if (is.null(projections)) {
       return(NULL)
     }

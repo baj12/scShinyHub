@@ -92,27 +92,6 @@ tabList <- list(
           # This outputs the dynamic UI component
           uiOutput("dgeParametersDynamic")
         )
-<<<<<<< HEAD
-=======
-      )
-    ),
-    
-    fluidRow(column(11,
-      offset = 1,
-      h4("Selected genes"), br(),
-      textOutput("crSelectedGenes", inline = FALSE)
-    )), br(),
-    fluidRow(column(11,
-      offset = 1,
-      h4("Top Differentially Expressed Genes", offset = 1),
-      DT::dataTableOutput("dgeTable") %>% withSpinner()
-    )), br(),
-    fluidRow(
-      div(
-        align = "right",
-        style = "margin-right:15px; margin-bottom:10px",
-        downloadButton("download_dge_table", "Download DGE Table")
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
       )
     ),
     

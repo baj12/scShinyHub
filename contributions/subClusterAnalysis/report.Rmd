@@ -32,11 +32,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
 # TODO module?  
   x1 = input$subscluster_x1
   y1 = input$subscluster_y1
-<<<<<<< HEAD
   c1 = input$dgeClustersSelection
-=======
-  c1 = input$clusters1
->>>>>>> 012c5c303a29ae54541730abda33b3d4e1088f20
   gn <- groupNames$namesDF
 
   
