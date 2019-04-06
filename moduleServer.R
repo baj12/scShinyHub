@@ -595,7 +595,7 @@ tableSelectionServer <- function(input, output, session,
   proxy <- dataTableProxy("cellNameTable")
   
   observeEvent(input$selectAll, {
-    if (DEBUG) cat(file = stderr(), "input$selectAll\n")
+    if (DEBUG) cat(file = stderr(), "observe input$selectAll\n")
     ipSelect <- input$selectAll
     prox <- proxy
     allrows <- input$cellNameTable_rows_all

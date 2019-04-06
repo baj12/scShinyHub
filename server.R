@@ -168,7 +168,7 @@ shinyServer(function(input, output, session) {
     projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
     zippedReportFiles <- c(zippedReportFiles, myZippedReportFiles)
   }
-  
+
   
 }) # END SERVER
 

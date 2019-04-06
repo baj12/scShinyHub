@@ -123,6 +123,8 @@ observe({
 observe({
   subClusterDim2 <<- input$subscluster_y1
 })
+#' TODO
+#' if this observer is really needed we need to get rid of projections
 observe({
   projections <- projections()
   if (!is.null(projections)) {

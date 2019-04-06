@@ -40,7 +40,7 @@ output$normalizationsParametersDynamic <- renderUI({
     return(NULL)
   }
   selectedChoice <- input$normalizationRadioButton
-
+  
   if (DEBUG) {
     cat(file = stderr(), paste(class(normaliztionParameters)), "\n")
     cat(file = stderr(), paste(length(normaliztionParameters)), "\n")
@@ -151,7 +151,7 @@ output$removedGenesTable <- DT::renderDataTable({
     return(NULL)
   }
   useGenes <- !useGenes
-
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/removedGenesTable.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
   }
@@ -224,7 +224,7 @@ output$gsrmGenes <- renderText({
 # DEBUGSAVEstring ----
 output$DEBUGSAVEstring <- renderText({
   if (DEBUG){
-  DEBUGSAVE <<- input$DEBUGSAVE
+    DEBUGSAVE <<- input$DEBUGSAVE
   } else {
     NULL
   }
@@ -281,9 +281,9 @@ observeEvent(input$updateColors, {
   scols = sampleCols$colPal
   inCols = list()
   lev <- levels(colData(scExx)$sampleNames)
-
+  
   inCols <- lapply(seq_along(lev), function(i){
-     input[[paste0("sampleNamecol", lev[i])]]
+    input[[paste0("sampleNamecol", lev[i])]]
   })
   names(inCols) = lev
   if (DEBUGSAVE) {
@@ -412,7 +412,7 @@ output$report <- downloadHandler(
       )
       fpRidx <- fpRidx + 1
     }
-
+    
     # Copy the report file to a temporary directory before processing it, in
     # case we don't have write permissions to the current working dir (which
     # can happen when deployed).
@@ -479,6 +479,36 @@ output$report <- downloadHandler(
     }
   }
 )
+
+# dummy function to return NULL
+returnNull <- function() {
+  return(NULL)
+}
+
+# forceCalc -----# handling expensive calcualtions
+forceCalc <- shiny::observe({
+  go <- input$goCalc
+  start.time <- base::Sys.time()
+  if (go) {
+    isolate({
+      if (DEBUG) base::cat(file = stderr(), "forceCalc\n")
+      # list of output variable and function name
+      
+      withProgress(message = "Performing heavy calculations", value = 0, {
+        n <- length(heavyCalculations)
+        for (calc in heavyCalculations) {
+          shiny::incProgress(1 / n, detail = base::paste("Creating ", calc[1]))
+          if (DEBUG) cat(file = stderr(), base::paste("forceCalc ", calc[1], "\n"))
+          assign(calc[1], eval(parse(text = base::paste0(calc[2], "()"))))
+        }
+      })
+    })
+    
+    printTimeEnd(start.time, "forceCalc")
+  }
+})
+
+
 
 if (DEBUG) {
   cat(file = stderr(), paste("end: outputs.R\n"))
