@@ -67,7 +67,7 @@ if (exists("params")) {
 require(pheatmap)
 
 scEx_matrix <- assays(scEx_log)[[1]]
-genesin <- input$heatmap_geneids
+genesin <- input$coE_heatmap_geneids
 sampCol = sampleCols$colPal
 
 genesin2 <- geneName2Index(genesin, featureData)
@@ -102,24 +102,24 @@ do.call(pheatmap, heatmapData)
 
 ### 2D plot with selection of cells 
 
-geneNames <- `r input$"selected-geneIds"`
+geneNames <- `r input$"coE_selected-geneIds"`
 
-clId <- `r input$"selected-clusters"`
+clId <- `r input$"coE_selected-clusters"`
 
-dimX <- `r input$"selected-dimension_x"`
+dimX <- `r input$"coE_selected-dimension_x"`
 
-dimY <- `r input$"selected-dimension_y"`
+dimY <- `r input$"coE_selected-dimension_y"`
 
 
 
 ```{r selectd2D, echo=FALSE}
 g_id <- input$gene_id
-geneNames <- input$"selected-geneIds"
+geneNames <- input$"coE_selected-geneIds"
 #TODO geneNames2 is just added to have a value, need to check how this should behave.
-geneNames2 <- input$"selected-geneIds"
-clId <- input$"selected-clusters"
-dimX <- input$"selected-dimension_x"
-dimY <- input$"selected-dimension_y"
+geneNames2 <- input$"coE_selected-geneIds"
+clId <- input$"coE_selected-clusters"
+dimX <- input$"coE_selected-dimension_x"
+dimY <- input$"coE_selected-dimension_y"
 legend.position <- "none"
 grpN <- make.names(input$groupName)
 cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
@@ -136,31 +136,31 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames, gene
 
 callModule(
 pHeatMapModule, 
-"heatmapSelectedModule", 
-heatmapSelectedReactive
+"coE_heatmapSelectedModule", 
+coE_heatmapSelectedReactive
 )
 
-heatmap_geneids2 `r input$heatmap_geneids2`
+coE_heatmap_geneids2 `r input$coE_heatmap_geneids2`
 
-'selected-geneIds' `r input$'selected-geneIds'`
+'selected-geneIds' `r input$'coE_selected-geneIds'`
 
-'selected-clusters' `r input$'selected-clusters'`
+'selected-clusters' `r input$'coE_selected-clusters'`
 
-'heatmapSelectedModule-ColNames' `r input$'heatmapSelectedModule-ColNames'`
+'coE_heatmapSelectedModule-ColNames' `r input$'coE_heatmapSelectedModule-ColNames'`
 
-orderColNames : `r input$'heatmapSelectedModule-orderNames'`
+orderColNames : `r input$'coE_heatmapSelectedModule-orderNames'`
 
-moreOptions <- `r input$'heatmapSelectedModule-moreOptions'`
+moreOptions <- `r input$'coE_heatmapSelectedModule-moreOptions'`
 
 
-```{r heatmapSelectedModule, echo=FALSE, eval=TRUE}
+```{r coE_heatmapSelectedModule, echo=FALSE, eval=TRUE}
 # save(file = "~/scShinyHubDebug/selectedHeatmap.1.RData", list = c(ls(), ls(envir = globalenv())))
-genesin <- input$heatmap_geneids2
+genesin <- input$coE_heatmap_geneids2
 
 # get selected cells
-brushedPs <- input$"selected-b1"
-geneNames <- input$'selected-geneIds'
-inpClusters <- input$"selected-clusters"
+brushedPs <- input$"coE_selected-b1"
+geneNames <- input$'coE_selected-geneIds'
+inpClusters <- input$"coE_selected-clusters"
 dimX <- brushedPs$mapping$x
 dimY <- brushedPs$mapping$y
 sampCol = sampleCols$colPal
@@ -186,9 +186,9 @@ if(!is.null(brushedPs)){
   )
   
   # print heatmap
-  addColNames <- input$"heatmapSelectedModule-ColNames"
-  orderColNames <- input$"heatmapSelectedModule-orderNames"
-  moreOptions <- input$"heatmapSelectedModule-moreOptions"
+  addColNames <- input$"coE_heatmapSelectedModule-ColNames"
+  orderColNames <- input$"coE_heatmapSelectedModule-orderNames"
+  moreOptions <- input$"coE_heatmapSelectedModule-moreOptions"
   proje <- projections
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
@@ -214,7 +214,7 @@ if(!is.null(brushedPs)){
 #### table of selected cells
 
 ```{r topexpCells, echo=FALSE}
-if (DEBUG) cat(file = stderr(), "output$topExpGenes\n")
+if (DEBUG) cat(file = stderr(), "output$coE_topExpGenes\n")
 coEtgPerc <- input$coEtgPerc
 coEtgminExpr <- input$coEtgMinExpr
 outMat <- NULL
@@ -223,9 +223,9 @@ if(!is.null(brushedPs)){
   scCells <- cells.1
   
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c("scCells", ls()))
+    save(file = "~/scShinyHubDebug/output_coE_topExpGenes.RData", list = c("scCells", ls()))
   }
-  # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
+  # load(file="~/scShinyHubDebug/output_coE_topExpGenes.RData")
   # we only work on genes that have been selected
   mat <- assays(scEx_log)[[1]][, scCells]
   # only genes that express at least coEtgminExpr UMIs
@@ -264,11 +264,11 @@ if(!is.null(brushedPs)){
 
 ```{r saveTOPGENES, echo=FALSE}
 # save full table in tmp folder to be included in report
-write.csv(outMat, file = paste0(input$reportTempDir, "/output_topExpGenes.csv"))
+write.csv(outMat, file = paste0(input$reportTempDir, "/output_coE_topExpGenes.csv"))
 
 ```
 
-Full table can be found here: [output_topExpGenes.csv](output_topExpGenes.csv)
+Full table can be found here: [output_coE_topExpGenes.csv](output_coE_topExpGenes.csv)
 
 
 ### binarized
@@ -312,25 +312,25 @@ return(p1)
 
 ## Violin plot coexpressed genes
 
-geneListStr <- `r input$geneGrpVioIds`
+geneListStr <- `r input$coE_geneGrpVioIds`
 
-projectionVar <- `r input$dimension_xVioiGrp`
+projectionVar <- `r input$coE_dimension_xVioiGrp`
 
 minExpr <- `r input$coEminExpr`
 
 ```{r violinPlot, echo=FALSE}
-geneListStr <- input$geneGrpVioIds
-projectionVar <- input$dimension_xVioiGrp
+geneListStr <- input$coE_geneGrpVioIds
+projectionVar <- input$coE_dimension_xVioiGrp
 minExpr <- input$coEminExpr
 sampCol = sampleCols$colPal
-retVal <- geneGrp_vioFunc(
+retVal <- coE_geneGrp_vioFunc(
   genesin = geneListStr,
   projections = projections,
   scEx = scEx,
   featureData = featureData,
   minExpr = minExpr,
   dbCluster = projectionVar,
-  showPermutations = input$showPermutations,
+  coE_showPermutations = input$coE_showPermutations,
   sampCol = sampCol
 )
 retVal

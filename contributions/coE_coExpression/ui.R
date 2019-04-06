@@ -24,7 +24,7 @@ tabList <- list(
         7,
         offset = 1,
 
-        textInput("heatmap_geneids", "Comma seperated gene names", value = defaultValueMultiGenes)
+        textInput("coE_heatmap_geneids", "Comma seperated gene names", value = defaultValueMultiGenes)
       )
     ),
     fluidRow(column(
@@ -45,28 +45,28 @@ tabList <- list(
     fluidRow(
       column(
         2,
-        textInput("gene_id_sch", "Enter gene", value = defaultValueSingleGene)
+        textInput("coE_gene_id_sch", "Enter gene", value = defaultValueSingleGene)
       ),
       column(
         12,
-        clusterUI("selected")
+        clusterUI("coE_selected")
       )
     ),
     fluidRow(column(
       6,
       offset = 1,
 
-      textInput("heatmap_geneids2", "Comma seperated gene names", value = defaultValueMultiGenes)
+      textInput("coE_heatmap_geneids2", "Comma seperated gene names", value = defaultValueMultiGenes)
     )),
     fluidRow(column(
       12,
       offset = 1,
-      uiOutput("heatmapNull")
+      uiOutput("coE_heatmapNull")
     )),
     fluidRow(column(
       12,
       offset = 0,
-      pHeatMapUI("heatmapSelectedModule")
+      pHeatMapUI("coE_heatmapSelectedModule")
     )), 
     # br(),
     fluidRow(
@@ -84,7 +84,7 @@ tabList <- list(
         )
       )
     ),
-    tableSelectionUi("topExpGenes") %>% withSpinner()
+    tableSelectionUi("coE_topExpGenes") %>% withSpinner()
   ),
   expressionTab = tabItem(
     "CoExpressionViolin",
@@ -100,19 +100,19 @@ tabList <- list(
     br(),
     br(),
     tipify(
-      checkboxInput("showPermutations", "show Permutations", FALSE),
+      checkboxInput("coE_showPermutations", "show Permutations", FALSE),
       "check this if you are working on the cell/gene selection to avoid certain calculations"
     ),
     fluidRow(
       column(
         3,
 
-        textInput("geneGrpVioIds", "Comma seperated gene names", value = defaultValueMultiGenes)
+        textInput("coE_geneGrpVioIds", "Comma seperated gene names", value = defaultValueMultiGenes)
       ),
       column(
         3,
         selectInput(
-          "dimension_xVioiGrp",
+          "coE_dimension_xVioiGrp",
           label = "X",
           choices = c("dbCluster", "sampleName", "tsne3"),
           selected = "dbCluster"
@@ -129,7 +129,7 @@ tabList <- list(
     br(),
     fluidRow(column(
       12,
-      jqui_resizable(plotOutput("geneGrp_vio_plot") )
+      jqui_resizable(plotOutput("coE_geneGrp_vio_plot") )
     ))
   ),
   tabList = tabItem(
@@ -138,23 +138,23 @@ tabList <- list(
     br(),
     fluidRow(column(
       3,
-      numericInput("dimSOM", "number of nodes per dimension",
+      numericInput("coE_dimSOM", "number of nodes per dimension",
         20,
         min = 2, max = 100
       ),
-      textInput("geneSOM", "Gene of interest", value = defaultValueSingleGene)
+      textInput("coE_geneSOM", "Gene of interest", value = defaultValueSingleGene)
     )),
     br(),
     fluidRow(column(
       10,
       offset = 1,
-      pHeatMapUI("heatmapSOM") %>% withSpinner()
+      pHeatMapUI("coE_heatmapSOM") %>% withSpinner()
     )),
     br(),
     fluidRow(column(
       10,
       offset = 1,
-      verbatimTextOutput("somGenes")
+      verbatimTextOutput("coE_somGenes")
     ))
   )
 )

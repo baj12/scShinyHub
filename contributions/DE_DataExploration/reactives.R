@@ -100,7 +100,7 @@ dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
   names(projections)[ncol(projections)] <- "values"
   if (!all(c("tsne1", "tsne2", "tsne3") %in% colnames(projections))) {
     showNotification("some tsne projections are not available.",
-                     id = "tsne_pltERROR",
+                     id = "DE_tsne_pltERROR",
                      duration = NULL, type = "error"
     )
   }

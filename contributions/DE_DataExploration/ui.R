@@ -4,8 +4,8 @@ menuList <- list(
   menuItem("Data Exploration",
     tabName = "expore", startExpanded = FALSE,
     menuSubItem("Expression", tabName = "expression"),
-    menuSubItem("Panel plot", tabName = "panelPlot"),
-    menuSubItem("Scater QC", tabName = "scaterQC")
+    menuSubItem("Panel plot", tabName = "DE_panelPlot"),
+    menuSubItem("Scater QC", tabName = "DE_scaterQC")
   )
 )
 
@@ -43,24 +43,24 @@ tabList <- list(
         fluidRow(
           column(
             4,
-            textInput("gene_id", "Enter gene", value = defaultValueSingleGene)
+            textInput("DE_gene_id", "Enter gene", value = defaultValueSingleGene)
           )
         ),
-        jqui_resizable(plotlyOutput("tsne_plt"))
+        jqui_resizable(plotlyOutput("DE_tsne_plt"))
       ), column(
         6,
-        clusterUI("expclusters")
+        clusterUI("DE_expclusters")
       )
     ),
     br(),
     fluidRow(column(
       12,
-      jqui_resizable( plotOutput("gene_vio_plot") %>% withSpinner())
+      jqui_resizable( plotOutput("DE_gene_vio_plot") %>% withSpinner())
     ))
   ),
 
-  panelPlotTab = tabItem(
-    "panelPlot",
+  DE_panelPlotTab = tabItem(
+    "DE_panelPlot",
     tags$ul(
       tags$li(
         strong("Panel plot"),
@@ -75,7 +75,7 @@ tabList <- list(
     fluidRow(
       column(
         2,
-        uiOutput("clusterSelectionPanelPlot")
+        uiOutput("DE_clusterSelectionPanelPlot")
       ),
       column(
         2,
@@ -98,17 +98,17 @@ tabList <- list(
       column(
         2,
 
-        textInput("panelplotids", "Comma seperated gene names", value = defaultValueMultiGenes)
+        textInput("DE_panelplotids", "Comma seperated gene names", value = defaultValueMultiGenes)
       )
     ),
     fluidRow(column(
       12,
-      jqui_resizable(plotOutput("panelPlot") )
+      jqui_resizable(plotOutput("DE_panelPlot") )
     ))
   ),
 
-  scaterQCTab = tabItem(
-    "scaterQC",
+  DE_scaterQCTab = tabItem(
+    "DE_scaterQC",
     tags$ul(
       tags$li(
         strong("Scater QC plots")
@@ -117,7 +117,7 @@ tabList <- list(
         column(
           10,
           offset = 1,
-          imageOutput("scaterQC") %>% withSpinner() # PNG output with temp file
+          imageOutput("DE_scaterQC") %>% withSpinner() # PNG output with temp file
         )
       )
     )

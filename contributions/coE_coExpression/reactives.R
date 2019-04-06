@@ -81,11 +81,11 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
   return(retVal)
 }
 
-output$heatmapNull = NULL
+output$coE_heatmapNull = NULL
 
-# heatmapSelectedReactive ----
+# coE_heatmapSelectedReactive ----
 # reactive function for selected heatmap
-heatmapSelectedReactive <- reactive({
+coE_heatmapSelectedReactive <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
@@ -93,7 +93,7 @@ heatmapSelectedReactive <- reactive({
     }
   )
   if (DEBUG) {
-    cat(file = stderr(), "output$heatmapSelectedReactive\n")
+    cat(file = stderr(), "output$coE_heatmapSelectedReactive\n")
   }
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
@@ -101,15 +101,15 @@ heatmapSelectedReactive <- reactive({
   
   scEx <- scEx()
   projections <- projections()
-  genesin <- input$heatmap_geneids2
-  sc <- selctedCluster()
+  genesin <- input$coE_heatmap_geneids2
+  sc <- coE_selctedCluster()
   scCL <- sc$cluster
   scCells <- sc$selectedCells()
   sampCol <- sampleCols$colPal
   
   if (is.null(scEx) ||
       is.null(projections) || is.null(scCells) || length(scCells) == 0) {
-    output$heatmapNull = renderUI(tags$h3(tags$span(style="color:red", "please select some cells")))
+    output$coE_heatmapNull = renderUI(tags$h3(tags$span(style="color:red", "please select some cells")))
     return(
       list(
         src = "empty.png",
@@ -120,7 +120,7 @@ heatmapSelectedReactive <- reactive({
       )
     )
   } else {
-    output$heatmapNull = NULL
+    output$coE_heatmapNull = NULL
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
@@ -142,32 +142,32 @@ heatmapSelectedReactive <- reactive({
   # print debugging information on the console
   printTimeEnd(start.time, "inputData")
   # for automated shiny testing using shinytest
-  exportTestValues(heatmapSelectedReactive = {retVal})  
+  exportTestValues(coE_heatmapSelectedReactive = {retVal})  
   return(retval)
 })
 
-# topExpGenesTable ----
-#' topExpGenesTable
+# coE_topExpGenesTable ----
+#' coE_topExpGenesTable
 #' in coexpressionSelected tab, showing the table of top expressed genes for a given 
 #' selection
 #' coEtgPerc = genes shown have to be expressed in at least X % of cells
 #' coEtgMinExpr = genes shown have at least to X UMIs expressed 
-topExpGenesTable <- reactive({
+coE_topExpGenesTable <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "topExpGenesTable")
+      removeNotification(id = "coE_topExpGenesTable")
   )
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("topExpGenesTable", id = "topExpGenesTable", duration = NULL)
+    showNotification("coE_topExpGenesTable", id = "coE_topExpGenesTable", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "topExpGenesTable\n")
+  if (DEBUG) cat(file = stderr(), "coE_topExpGenesTable\n")
   
   scEx_log <- scEx_log()
   coEtgPerc <- input$coEtgPerc
   coEtgminExpr <- input$coEtgMinExpr
-  sc <- selctedCluster()
+  sc <- coE_selctedCluster()
   scCL <- sc$cluster
   scCells <- sc$selectedCells()
   
@@ -175,9 +175,9 @@ topExpGenesTable <- reactive({
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/output_topExpGenes.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/output_coE_topExpGenes.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/output_topExpGenes.RData")
+  # load(file="~/scShinyHubDebug/output_coE_topExpGenes.RData")
   
   featureData <- rowData(scEx_log)
   # we only work on cells that have been selected
@@ -208,19 +208,19 @@ topExpGenesTable <- reactive({
     retVal = as.data.frame(outMat)
   } 
   
-  printTimeEnd(start.time, "topExpGenesTable")
-  exportTestValues(topExpGenesTable = {retVal})  
+  printTimeEnd(start.time, "coE_topExpGenesTable")
+  exportTestValues(coE_topExpGenesTable = {retVal})  
   return(retVal)
 })
 
 
 
-#' geneGrp_vioFunc
+#' coE_geneGrp_vioFunc
 #' generates a ggplot object with a violin plot
 #' optionally creates all permutations.
-geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1,
-                            dbCluster, showPermutations = FALSE, sampCol) {
-  if (DEBUG) cat(file = stderr(), "geneGrp_vioFunc\n")
+coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1,
+                            dbCluster, coE_showPermutations = FALSE, sampCol) {
+  if (DEBUG) cat(file = stderr(), "coE_geneGrp_vioFunc\n")
   require(gtools)
   require(stringr)
   
@@ -231,9 +231,9 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
   map <- rownames(featureData[which(featureData$symbol %in% genesin), ])
   
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/geneGrp_vioFunc.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/coE_geneGrp_vioFunc.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/geneGrp_vioFunc.RData")
+  # load(file="~/scShinyHubDebug/coE_geneGrp_vioFunc.RData")
   
   if (length(map) == 0) {
     if (!is.null(getDefaultReactiveDomain())) {
@@ -250,7 +250,7 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
   expression <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr)
   ylabText <- "number genes from list"
   
-  if (showPermutations) {
+  if (coE_showPermutations) {
     perms <- rep("", length(expression))
     ylabText <- "Permutations"
     xPerm <- length(genesin)
@@ -328,11 +328,11 @@ geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1
   return(p1)
 }
 
-#' somFunction
+#' coE_somFunction
 #' iData = expression matrix, rows = genes
 #' cluster genes in SOM 
 #' returns genes associated together within a som-node
-somFunction <- function(iData, nSom, geneName) {
+coE_somFunction <- function(iData, nSom, geneName) {
   require(kohonen)
   require(Rsomoclu)
   if (sum(geneName %in% rownames(iData)) == 0) return(NULL)
@@ -351,29 +351,29 @@ somFunction <- function(iData, nSom, geneName) {
   )
   
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/somFunction.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/coE_somFunction.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/somFunction.RData")
+  # load(file="~/scShinyHubDebug/coE_somFunction.RData")
   rownames(res2$globalBmus) <- make.unique(as.character(rownames(iData)), sep = "___")
   simGenes <- rownames(res2$globalBmus)[which(res2$globalBmus[, 1] == res2$globalBmus[geneName, 1] &
                                                 res2$globalBmus[, 2] == res2$globalBmus[geneName, 2])]
   return(simGenes)
 }
 
-# heatmapSOMReactive ----
-#' heatmapSOMReactive
+# coE_coE_heatmapSOMReactive ----
+#' coE_coE_heatmapSOMReactive
 #' calculates a self organizing map (SOM) on the expression data and identifies genes
 #' that cluster together with a gene of interest
 # TODO: check that we are using only raw counts and not normalized
-heatmapSOMReactive <- reactive({
+coE_coE_heatmapSOMReactive <- reactive({
   start.time <- Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "heatmapSOMReactive")
+      removeNotification(id = "coE_coE_heatmapSOMReactive")
     }
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("somheatmap", id = "heatmapSOMReactive", duration = NULL)
+    showNotification("somheatmap", id = "coE_coE_heatmapSOMReactive", duration = NULL)
   }
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "heatmapWarning")
@@ -381,8 +381,8 @@ heatmapSOMReactive <- reactive({
   
   scEx <- scEx()
   projections <- projections()
-  genesin <- input$geneSOM
-  nSOM <- input$dimSOM
+  genesin <- input$coE_geneSOM
+  nSOM <- input$coE_dimSOM
   sampCol <- sampleCols$colPal
   
   if (is.null(scEx)) {
@@ -398,19 +398,19 @@ heatmapSOMReactive <- reactive({
   }
 
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/heatmapSOMReactive.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/coE_coE_heatmapSOMReactive.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file = "~/scShinyHubDebug/heatmapSOMReactive.RData")
+  # load(file = "~/scShinyHubDebug/coE_coE_heatmapSOMReactive.RData")
 
   scEx_matrix <- as.matrix(assays(scEx)[["counts"]])
   featureData <- rowData(scEx)
   # go from readable gene name to ENSG number
   genesin <- geneName2Index(genesin, featureData)
 
-  geneNames <- somFunction(iData = scEx_matrix, nSom = nSOM, geneName = genesin)
+  geneNames <- coE_somFunction(iData = scEx_matrix, nSom = nSOM, geneName = genesin)
 
   # plot the genes found
-  output$somGenes <- renderText({
+  output$coE_somGenes <- renderText({
     paste(featureData[geneNames, "symbol"], collapse = ", ", sep = ",")
   })
   if (length(geneNames) < 2) {
@@ -454,15 +454,15 @@ heatmapSOMReactive <- reactive({
   # system.time(do.call(TRONCO::pheatmap, retVal))
   
   printTimeEnd(start.time, "inputData")
-  exportTestValues(heatmapSOMReactive = {retVal })  
+  exportTestValues(coE_coE_heatmapSOMReactive = {retVal })  
   return(retVal)
 })
 
-# updateInputXviolinPlot----
-#' updateInputXviolinPlot
+# coE_updateInputXviolinPlot----
+#' coE_updateInputXviolinPlot
 #' Update x/y axis selection possibilities for violin plot
 #' could probably be an observer, but it works like this as well...
-updateInputXviolinPlot <- reactive({
+coE_updateInputXviolinPlot <- reactive({
   tsneData <- projections()
   
   # Can use character(0) to remove all choices
@@ -496,17 +496,17 @@ updateInputXviolinPlot <- reactive({
   }
   updateSelectInput(
     session,
-    "dimension_xVioiGrp",
+    "coE_dimension_xVioiGrp",
     choices = choices,
     selected = choices[1]
   )
 })
 
 
-# heatmapReactive -------
+# coE_heatmapReactive -------
 # reactive for module pHeatMapModule
 # for all clusters menu item
-heatmapReactive <- reactive({
+coE_heatmapReactive <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -521,7 +521,7 @@ heatmapReactive <- reactive({
 
   scEx_log <- scEx_log()
   projections <- projections()
-  genesin <- input$heatmap_geneids
+  genesin <- input$coE_heatmap_geneids
   sampCol = sampleCols$colPal
   
   if (is.null(scEx_log) | is.null(projections)) {
@@ -548,6 +548,6 @@ heatmapReactive <- reactive({
   )
   
   printTimeEnd(start.time, "DummyReactive")
-  exportTestValues(heatmapReactive = {retVal})  
+  exportTestValues(coE_heatmapReactive = {retVal})  
   return(retVal)
 })

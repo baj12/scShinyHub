@@ -72,22 +72,22 @@ Normalization method used: `r input$normalizationRadioButton` used.
 
 2D plot 
 
-g_id <- `r input$gene_id`
-geneNames <- `r input$"expclusters-geneIds"`
-clId <- `r input$"expclusters-clusters"`
-dimX <- `r input$"expclusters-dimension_x"`
-dimY <- `r input$"expclusters-dimension_y"`
+g_id <- `r input$DE_gene_id`
+geneNames <- `r input$"DE_expclusters-geneIds"`
+clId <- `r input$"DE_expclusters-clusters"`
+dimX <- `r input$"DE_expclusters-dimension_x"`
+dimY <- `r input$"DE_expclusters-dimension_y"`
 
 
 ```{r bj-DE-2Dprojection, echo=FALSE, eval=TRUE}
 
-g_id <- input$gene_id
-geneNames <- input$"expclusters-geneIds"
+g_id <- input$DE_gene_id
+geneNames <- input$"DE_expclusters-geneIds"
 #TODO geneNames2 is just added to have a value, need to check how this should behave.
-geneNames2 <- input$"expclusters-geneIds"
-clId <- input$"expclusters-clusters"
-dimX <- input$"expclusters-dimension_x"
-dimY <- input$"expclusters-dimension_y"
+geneNames2 <- input$"DE_expclusters-geneIds"
+clId <- input$"DE_expclusters-clusters"
+dimX <- input$"DE_expclusters-dimension_x"
+dimY <- input$"DE_expclusters-dimension_y"
 divXBy <- input$devideXBy
 divYBy <- input$devideYBy
 
@@ -108,10 +108,10 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
 
 ## VIOLIN PLOT 
 
-```{r bj-DE-gene_vio_plot, eval=TRUE, echo=FALSE}
+```{r bj-DE-DE_gene_vio_plot, eval=TRUE, echo=FALSE}
 # geneid <- rownames(featureData[which(featureData$symbol %in%
-#                                        toupper(input$gene_id)), ])[1]
-  genesin <- toupper(input$gene_id)
+#                                        toupper(input$DE_gene_id)), ])[1]
+  genesin <- toupper(input$DE_gene_id)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
   genesin <- strsplit(genesin, ",")
   geneid <- rownames(featureData[which(featureData$symbol %in%
@@ -157,20 +157,20 @@ p1
 ```
 
 ## Panel plot
-output$panelPlot <- renderPlot({
+output$DE_panelPlot <- renderPlot({
 
-input$clusterSelectionPanelPlot : `r input$clusterSelectionPanelPlot`
+input$DE_clusterSelectionPanelPlot : `r input$DE_clusterSelectionPanelPlot`
 
-input$panelplotids : `r input$panelplotids`
+input$DE_panelplotids : `r input$DE_panelplotids`
 
 input$de_dim_x : `r input$de_dim_x`
 
 input$de_dim_y : `r input$de_dim_y`
 
-```{r bj-DE-panelPlot, eval=FALSE, echo=FALSE}
+```{r bj-DE-DE_panelPlot, eval=FALSE, echo=FALSE}
 
 #@DO fix
-# output$panelPlot
+# output$DE_panelPlot
 # Quitting from lines 164-211 (/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmpw4FHir/filee53f2f5d5938.Rmd) 
 # Quitting from lines NA-260 (/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmpw4FHir/filee53f2f5d5938.Rmd) 
 # 
@@ -179,9 +179,9 @@ input$de_dim_y : `r input$de_dim_y`
 #   [No stack trace available]
 
 
-if(DEBUG)cat(file=stderr(), "output$panelPlot\n")
+if(DEBUG)cat(file=stderr(), "output$DE_panelPlot\n")
 
-genesin <- input$panelplotids
+genesin <- input$DE_panelplotids
 genesin <- toupper(genesin)
 genesin <- gsub(" ", "", genesin, fixed = TRUE)
 genesin <- strsplit(genesin, ',')
@@ -190,7 +190,7 @@ genesin<-genesin[[1]]
 par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
 rbPal <- colorRampPalette(c('#f0f0f0','red'))
 
-if (input$clusterSelectionPanelPlot == 'All') 
+if (input$DE_clusterSelectionPanelPlot == 'All') 
 {
   for (i in 1:length(genesin)){
     Col <- rbPal(10)[
@@ -207,7 +207,7 @@ if (input$clusterSelectionPanelPlot == 'All')
 }else{
   for (i in 1:length(genesin)){
     
-    subsetTSNE <- subset(projections, dbCluster == input$clusterSelectionPanelPlot)
+    subsetTSNE <- subset(projections, dbCluster == input$DE_clusterSelectionPanelPlot)
     
     Col <- rbPal(10)[
       as.numeric(
@@ -232,10 +232,10 @@ if (input$clusterSelectionPanelPlot == 'All')
 
 ## 3D TSNE plot
 
-```{r bj-DE-tsne_plt, eval=TRUE, echo=FALSE}
-if(DEBUG)cat(file=stderr(), "output$tsne_plt\n")
+```{r bj-DE-DE_tsne_plt, eval=TRUE, echo=FALSE}
+if(DEBUG)cat(file=stderr(), "output$DE_tsne_plt\n")
 geneid <- rownames(featureData[which(featureData$symbol ==
-                                       toupper(input$gene_id)), ])[1]
+                                       toupper(input$DE_gene_id)), ])[1]
 
 expression <- log2cpm[geneid, ]
 
@@ -259,7 +259,7 @@ p <-
       colors = 'Greens'
     )
   )
-layout(p, title = toupper(input$gene_id))
+layout(p, title = toupper(input$DE_gene_id))
 
 ```
 
