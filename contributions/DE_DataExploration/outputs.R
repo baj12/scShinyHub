@@ -176,8 +176,13 @@ output$DE_panelPlot <- renderPlot({
   projections <- projections()
   genesin <- input$DE_panelplotids
   cl4 <- input$DE_clusterSelectionPanelPlot
+<<<<<<< HEAD:contributions/DE_DataExploration/outputs.R
   dimx4 <- input$DE_dim_x
   dimy4 <- input$DE_dim_y
+=======
+  dimx4 <- input$de_dim_x
+  dimy4 <- input$de_dim_y
+>>>>>>> 5086e5a710a9fa9022afdac260eee376be79abfb:contributions/DE_DataExploration/outputs.R
   
   if (is.null(scEx_log) | is.null(projections) | is.null(cl4)) {
     return(NULL)
