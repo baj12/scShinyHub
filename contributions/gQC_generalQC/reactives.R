@@ -118,6 +118,9 @@ tsne <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("tsne", id = "tsne", duration = NULL)
   }
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "gQC_tsneWarning")
+  
   if (DEBUG) cat(file = stderr(), "tsne\n")
   
   pca <- pca()
@@ -132,7 +135,17 @@ tsne <- reactive({
   }
   
   retVal <- tsneFunc(pca, gQC_tsneDim, gQC_tsnePerplexity, gQC_tsneTheta, gQC_tsneSeed)
-
+  if (is.null(tsne)) {
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification(paste("Problem with tsne:", e),
+                       id = "gQC_tsneWarning",
+                       type = "error",
+                       duration = NULL
+      )
+    }
+    return(NULL)
+  }
+  
   printTimeEnd(start.time, "tsne")
   exportTestValues(tsne = {retVal})  
   return(retVal)
@@ -155,16 +168,11 @@ tsneFunc <- function(pca, gQC_tsneDim, gQC_tsnePerplexity, gQC_tsneTheta, gQC_ts
       check_duplicates = FALSE, num_threads = detectCores()
     )
   },
-  error = function(e) {
-    if (!is.null(getDefaultReactiveDomain())) {
-      showNotification(paste("Problem with tsne:", e),
-                       type = "error",
-                       duration = NULL
-      )
-    }
+  error = function(e) {return(NULL)}
+  )
+  if (is.null(tsne)) {
     return(NULL)
   }
-  )
   retVal <- data.frame(tsne$Y)
   colnames(retVal) <- paste0("tsne", c(1:ncol(retVal)))
   return(retVal)

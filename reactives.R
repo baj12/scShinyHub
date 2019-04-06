@@ -1163,48 +1163,48 @@ sampleInfo <- reactive({
 })
 
 
-# # table of input cells with sample information
-# # TODO: used in tableSeletionServer table; should be divided into function and reactive
-# inputSample <- reactive({
-#   start.time <- base::Sys.time()
-#   on.exit(
-#     if (!is.null(getDefaultReactiveDomain())) {
-#       removeNotification(id = "inputSample")
-#     }
-#   )
-#   if (DEBUG) cat(file = stderr(), "inputSample\n")
-#   
-#   dataTables <- inputData()
-# 
-#   if (is.null(dataTables)) {
-#     return(NULL)
-#   }
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     showNotification("inputSample", id = "inputSample", duration = NULL)
-#   }
-#   if (DEBUGSAVE) {
-#     save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(), ls(envir = globalenv())))
-#   }
-#   # load(file='~/scShinyHubDebug/inputSample.RData')
-# 
-#   # TODO should come from sampleInfo
-#   sampInf <- gsub(".*-(.*)", "\\1", dataTables$scEx$barcode)
-#   cellIds <- data.frame(
-#     cellName = colnames(dataTables$scEx),
-#     sample = sampInf,
-#     ngenes = Matrix::colSums(assays(dataTables$scEx)[[1]])
-#   )
-#   
-#   if (DEBUG) {
-#     cat(file = stderr(), "inputSample: done\n")
-#   }
-#   if (dim(cellIds)[1] > 1) {
-#     return(cellIds)
-#   } else {
-#     return(NULL)
-#   }
-# })
-# 
+# table of input cells with sample information
+# TODO: used in tableSeletionServer table; should be divided into function and reactive
+inputSample <- reactive({
+  start.time <- base::Sys.time()
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "inputSample")
+    }
+  )
+  if (DEBUG) cat(file = stderr(), "inputSample\n")
+
+  dataTables <- inputData()
+
+  if (is.null(dataTables)) {
+    return(NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("inputSample", id = "inputSample", duration = NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file='~/scShinyHubDebug/inputSample.RData')
+
+  # TODO should come from sampleInfo
+  sampInf <- gsub(".*-(.*)", "\\1", dataTables$scEx$barcode)
+  cellIds <- data.frame(
+    cellName = colnames(dataTables$scEx),
+    sample = sampInf,
+    ngenes = Matrix::colSums(assays(dataTables$scEx)[[1]])
+  )
+
+  if (DEBUG) {
+    cat(file = stderr(), "inputSample: done\n")
+  }
+  if (dim(cellIds)[1] > 1) {
+    return(cellIds)
+  } else {
+    return(NULL)
+  }
+})
+
 
 getMemoryUsed <- reactive({
   require(pryr)

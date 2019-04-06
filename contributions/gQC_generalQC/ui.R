@@ -54,7 +54,7 @@ tabList <- list(
       ),
       column(
         3,
-        numericInput("gQC_tsneTheta", "Tsne gQC_tsneTheta", 0.5, min = 0.1, max = 10)
+        numericInput("gQC_tsneTheta", "Tsne gQC_tsneTheta", 0.5, min = 0.0, max = 1, step = 0.1)
       ),
       column(
         3,
@@ -91,8 +91,8 @@ tabList <- list(
         selectInput(
           "gQC_col3D",
           label = "colored by",
-          choices = c("tsne1"),
-          selected = "tsne1"
+          choices = c("sampleNames"),
+          selected = "sampleNames"
         )
       )
     ),
