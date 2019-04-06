@@ -1,22 +1,22 @@
 source("reactives.R")
 
-# since scaterPNG is not used frequently it is not included in the heavyCalculations
+# since DE_scaterPNG is not used frequently it is not included in the heavyCalculations
 # list
-# myHeavyCalculations = list(c("scaterPNG", "scaterPNG"))
+# myHeavyCalculations = list(c("DE_scaterPNG", "DE_scaterPNG"))
 
 # Expression ------------------------------------------------------------------
-expCluster <- callModule(
+callModule(
   clusterServer,
-  "expclusters",
+  "DE_expclusters",
   projections,
-  reactive(input$gene_id)
+  reactive(input$DE_gene_id)
 )
 
-# updateInputExpPanel ----
-#' updateInputExpPanel
+# DE_updateInputExpPanel ----
+#' DE_updateInputExpPanel
 #' update x/y coordinates that can be chosen based on available
 #' projections
-updateInputExpPanel <- reactive({
+DE_updateInputExpPanel <- reactive({
   projections <- projections()
 
   # Can use character(0) to remove all choices
@@ -25,22 +25,22 @@ updateInputExpPanel <- reactive({
   }
 
   # Can also set the label and select items
-  updateSelectInput(session, "de_dim_x",
+  updateSelectInput(session, "DE_dim_x",
     choices = colnames(projections),
     selected = colnames(projections)[1]
   )
 
   # Can also set the label and select items
-  updateSelectInput(session, "de_dim_y",
+  updateSelectInput(session, "DE_dim_y",
     choices = colnames(projections),
     selected = colnames(projections)[2]
   )
   return(TRUE)
 })
 
-de_X1 <<- "tsne1"
+DE_X1 <<- "tsne1"
 observe({
-  de_X1 <<- input$de_dim_x
+  DE_X1 <<- input$DE_dim_x
 })
 
 
@@ -49,31 +49,31 @@ observe({
 
 # EXPLORE TAB VIOLIN PLOT ----
 # TODO module for violin plot  ??
-output$gene_vio_plot <- renderPlot({
+output$DE_gene_vio_plot <- renderPlot({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "gene_vio_plot")
+      removeNotification(id = "DE_gene_vio_plot")
     }
   )
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("gene_vio_plot", id = "gene_vio_plot", duration = NULL)
+    showNotification("DE_gene_vio_plot", id = "DE_gene_vio_plot", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "output$gene_vio_plot\n")
+  if (DEBUG) cat(file = stderr(), "output$DE_gene_vio_plot\n")
 
   scEx_log <- scEx_log()
   projections <- projections()
-  g_id <- input$gene_id
+  g_id <- input$DE_gene_id
 
   if (is.null(scEx_log) | is.null(projections)) {
-    if (DEBUG) cat(file = stderr(), "output$gene_vio_plot:NULL\n")
+    if (DEBUG) cat(file = stderr(), "output$DE_gene_vio_plot:NULL\n")
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/gene_vio_plot.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/DE_gene_vio_plot.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/gene_vio_plot.RData")
+  # load(file="~/scShinyHubDebug/DE_gene_vio_plot.RData")
 
 
   featureData <- rowData(scEx_log)
@@ -82,8 +82,6 @@ output$gene_vio_plot <- renderPlot({
   if (length(geneid) == 0) {
     return(NULL)
   }
-  # geneid <- rownames(featureData[which(featureData$symbol ==
-  #                                        toupper(input$gene_id)), ])[1]
 
   # expression <- exprs(scEx_log)[geneid, ]
   if (length(geneid) == 1) {
@@ -125,8 +123,8 @@ output$gene_vio_plot <- renderPlot({
     ylab("Expression") +
     ggtitle(paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
 
-  printTimeEnd(start.time, "gene_vio_plot")
-  exportTestValues(gene_vio_plot = {
+  printTimeEnd(start.time, "DE_gene_vio_plot")
+  exportTestValues(DE_gene_vio_plot = {
     p1
   })
   return(p1)
@@ -134,21 +132,21 @@ output$gene_vio_plot <- renderPlot({
 
 
 ### Panel Plot ----
-#' clusterSelectionPanelPlot
+#' DE_clusterSelectionPanelPlot
 #' update selection options for clusters
 #' since we allow also "all" we have to have a different strategy for the input
 #' it is debateable whether this is usefull to have a different strategy, but for now
 #' we leave it as it.
-output$clusterSelectionPanelPlot <- renderUI({
-  if (DEBUG) cat(file = stderr(), "output$clusterSelectionPanelPlot\n")
+output$DE_clusterSelectionPanelPlot <- renderUI({
+  if (DEBUG) cat(file = stderr(), "output$DE_clusterSelectionPanelPlot\n")
   projections <- projections()
-  upI <- updateInputExpPanel()
+  upI <- DE_updateInputExpPanel()
   if (is.null(projections)) {
     HTML("Please load data")
   } else {
     noOfClusters <- levels(as.factor(projections$dbCluster))
     selectInput(
-      "clusterSelectionPanelPlot",
+      "DE_clusterSelectionPanelPlot",
       label = "Cluster",
       choices = c(c("All"), noOfClusters),
       selected = "All"
@@ -156,38 +154,38 @@ output$clusterSelectionPanelPlot <- renderUI({
   }
 })
 
-# panelPlot ----
-#' panelPlot
+# DE_panelPlot ----
+#' DE_panelPlot
 #' plot multiple panels for a given list of genes
 #' If the x-axis is a categorical value and the y-axis is UMI.counts the y-axis related to 
 #' the count for that gene. Otherwise, all genes are used.
 #' normalized counts are used for plotting
-output$panelPlot <- renderPlot({
+output$DE_panelPlot <- renderPlot({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "panelPlot")
+      removeNotification(id = "DE_panelPlot")
   )
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("panelPlot", id = "panelPlot", duration = NULL)
+    showNotification("DE_panelPlot", id = "DE_panelPlot", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "output$panelPlot\n")
+  if (DEBUG) cat(file = stderr(), "output$DE_panelPlot\n")
   
   scEx_log <- scEx_log()
   projections <- projections()
-  genesin <- input$panelplotids
-  cl4 <- input$clusterSelectionPanelPlot
-  dimx4 <- input$de_dim_x
-  dimy4 <- input$de_dim_y
+  genesin <- input$DE_panelplotids
+  cl4 <- input$DE_clusterSelectionPanelPlot
+  dimx4 <- input$DE_dim_x
+  dimy4 <- input$DE_dim_y
   
   if (is.null(scEx_log) | is.null(projections) | is.null(cl4)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/panelPlot.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/DE_panelPlot.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/panelPlot.RData")
+  # load(file="~/scShinyHubDebug/DE_panelPlot.RData")
   
   genesin <- toupper(genesin)
   genesin <- gsub(" ", "", genesin, fixed = TRUE)
@@ -267,52 +265,52 @@ output$panelPlot <- renderPlot({
     }
   }
   
-  printTimeEnd(start.time, "panelPlot")
-  exportTestValues(panelPlot = {ls()})  
+  printTimeEnd(start.time, "DE_panelPlot")
+  exportTestValues(DE_panelPlot = {ls()})  
   
 })
 
 
 # Scater QC ----
-output$scaterQC <- renderImage({
-  if (DEBUG) cat(file = stderr(), "output$scaterQC\n")
+output$DE_scaterQC <- renderImage({
+  if (DEBUG) cat(file = stderr(), "output$DE_scaterQC\n")
   scaterReads <- scaterReads()
   if (is.null(scaterReads)) {
     return(NULL)
   }
 
-  scaterPNG()
+  DE_scaterPNG()
 })
 
-# tsne_plt ----
+# DE_tsne_plt ----
 # tSNE plot within Data exploration - Expressoin
-output$tsne_plt <- renderPlotly({
+output$DE_tsne_plt <- renderPlotly({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "tsne_plt")
+      removeNotification(id = "DE_tsne_plt")
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne_plt", id = "tsne_plt", duration = NULL)
+    showNotification("DE_tsne_plt", id = "DE_tsne_plt", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "output$tsne_plt\n")
+  if (DEBUG) cat(file = stderr(), "output$DE_tsne_plt\n")
   
   scEx_log <- scEx_log()
-  g_id <- input$gene_id
+  g_id <- input$DE_gene_id
   projections <- projections()
 
   if (is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/tsne_plt.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/DE_tsne_plt.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/tsne_plt.RData")
+  # load(file="~/scShinyHubDebug/DE_tsne_plt.RData")
 
-  retVal <- dataExpltSNEPlot(scEx_log, g_id, projections)
+  retVal <- DE_dataExpltSNEPlot(scEx_log, g_id, projections)
 
-  printTimeEnd(start.time, "dataExpltSNEPlot")
-  exportTestValues(dataExpltSNEPlot = {str(retVal)})  
+  printTimeEnd(start.time, "DE_dataExpltSNEPlot")
+  exportTestValues(DE_dataExpltSNEPlot = {str(retVal)})  
   return(retVal)
 })
 

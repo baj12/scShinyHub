@@ -1,13 +1,13 @@
-#' selectedDge
+#' sCA_selectedDge
 #' stores table with differentially expressed genes
 #' is used to export file and write csv file
-selectedDge <- reactiveValues(
-  dgeTable = data.frame()
+sCA_selectedDge <- reactiveValues(
+  sCA_dgeTable = data.frame()
 )
 
-#' getCells
+#' sCA_getCells
 #' get list of cells from selctions 
-getCells <- function(projections, cl1, db1, db2) {
+sCA_getCells <- function(projections, cl1, db1, db2) {
   dbCluster = projections$dbCluster
   subsetData <- subset(projections, dbCluster %in% cl1)
   cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
@@ -19,13 +19,13 @@ getCells <- function(projections, cl1, db1, db2) {
 #' define different methods for calculating diff. expressed genes
 #' first entry is displayed in Radio box, second is function to be called.
 myDiffExpFunctions = list(
-  c("dge as per CellView", "dge_CellViewfunc"),
-  c("t-test", "dge_ttest")
+  c("dge as per CellView", "sCA_dge_CellViewfunc"),
+  c("t-test", "sCA_dge_ttest")
 )
 
-#' dge_CellViewfunc
+#' sCA_dge_CellViewfunc
 #' calculate differentically expressed genes given 2 sets of cells
-dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
+sCA_dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
   
   featureData <- rowData(scEx_log)
   scEx_log <- as.matrix(assays(scEx_log)[[1]])
@@ -47,9 +47,9 @@ dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
   return(retVal)
 }
 
-#' dge_ttest
+#' sCA_dge_ttest
 #' t-test on selected cells
-dge_ttest <- function(scEx_log, cells.1, cells.2) {
+sCA_dge_ttest <- function(scEx_log, cells.1, cells.2) {
   featureData <- rowData(scEx_log)
   scEx_log <- as.matrix(assays(scEx_log)[[1]])
   subsetExpression <- scEx_log[complete.cases(scEx_log[, union(cells.1, cells.2)]),]
@@ -62,40 +62,40 @@ dge_ttest <- function(scEx_log, cells.1, cells.2) {
   return(retVal)
 }
 
-#' dge
+#' sCA_dge
 #' manage calculation for differential expression analysis
-dge <- reactive({
+sCA_dge <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "dge")
+      removeNotification(id = "sCA_dge")
     }
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("dge", id = "dge", duration = NULL)
+    showNotification("dge", id = "sCA_dge", duration = NULL)
   }
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "dgewarning")
-  if (DEBUG) cat(file = stderr(), "dge\n")
+  if (DEBUG) cat(file = stderr(), "sCA_dge\n")
 
   scEx_log <- scEx_log()
   projections <- projections()
-  cl1 <- input$dgeClustersSelection
+  cl1 <- input$sCA_dgeClustersSelection
   db1 <- input$db1
   db2 <- input$db2
-  method <- input$dgeRadioButton
+  method <- input$sCA_dgeRadioButton
   
   if (is.null(scEx_log) | is.null(projections)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/dge.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/sCA_dge.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file='~/scShinyHubDebug/dge.RData')
+  # load(file='~/scShinyHubDebug/sCA_dge.RData')
   
   methodIdx <- ceiling(which(unlist(diffExpFunctions)== method)/2)
   dgeFunc <- diffExpFunctions[[methodIdx]][2]
-  gCells <- getCells(projections, cl1, db1, db2)
+  gCells <- sCA_getCells(projections, cl1, db1, db2)
   retVal <- do.call(dgeFunc, args = list(scEx_log = scEx_log,
                                          cells.1 = gCells$c1, cells.2 = gCells$c2))
 
@@ -106,10 +106,10 @@ dge <- reactive({
     }
   }
   # update reactiveValue
-  selectedDge$dgeTable <- retVal
+  sCA_selectedDge$sCA_dgeTable <- retVal
   
   printTimeEnd(start.time, "dge")
-  exportTestValues(dge = {retVal})  
+  exportTestValues(sCA_dge = {retVal})  
   return(retVal)
 })
 
@@ -118,10 +118,10 @@ subClusterDim1 <- "PC1"
 subClusterDim2 <- "PC2"
 subClusterClusters <<- NULL
 observe({
-  subClusterDim1 <<- input$subscluster_x1
+  subClusterDim1 <<- input$sCA_subscluster_x1
 })
 observe({
-  subClusterDim2 <<- input$subscluster_y1
+  subClusterDim2 <<- input$sCA_subscluster_y1
 })
 #' TODO
 #' if this observer is really needed we need to get rid of projections
@@ -136,7 +136,7 @@ observe({
   }
 })
 observe({
-  subClusterClusters <<- input$dgeClustersSelection
+  subClusterClusters <<- input$sCA_dgeClustersSelection
 })
 
 
@@ -158,12 +158,12 @@ updateInputSubclusterAxes <- reactive({
   #   projections <- cbind(projections, gn[rownames(projections), ] * 1)
   # }
   # Can also set the label and select items
-  updateSelectInput(session, "subscluster_x1",
+  updateSelectInput(session, "sCA_subscluster_x1",
                     choices = colnames(projections),
                     selected = subClusterDim1
   )
   
-  updateSelectInput(session, "subscluster_y1",
+  updateSelectInput(session, "sCA_subscluster_y1",
                     choices = colnames(projections),
                     selected = subClusterDim2
   )
@@ -171,15 +171,15 @@ updateInputSubclusterAxes <- reactive({
 
 
 # sub cluster analysis ( used for 2 panels )
-output$dgeClustersSelection <- renderUI({
+output$sCA_dgeClustersSelection <- renderUI({
   projections <- projections()
   up1 <- updateInputSubclusterAxes()
   
-  if (DEBUG) cat(file = stderr(), "output$dgeClustersSelection\n")
+  if (DEBUG) cat(file = stderr(), "output$sCA_dgeClustersSelection\n")
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/dgeClustersSelection.RData", list = c(ls(envir = globalenv(), ls(), "subClusterClusters")))
+    save(file = "~/scShinyHubDebug/sCA_dgeClustersSelection.RData", list = c(ls(envir = globalenv(), ls(), "subClusterClusters")))
   }
-  # load(file="~/scShinyHubDebug/dgeClustersSelection.RData")
+  # load(file="~/scShinyHubDebug/sCA_dgeClustersSelection.RData")
   
   
   if (is.null(projections)) {
@@ -188,7 +188,7 @@ output$dgeClustersSelection <- renderUI({
     noOfClusters <- levels(as.factor(projections$dbCluster))
     # noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
     selectizeInput(
-      "dgeClustersSelection",
+      "sCA_dgeClustersSelection",
       label = "Cluster",
       choices = noOfClusters,
       selected = subClusterClusters,
@@ -203,20 +203,20 @@ output$dgeClustersSelection <- renderUI({
 #' outside this function
 subCluster2Dplot <- function() {
   renderPlot({
-    if (DEBUG) cat(file = stderr(), "output$dge_plot2\n")
+    if (DEBUG) cat(file = stderr(), "output$sCA_dge_plot2\n")
     
     projections <- projections()
-    x1 <- input$subscluster_x1
-    y1 <- input$subscluster_y1
-    c1 <- input$dgeClustersSelection
+    x1 <- input$sCA_subscluster_x1
+    y1 <- input$sCA_subscluster_y1
+    c1 <- input$sCA_dgeClustersSelection
 
     if (is.null(projections)) {
       return(NULL)
     }
     if (DEBUGSAVE) {
-      save(file = "~/scShinyHubDebug/dge_plot2.RData", list = c(ls(envir = globalenv(), ls())))
+      save(file = "~/scShinyHubDebug/sCA_dge_plot2.RData", list = c(ls(envir = globalenv(), ls())))
     }
-    # load(file="~/scShinyHubDebug/dge_plot2.RData")
+    # load(file="~/scShinyHubDebug/sCA_dge_plot2.RData")
     
     
     subsetData <- subset(projections, dbCluster %in% c1)

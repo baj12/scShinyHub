@@ -1,22 +1,22 @@
 require(ggplot2)
 
-# scaterPNG ----
-#' scaterPNG 
+# DE_scaterPNG ----
+#' DE_scaterPNG 
 #' reactive to plot highest expressed genes
 #' take quite some time to compute, but since we normally don't need it 
 #' it is not in the heavyCalculations list.
 #' TODO
 #' maybe in a future version there can be a button to enable caclulations
-scaterPNG <- reactive({
+DE_scaterPNG <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "scaterPNG")
+      removeNotification(id = "DE_scaterPNG")
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("scaterPNG", id = "scaterPNG", duration = NULL)
+    showNotification("DE_scaterPNG", id = "DE_scaterPNG", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "scaterPNG\n")
+  if (DEBUG) cat(file = stderr(), "DE_scaterPNG\n")
 
   scaterReads <- scaterReads()
   if (is.null(scaterReads)) {
@@ -69,17 +69,17 @@ scaterPNG <- reactive({
   )
   # end calculation
   
-  printTimeEnd(start.time, "scaterPNG")
-  exportTestValues(scaterPNG = {retVal})  
+  printTimeEnd(start.time, "DE_scaterPNG")
+  exportTestValues(DE_scaterPNG = {retVal})  
   return(retVal)
 })
 
-# dataExpltSNEPlot ---
-#' dataExpltSNEPlot
+# DE_dataExpltSNEPlot ---
+#' DE_dataExpltSNEPlot
 #' plot 3D tSNE in DataExploration - Expression
 #' Here, only the expression of a gene or gene list is shown, compared to the other tSNE plot 
 #' in General QC - tSNE
-dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
+DE_dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
   featureData <- rowData(scEx_log)
   geneid <- geneName2Index(g_id, featureData)
   if (length(geneid) == 0) {
@@ -100,7 +100,7 @@ dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
   names(projections)[ncol(projections)] <- "values"
   if (!all(c("tsne1", "tsne2", "tsne3") %in% colnames(projections))) {
     showNotification("some tsne projections are not available.",
-                     id = "tsne_pltERROR",
+                     id = "DE_tsne_pltERROR",
                      duration = NULL, type = "error"
     )
   }

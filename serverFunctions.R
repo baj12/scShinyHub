@@ -124,7 +124,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
   names(projections)[ncol(projections)] <- "exprs"
   
   if (DEBUG) {
-    cat(file = stderr(), paste("output$dge_plot1:---", clId[1], "---\n"))
+    cat(file = stderr(), paste("output$sCA_dge_plot1:---", clId[1], "---\n"))
   }
   subsetData <- subset(projections, dbCluster %in% clId)
   # subsetData$dbCluster = factor(subsetData$dbCluster)

@@ -4,10 +4,10 @@ require(SingleCellExperiment)
 
 # here we define reactive values/variables
 
-# scaterReadsFunc ----
-#' scaterReadsFunc
+# gQC_scaterReadsFunc ----
+#' gQC_scaterReadsFunc
 #' calculate the QC metrix and return updated singleCellExperiment object
-scaterReadsFunc <- function(scEx) {
+gQC_scaterReadsFunc <- function(scEx) {
 
   if (class(assays(scEx)[["counts"]]) == "dgTMatrix") {
     assays(scEx)[["counts"]] = as(assays(scEx)[["counts"]], "dgCMatrix")
@@ -54,7 +54,7 @@ scaterReads <- reactive({
   if (is.null(scEx)) {
     return(NULL)
   }
-  retVal <- scaterReadsFunc(scEx)
+  retVal <- gQC_scaterReadsFunc(scEx)
 
   printTimeEnd(start.time, "scaterReads")
   exportTestValues(scaterReads = {str(retVal)})  
@@ -62,10 +62,10 @@ scaterReads <- reactive({
 })
 
 
-# sampleHistFunc ----
-#' sampleHistFunc
+# gQC_sampleHistFunc ----
+#' gQC_sampleHistFunc
 #' create a histogram from samples
-sampleHistFunc <- function(samples, scols) {
+gQC_sampleHistFunc <- function(samples, scols) {
   counts <- table(samples)
   barplot(counts,
           main = "histogram of number of cell per sample",
@@ -121,25 +121,25 @@ tsne <- reactive({
   if (DEBUG) cat(file = stderr(), "tsne\n")
   
   pca <- pca()
-  tsneDim <- input$tsneDim
-  tsnePerplexity <- input$tsnePerplexity
-  tsneTheta <- input$tsneTheta
-  tsneSeed <- input$tsneSeed
+  gQC_tsneDim <- input$gQC_tsneDim
+  gQC_tsnePerplexity <- input$gQC_tsnePerplexity
+  gQC_tsneTheta <- input$gQC_tsneTheta
+  gQC_tsneSeed <- input$gQC_tsneSeed
   
   if (is.null(pca)) {
     if (DEBUG) cat(file = stderr(), "tsne: NULL\n")
     return(NULL)
   }
   
-  retVal <- tsneFunc(pca, tsneDim, tsnePerplexity, tsneTheta, tsneSeed)
+  retVal <- tsneFunc(pca, gQC_tsneDim, gQC_tsnePerplexity, gQC_tsneTheta, gQC_tsneSeed)
 
   printTimeEnd(start.time, "tsne")
   exportTestValues(tsne = {retVal})  
   return(retVal)
 })
 
-tsneFunc <- function(pca, tsneDim, tsnePerplexity, tsneTheta, tsneSeed) {
-  set.seed(seed = tsneSeed)
+tsneFunc <- function(pca, gQC_tsneDim, gQC_tsnePerplexity, gQC_tsneTheta, gQC_tsneSeed) {
+  set.seed(seed = gQC_tsneSeed)
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(), ls(envir = globalenv())))
   }
@@ -149,9 +149,9 @@ tsneFunc <- function(pca, tsneDim, tsnePerplexity, tsneTheta, tsneSeed) {
   np = dim(pca$x)[2]
   tsne <- tryCatch({
     Rtsne::Rtsne(
-      pca$x[,1:np], pca = FALSE, dims = tsneDim,
-      perplexity = tsnePerplexity,
-      theta = tsneTheta,
+      pca$x[,1:np], pca = FALSE, dims = gQC_tsneDim,
+      perplexity = gQC_tsnePerplexity,
+      theta = gQC_tsneTheta,
       check_duplicates = FALSE, num_threads = detectCores()
     )
   },
@@ -186,7 +186,7 @@ umapReact <- reactive({
   if (DEBUG) cat(file = stderr(), "umapReact started.\n")
   
   scEx_log <- scEx_log()
-  myseed <- input$um_randSeed
+  myseed <- input$gQC_um_randSeed
   xaxis <- input$um_xaxis
   yaxis <- input$um_yaxis
   cellT <- input$um_ct
@@ -198,19 +198,19 @@ umapReact <- reactive({
   UMAP2 <- input$um_umap2
   runUMAP <- input$activateUMAP
   
-  n_neighbors <- as.numeric(input$um_n_neighbors)
-  n_components <- as.numeric(input$um_n_components)
-  n_epochs <- as.numeric(input$um_n_epochs)
+  n_neighbors <- as.numeric(input$gQC_um_n_neighbors)
+  n_components <- as.numeric(input$gQC_um_n_components)
+  n_epochs <- as.numeric(input$gQC_um_n_epochs)
   alpha <- as.numeric(input$um_alpha)
-  init <- input$um_init
-  min_dist <- as.numeric(input$um_min_dist)
-  set_op_mix_ratio <- as.numeric(input$um_set_op_mix_ratio)
-  local_connectivity <- as.numeric(input$um_local_connectivity)
-  bandwidth <- as.numeric(input$um_bandwidth)
+  init <- input$gQC_um_init
+  min_dist <- as.numeric(input$gQC_um_min_dist)
+  set_op_mix_ratio <- as.numeric(input$gQC_um_set_op_mix_ratio)
+  local_connectivity <- as.numeric(input$gQC_um_local_connectivity)
+  bandwidth <- as.numeric(input$gQC_um_bandwidth)
   gamma <- as.numeric(input$um_gamma)
-  negative_sample_rate <- as.numeric(input$um_negative_sample_rate)
-  metric <- input$um_metric
-  spread <- as.numeric(input$um_spread)
+  negative_sample_rate <- as.numeric(input$gQC_um_negative_sample_rate)
+  metric <- input$gQC_um_metric
+  spread <- as.numeric(input$gQC_um_spread)
   
   if (is.null(scEx_log)) {
     if (DEBUG) cat(file = stderr(), "output$umap_react:NULL\n")

@@ -3,7 +3,7 @@
 
 # choice for the radio buttion
 myNormalizationChoices <- list(
-  scEx_log = "scEx_logNormalization"
+  scEx_log = "DE_logNormalization"
 )
 
 # value should be of class shiny.tag
@@ -12,45 +12,45 @@ myNormalizationParameters <- list(
   scEx_log = h5("no Parameters implemented")
 )
 
-# scEx_logNormalization ----
-#' scEx_logNormalization
+# DE_logNormalization ----
+#' DE_logNormalization
 #' reactive for normalizing data according to seurat
-scEx_logNormalization <- reactive({
+DE_logNormalization <- reactive({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "scEx_logNormalization")
+      removeNotification(id = "DE_logNormalization")
   )
-  if (DEBUG) cat(file = stderr(), "scEx_logNormalization\n")
+  if (DEBUG) cat(file = stderr(), "DE_logNormalization\n")
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("scEx_logNormalization", id = "scEx_logNormalization", duration = NULL)
+    showNotification("DE_logNormalization", id = "DE_logNormalization", duration = NULL)
   }
   
   scEx <- scEx()
   
   if (is.null(scEx)) {
     if (DEBUG) {
-      cat(file = stderr(), "scEx_logNormalization:NULL\n")
+      cat(file = stderr(), "DE_logNormalization:NULL\n")
     }
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/scEx_logNormalization.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/DE_logNormalization.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/scEx_logNormalization.RData")
+  # load(file="~/scShinyHubDebug/DE_logNormalization.RData")
   
   # TODO ?? define scaling factor somewhere else???
   sfactor = max(max(assays(scEx)[["counts"]]),1000)
-  retVal <- scEx_logNormalizationfunc(scEx, scalingFactor = sfactor)
+  retVal <- DE_logNormalizationfunc(scEx, scalingFactor = sfactor)
   
-  printTimeEnd(start.time, "scEx_logNormalization")
-  exportTestValues(scEx_logNormalization = {assays(retVal)[["logcounts"]]})  
+  printTimeEnd(start.time, "DE_logNormalization")
+  exportTestValues(DE_logNormalization = {assays(retVal)[["logcounts"]]})  
   return(retVal)
 })
 
-#' scEx_logNormalizationfunc
+#' DE_logNormalizationfunc
 #' actual computation of the normalization as it is done in seurat
-scEx_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
+DE_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
   use_genes <- sort(unique(1 + slot(as(assays(scEx)[["counts"]], "dgTMatrix"), 
                                     "i")))
   

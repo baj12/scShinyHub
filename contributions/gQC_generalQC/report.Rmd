@@ -123,7 +123,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
           sizeref = 3
         )
     )
-  if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
+  if(DEBUG)cat(file=stderr(), "output$gQC_tsne_main: done\n")
   layout(p)
   
 
@@ -133,14 +133,14 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 ## UMI histogram
 
 
-```{r plotUmiHist, eval=TRUE, echo=FALSE}
+```{r gQC_plotUmiHist, eval=TRUE, echo=FALSE}
 
 hist(Matrix::colSums(assays(scEx)[["counts"]]), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs
 
-```{r variancePCA, eval=TRUE, echo=FALSE}
+```{r gQC_variancePCA, eval=TRUE, echo=FALSE}
 # if(exists("pca$var_pcs")){
   barplot(pca$var_pcs, main="Variance captured by first PCs")
 # }
@@ -154,7 +154,7 @@ if(DEBUGSAVE)
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
 sampleInf <- sampleInfoFunc(scEx)
 scols = sampleCols$colPal
-sampleHistFunc(sampleInf, scols)
+gQC_sampleHistFunc(sampleInf, scols)
 ```
 
 ## TSNE plot
@@ -162,15 +162,15 @@ sampleHistFunc(sampleInf, scols)
 ```{r bj-GC-tsne, echo=FALSE}
 
 
-  dimX = input$dim3D_x
-  dimY = input$dim3D_y
-  dimZ = input$dim3D_z
-  dimCol = input$col3D
+  dimX = input$gQC_dim3D_x
+  dimY = input$gQC_dim3D_y
+  dimZ = input$gQC_dim3D_z
+  dimCol = input$gQC_col3D
   
   
   if (DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(),ls(envir = globalenv())))
-  # load(file="~/scShinyHubDebug/tsne_main.RData")
+    save(file = "~/scShinyHubDebug/gQC_tsne_main.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/gQC_tsne_main.RData")
   
   projections <- as.data.frame(projections)
   

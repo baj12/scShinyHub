@@ -18,21 +18,21 @@ if (is.null(input$db1) | is.null(input$db2)) {
 
 ## Plot 1
 
-  x1 = `r input$subscluster_x1`
+  x1 = `r input$sCA_subscluster_x1`
   
-  y1 = `r input$subscluster_y1`
+  y1 = `r input$sCA_subscluster_y1`
   
-  c1 = `r input$dgeClustersSelection`
+  c1 = `r input$sCA_dgeClustersSelection`
   
   gn <- `r dim(groupNames$namesDF)`
 
 
 
-```{r selectedDge1, eval=TRUE, echo=FALSE}
+```{r sCA_selectedDge1, eval=TRUE, echo=FALSE}
 # TODO module?  
-  x1 = input$subscluster_x1
-  y1 = input$subscluster_y1
-  c1 = input$dgeClustersSelection
+  x1 = input$sCA_subscluster_x1
+  y1 = input$sCA_subscluster_y1
+  c1 = input$sCA_dgeClustersSelection
   gn <- groupNames$namesDF
 
   
@@ -80,13 +80,13 @@ if (is.null(input$db1) | is.null(input$db2)) {
 
   gn <- `r dim(groupNames$namesDF)`
   
-  inpCl1 <- `r input$dgeClustersSelection`
+  inpCl1 <- `r input$sCA_dgeClustersSelection`
 
 
 ```{r dgePlot2, echo=FALSE}
 
   gn <- groupNames$namesDF
-  inpCl1 <- input$dgeClustersSelection
+  inpCl1 <- input$sCA_dgeClustersSelection
   
   xmin <- input$db2$xmin
   xmax <- input$db2$xmax
@@ -98,7 +98,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
   # load(file = "~/scShinyHubDebug/dge.Rmd.RData")
   p1 <-
     ggplot(subsetData,
-           aes_string(x = input$subscluster_y1, y = input$dimension_y1),
+           aes_string(x = input$sCA_subscluster_y1, y = input$dimension_y1),
            color = "dbCluster") +
     geom_point(aes(colour = dbCluster)) +
     geom_point(shape = 1,
@@ -122,7 +122,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
       axis.title.y = element_text(face = "bold", size = 16),
       legend.position = "none"
     ) +
-    ggtitle(input$dgeClustersSelection)
+    ggtitle(input$sCA_dgeClustersSelection)
   p1
 
 ```
@@ -132,14 +132,14 @@ if (is.null(input$db1) | is.null(input$db2)) {
 
   gn <- `r dim(groupNames$namesDF)`
   
-  cl1 = `r input$dgeClustersSelection`
+  cl1 = `r input$sCA_dgeClustersSelection`
   
   
 
 ```{r DGETable, eval=TRUE, echo=FALSE}
   gn <- groupNames$namesDF
   
-  cl1 = input$dgeClustersSelection
+  cl1 = input$sCA_dgeClustersSelection
   db1 = input$db1
   db2 = input$db2
   prj <- projections
@@ -156,7 +156,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
       showNotification("dge: nothing found", id="dgewarning", duration = 10, type = 'warning')
     }
   }
-  # selectedDge$dgeTable <- toReturn
+  # sCA_selectedDge$sCA_dgeTable <- toReturn
   # cat(stderr(), rownames(toReturn)[1:5])
 
   # toReturn

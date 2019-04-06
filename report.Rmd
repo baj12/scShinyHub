@@ -107,9 +107,9 @@ if (is.null(input$clusters)) {
   input$clusters <- "0"
   print("Warning: setting clusters to 0")
 }
-if (is.null(input$dgeClustersSelection)) {
-  input$dgeClustersSelection <- "0"
-  print("Warning: setting dgeClustersSelection to All")
+if (is.null(input$sCA_dgeClustersSelection)) {
+  input$sCA_dgeClustersSelection <- "0"
+  print("Warning: setting sCA_dgeClustersSelection to All")
 }
 if (is.null(input$clusters2)) {
   input$clusters2 <- "0"
@@ -119,8 +119,8 @@ if (is.null(input$clusters3)) {
   input$clusters3 <- "0"
   print("Warning: setting clusters4 to 0")
 }
-if (is.null(input$clusterSelectionPanelPlot)) {
-  input$clusterSelectionPanelPlot <- "All"
+if (is.null(input$DE_clusterSelectionPanelPlot)) {
+  input$DE_clusterSelectionPanelPlot <- "All"
   print("Warning: setting clusters4 to All")
 }
 ```
@@ -254,19 +254,19 @@ seed <- 1
 if (DEBUG) cat(file = stderr(), "kmClustering:done\n")
 ```
 
-Creating `r input$tsneDim` tSNE clusters.
+Creating `r input$gQC_tsneDim` tSNE clusters.
 
 ```{r tsne, eval=TRUE, echo=FALSE}
 if (DEBUG) cat(file = stderr(), "tsne\n")
-tsneDim <- input$tsneDim
-tsnePerplexity <- input$tsnePerplexity
-tsneTheta <- input$tsneTheta
-tsneSeed <- input$tsneSeed
-set.seed(seed = tsneSeed)
+gQC_tsneDim <- input$gQC_tsneDim
+gQC_tsnePerplexity <- input$gQC_tsnePerplexity
+gQC_tsneTheta <- input$gQC_tsneTheta
+gQC_tsneSeed <- input$gQC_tsneSeed
+set.seed(seed = gQC_tsneSeed)
 tsne <- run_tsne(pca,
-  dims = tsneDim,
-  perplexity = tsnePerplexity,
-  theta = tsneTheta, check_duplicates = FALSE
+  dims = gQC_tsneDim,
+  perplexity = gQC_tsnePerplexity,
+  theta = gQC_tsneTheta, check_duplicates = FALSE
 )
 
 if (DEBUG) cat(file = stderr(), "tsne: done\n")

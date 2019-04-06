@@ -4,23 +4,23 @@ myZippedReportFiles <- c("DGE.csv")
 
 
 
-# dge_plot1 ----
-#' dge_plot1
+# sCA_dge_plot1 ----
+#' sCA_dge_plot1
 #' left plot for selection of cells
-output$dge_plot1 <- subCluster2Dplot()
+output$sCA_dge_plot1 <- subCluster2Dplot()
 # SUBCLUSTER DGE PLOT2 -----
-#' dge_plot2
+#' sCA_dge_plot2
 #' right plot
-output$dge_plot2 <- subCluster2Dplot()
+output$sCA_dge_plot2 <- subCluster2Dplot()
 
-# dgeTable ----
-#' dgeTable
+# sCA_dgeTable ----
+#' sCA_dgeTable
 #' Table with differential expressed genes
 
-dgeTableReac <- reactive({
+sCA_dgeTableReac <- reactive({
   if (DEBUG) cat(file = stderr(), "output$dge\n")
   scEx <- scEx()
-  top.genes <- dge()
+  top.genes <- sCA_dge()
   
   if (is.null(scEx)) {
     return(NULL)
@@ -45,22 +45,13 @@ dgeTableReac <- reactive({
   
 })
 
-# projectionTableMod ----
+# dge table ----
 callModule(
   tableSelectionServer, 
-  "dgeTable", 
-  dgeTableReac)
+  "sCA_dgeTable", 
+  sCA_dgeTableReac)
 
 
-# download differentially expressed genes
-output$download_dge_table <- downloadHandler(
-  filename = function() {
-    paste("SubCluster", "DGE_table.csv", sep = "_")
-  },
-  content = function(file) {
-    write.csv(selectedDge$dgeTable, file)
-  }
-)
 
 
 

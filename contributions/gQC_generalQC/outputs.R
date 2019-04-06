@@ -6,27 +6,27 @@ myZippedReportFiles <- c("gqcProjections.csv")
 
 
 
-gqcX1 <<- "tsne1"
-gqcX2 <<- "tsne2"
-gqcX3 <<- "tsne3"
-gqcCol <<- "sampleNames"
+gQC_X1 <<- "tsne1"
+gQC_X2 <<- "tsne2"
+gQC_X3 <<- "tsne3"
+gQC_col <<- "sampleNames"
 observe({
-  gqcX1 <<- input$dim3D_x
+  gQC_X1 <<- input$gQC_dim3D_x
 })
 observe({
-  gqcX2 <<- input$dim3D_y
+  gQC_X2 <<- input$gQC_dim3D_y
 })
 observe({
-  gqcX3 <<- input$dim3D_z
+  gQC_X3 <<- input$gQC_dim3D_z
 })
 observe({
-  gqcCol <<- input$col3D
+  gQC_col <<- input$gQC_col3D
 })
 
-# update3DInput ----
-#' update3DInput
+# gQC_update3DInput ----
+#' gQC_update3DInput
 #' update axes for tsne display
-update3DInput <- reactive({
+gQC_update3DInput <- reactive({
   projections <- projections()
   
   # Can use character(0) to remove all choices
@@ -36,53 +36,53 @@ update3DInput <- reactive({
   # choices = colnames(projections)[unlist(lapply(colnames(projections), function(x) !is.factor(projections[,x])))]
   choices = colnames(projections)
   # Can also set the label and select items
-  updateSelectInput(session, "dim3D_x",
+  updateSelectInput(session, "gQC_dim3D_x",
                     choices = choices,
-                    selected = gqcX1
+                    selected = gQC_X1
   )
   
-  updateSelectInput(session, "dim3D_y",
+  updateSelectInput(session, "gQC_dim3D_y",
                     choices = choices,
-                    selected = gqcX2
+                    selected = gQC_X2
   )
-  updateSelectInput(session, "dim3D_z",
+  updateSelectInput(session, "gQC_dim3D_z",
                     choices = choices,
-                    selected = gqcX3
+                    selected = gQC_X3
   )
-  updateSelectInput(session, "col3D",
+  updateSelectInput(session, "gQC_col3D",
                     choices = colnames(projections),
-                    selected = gqcCol
+                    selected = gQC_col
   )
 })
 
-# tsne_main ----
-output$tsne_main <- renderPlotly({
+# gQC_tsne_main ----
+output$gQC_tsne_main <- renderPlotly({
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "tsne_main")
+      removeNotification(id = "gQC_tsne_main")
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("tsne_main", id = "tsne_main", duration = NULL)
+    showNotification("gQC_tsne_main", id = "gQC_tsne_main", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "output$tsne_main\n")
+  if (DEBUG) cat(file = stderr(), "output$gQC_tsne_main\n")
   
-  upI <- update3DInput()
+  upI <- gQC_update3DInput()
   projections <- projections()
-  dimX <- input$dim3D_x
-  dimY <- input$dim3D_y
-  dimZ <- input$dim3D_z
-  dimCol <- input$col3D
+  dimX <- input$gQC_dim3D_x
+  dimY <- input$gQC_dim3D_y
+  dimZ <- input$gQC_dim3D_z
+  dimCol <- input$gQC_col3D
   scols <- sampleCols$colPal
   
   if (is.null(projections)) {
-    if (DEBUG) cat(file = stderr(), "output$tsne_main:NULL\n")
+    if (DEBUG) cat(file = stderr(), "output$gQC_tsne_main:NULL\n")
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/gQC_tsne_main.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/tsne_main.RData")
+  # load(file="~/scShinyHubDebug/gQC_tsne_main.RData")
   
   retVal <- tsnePlot(projections, dimX, dimY, dimZ, dimCol, scols)
   
@@ -125,22 +125,22 @@ tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols) {
   return(p)
 }
 
-# umap_main 2D plot ----
+# gQC_umap_main 2D plot ----
 callModule(
   clusterServer,
-  "umap_main",
+  "gQC_umap_main",
   projections
 )
 
-# projectionTableMod ----
+# gQC_projectionTableMod ----
 callModule(
   tableSelectionServer, 
-  "projectionTableMod", 
+  "gQC_projectionTableMod", 
   projectionTable)
 
-# plotUmiHist ----
-output$plotUmiHist <- renderPlot({
-  if (DEBUG) cat(file = stderr(), "output_plotUmiHist\n")
+# gQC_plotUmiHist ----
+output$gQC_plotUmiHist <- renderPlot({
+  if (DEBUG) cat(file = stderr(), "output_gQC_plotUmiHist\n")
   scEx <- scEx()
   scols <- sampleCols$colPal
   
@@ -148,9 +148,9 @@ output$plotUmiHist <- renderPlot({
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/plotUmiHist.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/gQC_plotUmiHist.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file = "~/scShinyHubDebug/plotUmiHist.RData")
+  # load(file = "~/scShinyHubDebug/gQC_plotUmiHist.RData")
 
   dat <- data.frame(counts = Matrix::colSums(assays(scEx)[["counts"]]))
   dat$sample <- colData(scEx)$sampleNames
@@ -161,7 +161,7 @@ output$plotUmiHist <- renderPlot({
   
 })
 
-output$plotSampleHist <- renderPlot({
+output$gQC_plotSampleHist <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output_sampleHist\n")
   sampleInf <- sampleInfo()
   scols <- sampleCols$colPal
@@ -173,11 +173,11 @@ output$plotSampleHist <- renderPlot({
     save(file = "~/scShinyHubDebug/sampleHist.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file = "~/scShinyHubDebug/sampleHist.RData")
-  sampleHistFunc(sampleInf, scols)
+  gQC_sampleHistFunc(sampleInf, scols)
 })
 
-output$variancePCA <- renderPlot({
-  if (DEBUG) cat(file = stderr(), "output$variancePCA\n")
+output$gQC_variancePCA <- renderPlot({
+  if (DEBUG) cat(file = stderr(), "output$gQC_variancePCA\n")
   h2("Variances of PCs")
   pca <- pca()
   if (is.null(pca)) {

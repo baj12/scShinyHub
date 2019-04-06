@@ -149,7 +149,7 @@ shinyServer(function(input, output, session) {
       }
     }
   }
-  updateRadioButtons(session = session, inputId = "dgeRadioButton",
+  updateRadioButtons(session = session, inputId = "sCA_dgeRadioButton",
                      choices = dgeChoices)
   # make variable global
   diffExpFunctions <<- diffExpFunctions

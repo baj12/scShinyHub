@@ -98,12 +98,12 @@ do.call(pheatmap, heatmapData)
 
 ```{r violinPlot}
   featureData <- featuredata
-  # geneListStr <- input$geneGrpVioIds
+  # geneListStr <- input$coE_geneGrpVioIds
   geneListStr = genesin
-  projectionVar <- input$dimension_xVioiGrp
+  projectionVar <- input$coE_dimension_xVioiGrp
   minExpr <- input$coEminExpr
   sampCol = sampleCols$colPal
-  retVal <- geneGrp_vioFunc(
+  retVal <- coE_geneGrp_vioFunc(
     genesin = geneListStr,
     projections = proje,
     scEx = scEx,
