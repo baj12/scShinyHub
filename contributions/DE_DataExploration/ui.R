@@ -3,11 +3,7 @@
 menuList <- list(
   menuItem("Data Exploration",
     tabName = "expore", startExpanded = FALSE,
-<<<<<<< HEAD:contributions/DE_DataExploration/ui.R
     menuSubItem("Expression", tabName = "DE_expression"),
-=======
-    menuSubItem("Expression", tabName = "expression"),
->>>>>>> 5086e5a710a9fa9022afdac260eee376be79abfb:contributions/DE_DataExploration/ui.R
     menuSubItem("Panel plot", tabName = "DE_panelPlot"),
     menuSubItem("Scater QC", tabName = "DE_scaterQC")
   )
