@@ -130,7 +130,7 @@ output$selectedGenesTable <- DT::renderDataTable({
   # load("~/scShinyHubDebug/selectedGenesTable.RData")
   
   scEx <- assays(dataTables$scEx)[[1]]
-  fd <- dataTables$featuredata
+  fd <- rowData(dataTables$scEx)
   dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
   dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
@@ -157,7 +157,7 @@ output$removedGenesTable <- DT::renderDataTable({
   }
   # load("~/scShinyHubDebug/removedGenesTable.RData")
   scEx <- assays(dataTables$scEx)[[1]]
-  fd <- dataTables$featuredata
+  fd <- rowData(dataTables$scEx)
   dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   dt$rowSums <- Matrix::rowSums(scEx[useGenes, useCells])
   dt$rowSamples <- Matrix::rowSums(scEx[useGenes, useCells] > 0)
@@ -185,7 +185,7 @@ output$gsSelectedGenes <- renderText({
   # load("~/scShinyHubDebug/gsSelectedGenes.RData")
   
   # scEx <- as.matrix(exprs(dataTables$scEx))
-  fd <- dataTables$featuredata
+  fd <- rowData(dataTables$scEx)
   dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   retVal <- paste0(dt$symbol[selectedGenesTable_rows_selected], ",")
   exportTestValues(gsSelectedGenes = { retVal })
@@ -209,9 +209,9 @@ output$gsrmGenes <- renderText({
     save(file = "~/scShinyHubDebug/gsrmGenes.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
   }
   # load("~/scShinyHubDebug/gsrmGenes.RData")
-  
+  useGenes = !useGenes
   # scEx <- as.matrix(exprs(dataTables$scEx))
-  fd <- dataTables$featuredata
+  fd <- rowData(dataTables$scEx)
   dt <- fd[useGenes, c("symbol", "Gene.Biotype", "Description")]
   if (DEBUG) {
     cat(file = stderr(), "gsrmGenes: done\n")
@@ -270,15 +270,49 @@ output$sampleColorSelection <- renderUI({
   })
 })
 
+# clusterColorSelection ----
+output$clusterColorSelection <- renderUI({ 
+  scEx <- scEx()
+  projections = projections()
+  clusterCol = clusterCols$colPal
+  
+  if (is.null(scEx) || is.null(projections)) {
+    return(NULL)
+  }
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/clusterColorSelection.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
+  }
+  # load("~/scShinyHubDebug/clusterColorSelection.RData")
+  
+  lev <- levels(projections$dbCluster)
+  # cols <- gg_fill_hue(length(lev))
+  
+  # New IDs "colX1" so that it partly coincide with input$select...
+  lapply(seq_along(lev), function(i) {
+    colourpicker::colourInput(inputId = paste0("clusterNamecol", lev[i]),
+                              label = paste0("Choose colour for cluster ","\"", lev[i],"\""), 
+                              # value = "#762A83"
+                              # ,
+                              value = clusterCol[i],
+                              allowedCols = allowedColors,
+                              palette = "limited"
+    )        
+  })
+})
+
 
 # observe: input$updateColors ----
 observeEvent(input$updateColors, {
   cat(file = stderr(), paste0("observeEvent input$updateColors\n"))
   scExx <- scEx()
-  if (is.null(scExx) ) {
+  projections <- projections()
+  
+  if (is.null(scExx) || is.null(projections)) {
     return(NULL)
   }
+  #sample colors
   scols = sampleCols$colPal
+  
   inCols = list()
   lev <- levels(colData(scExx)$sampleNames)
   
@@ -292,9 +326,29 @@ observeEvent(input$updateColors, {
   }
   # load(file="~/scShinyHubDebug/updateColors.RData")
   
-  isolate({
-    sampleCols$colPal = unlist(inCols)
+  # isolate({
+  sampleCols$colPal = unlist(inCols)
+  # })
+  
+  #cluster colors
+  ccols <- clusterCols$colPal
+  
+  inCols = list()
+  lev <- levels(projections$dbCluster)
+  
+  inCols <- lapply(seq_along(lev), function(i){
+    input[[paste0("clusterNamecol", lev[i])]]
   })
+  names(inCols) = lev
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/updateColors2.RData", list = c(ls(), ls(envir = globalenv())))
+    cat(file = stderr(), paste0("observeEvent 2 save done\n"))
+  }
+  # load(file="~/scShinyHubDebug/updateColors2.RData")
+  
+  # isolate({
+  clusterCols$colPal = unlist(inCols)
+  # })
 })
 
 # Nclusters ----

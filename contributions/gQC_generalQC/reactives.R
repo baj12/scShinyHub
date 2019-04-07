@@ -7,9 +7,10 @@ require(SingleCellExperiment)
 # gQC_scaterReadsFunc ----
 #' gQC_scaterReadsFunc
 #' calculate the QC metrix and return updated singleCellExperiment object
+#' TODO make the 200 a parameter
 gQC_scaterReadsFunc <- function(scEx) {
 
-  if (class(assays(scEx)[["counts"]]) == "dgTMatrix") {
+  if (class(assays(scEx)[[1]]) == "dgTMatrix") {
     assays(scEx)[["counts"]] = as(assays(scEx)[["counts"]], "dgCMatrix")
   }
   

@@ -90,6 +90,8 @@ dimX <- input$"DE_expclusters-dimension_x"
 dimY <- input$"DE_expclusters-dimension_y"
 divXBy <- input$devideXBy
 divYBy <- input$devideYBy
+scols <- sampleCols$colPal
+ccols <- clusterCols$colPal
 
 legend.position <- "none"
 grpN <- make.names(input$groupName)
@@ -97,10 +99,19 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
+ if (dimCol == "sampleNames") {
+    myColors <- scols
+  } else {
+    myColors <- NULL
+  }
+if (dimCol == "dbCluster") {
+    myColors <- ccols
+  }
 
-plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames, 
+
+plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames, 
                  geneNames2, dimX, dimY, clId, grpN, legend.position, 
-                 grpNs = groupNames$namesDF, divXBy = divXBy, divYBy = divYBy)
+                 grpNs = groupNames$namesDF, divXBy = divXBy, divYBy = divYBy, dimCol = dimCol, colors = myColors)
 
 ```
 
@@ -120,7 +131,7 @@ plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
     rownames(featureData[which(featureData$symbol %in% genesin[[1]]), ])
   
  # expression <- Matrix::colSums(exprs(scEx[map, ]) >= minExpr)
- expression <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr)
+ expression <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr)
 
   projections <- cbind(projections, coExpVal = expression)
   # if(class(projections[,dbCluster])=="factor"){

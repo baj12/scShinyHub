@@ -51,13 +51,13 @@ DE_logNormalization <- reactive({
 #' DE_logNormalizationfunc
 #' actual computation of the normalization as it is done in seurat
 DE_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
-  use_genes <- sort(unique(1 + slot(as(assays(scEx)[["counts"]], "dgTMatrix"), 
+  use_genes <- sort(unique(1 + slot(as(assays(scEx)[[1]], "dgTMatrix"), 
                                     "i")))
   
-  bc_sums <- Matrix::colSums(assays(scEx)[["counts"]])
+  bc_sums <- Matrix::colSums(assays(scEx)[[1]])
   median_sum <- median(bc_sums)
-  A <- as(assays(scEx)[["counts"]], "dgCMatrix")
-  A@x <- A@x / Matrix::colSums(A)[assays(scEx)[["counts"]]@j + 1L]
+  A <- as(assays(scEx)[[1]], "dgCMatrix")
+  A@x <- A@x / Matrix::colSums(A)[assays(scEx)[[1]]@j + 1L]
   scEx_bcnorm <- SingleCellExperiment(assay = list(logcounts = as(A,"dgTMatrix")),
                                       colData = colData(scEx),
                                       rowData = rowData(scEx))

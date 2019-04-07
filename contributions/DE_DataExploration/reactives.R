@@ -113,7 +113,9 @@ DE_dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
       z = ~tsne3,
       type = "scatter3d",
       hoverinfo = "text",
-      text = paste("Cluster:", as.numeric(as.character(projections$dbCluster))),
+      text = ~ paste(1:nrow(projections), " ", rownames(projections), "<br />",
+            "Cluster:", as.numeric(as.character(projections$dbCluster))),
+      # text = paste("Cluster:", as.numeric(as.character(projections$dbCluster))),
       mode = "markers",
       marker = list(
         size = 2,

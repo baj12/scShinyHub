@@ -74,6 +74,7 @@ output$gQC_tsne_main <- renderPlotly({
   dimZ <- input$gQC_dim3D_z
   dimCol <- input$gQC_col3D
   scols <- sampleCols$colPal
+  ccols <- clusterCols$colPal
   
   if (is.null(projections)) {
     if (DEBUG) cat(file = stderr(), "output$gQC_tsne_main:NULL\n")
@@ -84,7 +85,7 @@ output$gQC_tsne_main <- renderPlotly({
   }
   # load(file="~/scShinyHubDebug/gQC_tsne_main.RData")
   
-  retVal <- tsnePlot(projections, dimX, dimY, dimZ, dimCol, scols)
+  retVal <- tsnePlot(projections, dimX, dimY, dimZ, dimCol, scols, ccols)
   
   printTimeEnd(start.time, "tsnePlot")
   exportTestValues(tsnePlot = {str(retVal)})  
@@ -93,7 +94,7 @@ output$gQC_tsne_main <- renderPlotly({
 
 #' tsnePlot
 #' function that plots in 3D the tsne projection
-tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols) {
+tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols, ccols) {
   projections <- as.data.frame(projections)
   projections$dbCluster <- as.factor(projections$dbCluster)
   
@@ -102,6 +103,9 @@ tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols) {
   } else {
     myColors <- NULL
   }
+  if (dimCol == "dbCluster") {
+    myColors <- ccols
+  } 
   
   p <-
     plot_ly(
@@ -143,7 +147,7 @@ output$gQC_plotUmiHist <- renderPlot({
   if (DEBUG) cat(file = stderr(), "output_gQC_plotUmiHist\n")
   scEx <- scEx()
   scols <- sampleCols$colPal
-  
+
   if (is.null(scEx)) {
     return(NULL)
   }
