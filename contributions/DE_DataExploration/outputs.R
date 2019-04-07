@@ -16,6 +16,16 @@ callModule(
 #' DE_updateInputExpPanel
 #' update x/y coordinates that can be chosen based on available
 #' projections
+
+DE_X1 <<- "tsne1"
+observe({
+  DE_X1 <<- input$DE_dim_x
+})
+DE_Y1 <<- "tsne1"
+observe({
+  DE_Y1 <<- input$DE_dim_y
+})
+
 DE_updateInputExpPanel <- reactive({
   projections <- projections()
 
@@ -27,22 +37,16 @@ DE_updateInputExpPanel <- reactive({
   # Can also set the label and select items
   updateSelectInput(session, "DE_dim_x",
     choices = colnames(projections),
-    selected = colnames(projections)[1]
+    selected = DE_X1
   )
 
   # Can also set the label and select items
   updateSelectInput(session, "DE_dim_y",
     choices = colnames(projections),
-    selected = colnames(projections)[2]
+    selected = DE_Y1
   )
   return(TRUE)
 })
-
-DE_X1 <<- "tsne1"
-observe({
-  DE_X1 <<- input$DE_dim_x
-})
-
 
 
 
@@ -65,6 +69,7 @@ output$DE_gene_vio_plot <- renderPlot({
   scEx_log <- scEx_log()
   projections <- projections()
   g_id <- input$DE_gene_id
+  ccols <- clusterCols$colPal
 
   if (is.null(scEx_log) | is.null(projections)) {
     if (DEBUG) cat(file = stderr(), "output$DE_gene_vio_plot:NULL\n")
@@ -98,6 +103,7 @@ output$DE_gene_vio_plot <- renderPlot({
   p1 <-
     ggplot(projections, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
     geom_violin(scale = "width") +
+    scale_color_manual(values = ccols) +
     stat_summary(
       fun.y = median,
       geom = "point",
@@ -137,6 +143,10 @@ output$DE_gene_vio_plot <- renderPlot({
 #' since we allow also "all" we have to have a different strategy for the input
 #' it is debateable whether this is usefull to have a different strategy, but for now
 #' we leave it as it.
+DE_cl1 <<- "All"
+observe({
+  DE_cl1 <<- input$DE_clusterSelectionPanelPlot
+})
 output$DE_clusterSelectionPanelPlot <- renderUI({
   if (DEBUG) cat(file = stderr(), "output$DE_clusterSelectionPanelPlot\n")
   projections <- projections()
@@ -149,7 +159,7 @@ output$DE_clusterSelectionPanelPlot <- renderUI({
       "DE_clusterSelectionPanelPlot",
       label = "Cluster",
       choices = c(c("All"), noOfClusters),
-      selected = "All"
+      selected = DE_cl1
     )
   }
 })

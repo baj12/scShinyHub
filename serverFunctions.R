@@ -2,7 +2,7 @@
 printTimeEnd <- function(start.time, messtr) {
   end.time <- base::Sys.time()
   if (DEBUG){
-  cat(file = stderr(), paste("---", messtr,":done", difftime(end.time, start.time, units = "min"), " min\n"))  
+    cat(file = stderr(), paste("---", messtr,":done", difftime(end.time, start.time, units = "min"), " min\n"))  
   }
 }
 
@@ -20,7 +20,7 @@ geneName2Index <- function(g_id, featureData) {
   g_id <- gsub(" ", "", g_id, fixed = TRUE)
   g_id <- strsplit(g_id, ",")
   g_id <- g_id[[1]]
-
+  
   notFound <- g_id[!g_id %in% toupper(featureData$symbol)]
   if (length(featureData$symbol) == length(notFound)) {
     # in case there is only one gene that is not available.
@@ -32,12 +32,12 @@ geneName2Index <- function(g_id, featureData) {
     }
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification(paste("following genes were not found", notFound, collapse = " "),
-        id = "moduleNotFound", type = "warning",
-        duration = 20
+                       id = "moduleNotFound", type = "warning",
+                       duration = 20
       )
     }
   }
-
+  
   geneid <- rownames(featureData[which(toupper(featureData$symbol) %in% toupper(g_id)), ])
   if (DEBUG) {
     cat(file = stderr(), paste("done: geneName2Index\n"))
@@ -46,31 +46,36 @@ geneName2Index <- function(g_id, featureData) {
 }
 
 
-updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NULL, featureData, scEx, projections) {
-  if ((dimY == "UmiCountPerGenes") | (dimX == "UmiCountPerGenes")) {
-    geneNames <- geneName2Index(geneNames, featureData)
-    if ((length(geneNames) > 0) & (length(geneNames[[1]]) > 0)) {
+updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NULL, scEx, projections) {
+  featureData = rowData(scEx)
+  # if ((dimY == "UmiCountPerGenes") | (dimX == "UmiCountPerGenes")) {
+  geneNames <- geneName2Index(geneNames, featureData)
+  # if (length(geneNames) > 0) {
+    if ((length(geneNames) > 0) && (length(geneNames[[1]]) > 0)) {
       if (length(geneNames) == 1) {
-        projections$UmiCountPerGenes <- assays(scEx)[["counts"]][geneNames, ]
+        projections$UmiCountPerGenes <- assays(scEx)[[1]][geneNames, ]
       } else {
-        projections$UmiCountPerGenes <- Matrix::colSums(assays(scEx)[["counts"]][geneNames, ])
+        projections$UmiCountPerGenes <- Matrix::colSums(assays(scEx)[[1]][geneNames, ])
       }
     } else {
       projections$UmiCountPerGenes <- 0
     }
-  }
-  if ((dimY == "UmiCountPerGenes2") | (dimX == "UmiCountPerGenes2")) {
-    geneNames <- geneName2Index(geneNames2, featureData)
-    if ((length(geneNames) > 0) & (length(geneNames[[1]]) > 0)) {
+  # }
+  # }
+  # if ((dimY == "UmiCountPerGenes2") | (dimX == "UmiCountPerGenes2")) {
+  geneNames <- geneName2Index(geneNames2, featureData)
+  # if (length(geneNames) > 0) {
+    if ((length(geneNames) > 0) && (length(geneNames[[1]]) > 0)) {
       if (length(geneNames) == 1) {
-        projections$UmiCountPerGenes2 <- assays(scEx)[["counts"]][geneNames, ]
+        projections$UmiCountPerGenes2 <- assays(scEx)[[1]][geneNames, ]
       } else {
-        projections$UmiCountPerGenes2 <- Matrix::colSums(assays(scEx)[["counts"]][geneNames, ])
+        projections$UmiCountPerGenes2 <- Matrix::colSums(assays(scEx)[[1]][geneNames, ])
       }
     } else {
       projections$UmiCountPerGenes2 <- 0
     }
-  }
+  # }
+  # }
   return(projections)
 }
 
@@ -89,9 +94,10 @@ appendHeavyCalculations <- function(myHeavyCalculations, heavyCalculations) {
 
 #### plot2Dprojection ----------------
 # used in moduleServer and reports
-plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
+plot2Dprojection <- function(scEx_log, projections, g_id, featureData,
                              geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
-                             logx = FALSE, logy = FALSE, divXBy = "None", divYBy = "None") {
+                             logx = FALSE, logy = FALSE, divXBy = "None", divYBy = "None", dimCol = "Gene.count",
+                             colors = NULL) {
   geneid <- geneName2Index(g_id, featureData)
   
   if (length(geneid) == 0) {
@@ -115,8 +121,7 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
     dimX = dimX, dimY = dimY,
     geneNames = geneNames,
     geneNames2 = geneNames2,
-    featureData = featureData,
-    scEx = scEx, projections = projections
+    scEx = scEx_log, projections = projections
   )
   
   
@@ -183,26 +188,31 @@ plot2Dprojection <- function(scEx_log, scEx, projections, g_id, featureData,
     titlefont = f,
     type = typeY
   )
+
+
+  # dimCol = "Gene.count"
+  # dimCol = "sampleNames"
   p1 <- plot_ly(data = subsetData, source = "subset") %>%
-    add_trace(
-      x = ~ get(dimX),
-      y = ~ get(dimY),
-      type = "scatter",
-      mode = "markers",
-      text = ~ paste(1:nrow(subsetData), " ", rownames(subsetData), "<br />", subsetData$exprs),
-      marker = list(
-        color = subsetData[, "exprs"],
-        size = 4
-      )
-    ) %>%
-    # add_trace() %>%
+    add_trace(x = ~ get(dimX)
+              ,y = ~ get(dimY),  
+              type = "scatter" ,mode = "markers"
+              ,text = ~ paste(1:nrow(subsetData), " ", rownames(subsetData), "<br />", subsetData$exprs)
+              ,color = ~ get(dimCol)
+              ,colors = colors
+              ,showlegend =  TRUE
+     ) %>% 
     layout(
       xaxis = xAxis,
       yaxis = yAxis,
       title = gtitle,
       dragmode = "select"
-    )
-  
+    )     
+  if( is.factor(subsetData[,dimCol]) ) {
+    
+  } else {
+    p1 = colorbar(p1, title = dimCol)
+  }
+ 
   selectedCells <- NULL
   if (length(grpN) > 0) {
     if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {

@@ -43,10 +43,10 @@ tabList <- list(
       )
     ),
     fluidRow(
-      column(
-        2,
-        textInput("coE_gene_id_sch", "Enter gene", value = defaultValueSingleGene)
-      ),
+      # column(
+      #   2,
+      #   textInput("coE_gene_id_sch", "Enter gene", value = defaultValueSingleGene)
+      # ),
       column(
         12,
         clusterUI("coE_selected")
@@ -129,7 +129,7 @@ tabList <- list(
     br(),
     fluidRow(column(
       12,
-      jqui_resizable(plotOutput("coE_geneGrp_vio_plot") )
+      jqui_resizable(plotlyOutput("coE_geneGrp_vio_plot") )
     ))
   ),
   tabList = tabItem(

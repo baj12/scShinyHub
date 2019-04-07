@@ -157,7 +157,11 @@ generalParametersTab <- tabItem(
   ),
   fluidRow(column(4,offset = 1,
     uiOutput('sampleColorSelection')
-  ))
+  ),
+  column(4,offset = 1,
+           uiOutput('clusterColorSelection')
+  )
+  )
   # ,
   # fluidRow(
   #   column(11,offset = 1,

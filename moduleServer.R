@@ -40,14 +40,22 @@ clusterServer <- function(input, output, session,
   # dim2 <- defaultValues[2]
   dim1 <- "PC1"
   dim2 <- "PC2"
+  dimCol <- "Gene.count"
   divXBy <- "None"
   divYBy <- "None"
+  mod_cl1 <- ""
+  observe({
+    mod_cl1 <<- input$clusters
+  })
   
   observe({
     dim1 <<- input$dimension_x
   })
   observe({
     dim2 <<- input$dimension_y
+  })
+  observe({
+    dimCol <<- input$dimension_col
   })
   observe({
     divXBy <<- input$devideXBy
@@ -65,14 +73,22 @@ clusterServer <- function(input, output, session,
     }
     
     # Can also set the label and select items
+    if (is.null(mod_cl1) || mod_cl1 == "") mod_cl1 = levels(tsneData$dbCluster)
+    updateSelectInput(session, "clusters",
+                      choices = levels(tsneData$dbCluster),
+                      selected = mod_cl1
+    )
     updateSelectInput(session, "dimension_x",
                       choices = colnames(tsneData),
                       selected = dim1
     )
-    
     updateSelectInput(session, "dimension_y",
                       choices = colnames(tsneData),
                       selected = dim2
+    )
+    updateSelectInput(session, "dimension_col",
+                      choices = colnames(tsneData),
+                      selected = dimCol
     )
     
     updateSelectInput(session, "devideXBy",
@@ -95,7 +111,8 @@ clusterServer <- function(input, output, session,
     dimX <- input$dimension_x
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
-    scEx <- scEx()
+    # scEx <- scEx()
+    scEx_log <- scEx_log()
     if (DEBUG) {
       cat(file = stderr(), "+++cluster: selectedCellNames\n")
     }
@@ -111,14 +128,13 @@ clusterServer <- function(input, output, session,
     # load(file="~/scShinyHubDebug/selectedCellNames.RData")
     
     
-    featureData <- rowData(scEx)
+    featureData <- rowData(scEx_log)
     geneid <- geneName2Index(geneNames, featureData)
     projections <- updateProjectionsWithUmiCount(
       dimX = dimX, dimY = dimY,
       geneNames = geneNames,
       geneNames2 = geneNames2,
-      featureData = featureData,
-      scEx = scEx, projections = projections
+      scEx = scEx_log, projections = projections
     )
     
     subsetData <- subset(projections, dbCluster %in% inpClusters)
@@ -153,21 +169,20 @@ clusterServer <- function(input, output, session,
       dimX <- input$dimension_x
       geneNames <- input$geneIds
       geneNames2 <- input$geneIds2
-      scEx <- scEx()
+      scEx_log <- scEx_log()
       
       if (DEBUGSAVE) {
         cat(file = stderr(), paste("selectedCell: saving\n"))
         base::save(file = "~/scShinyHubDebug/clusterServerreturnValues.RData", list = c(ls(), ls(envir = globalenv())))
       }
       # load(file="~/scShinyHubDebug/clusterServerreturnValues.RData")
-      featureData <- rowData(scEx)
+      featureData <- rowData(scEx_log)
       if (!is.null(projections)) {
         projections <- updateProjectionsWithUmiCount(
           dimX = dimX, dimY = dimY,
           geneNames = geneNames,
           geneNames2 = geneNames2,
-          featureData = featureData,
-          scEx = scEx, projections = projections
+          scEx = scEx_log, projections = projections
         )
         
         subsetData <- subset(projections, dbCluster %in% inpClusters)
@@ -193,6 +208,8 @@ clusterServer <- function(input, output, session,
     projections <- tData()
     upI <- updateInput() # needed to update input of this module
     ns <- session$ns
+    cat(file = stderr(), paste("2observe: ns(input$clusters)", session$ns(input$clusters), "\n"))
+    cat(file = stderr(), paste("2observe: ns(mod_cl1)", ns(mod_cl1), "\n"))
     if (is.null(projections)) {
       HTML("Please load data first")
     } else {
@@ -203,7 +220,7 @@ clusterServer <- function(input, output, session,
         label = "Cluster",
         choices = noOfClusters,
         # selected = input$clusters, # not working because of stack, too slow and possible to create infinite loop
-        selected = noOfClusters,
+        selected = mod_cl1,
         multiple = TRUE
       )
     }
@@ -214,7 +231,7 @@ clusterServer <- function(input, output, session,
     if (DEBUG) {
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
-    scEx <- scEx()
+    scEx_log <- scEx_log()
     scEx_log <- scEx_log()
     projections <- tData()
     grpNs <- groupNames$namesDF
@@ -223,6 +240,7 @@ clusterServer <- function(input, output, session,
     returnValues$cluster <- input$clusters
     dimY <- input$dimension_y
     dimX <- input$dimension_x
+    dimCol <- input$dimension_col
     clId <- input$clusters
     g_id <- gene_id()
     geneNames <- input$geneIds
@@ -231,13 +249,16 @@ clusterServer <- function(input, output, session,
     logy <- input$logY
     divXBy <- input$devideXBy
     divYBy <- input$devideYBy
+    scols <- sampleCols$colPal
+    ccols <- clusterCols$colPal
     
-    if (is.null(scEx) | is.null(scEx_log) | is.null(projections)) {
+    
+    if (is.null(scEx_log) | is.null(scEx_log) | is.null(projections)) {
       if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
       return(NULL)
     }
     
-    featureData <- rowData(scEx)
+    featureData <- rowData(scEx_log)
     if (DEBUGSAVE) {
       cat(file = stderr(), paste("cluster plot saving\n"))
       save(
@@ -256,9 +277,24 @@ clusterServer <- function(input, output, session,
     if (is.null(divXBy)) divXBy <- "None"
     if (is.null(divYBy)) divYBy <- "None"
     
-    p1 <- plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames,
+    subsetData <- updateProjectionsWithUmiCount(
+      dimX = dimX, dimY = dimY,
+      geneNames = geneNames,
+      geneNames2 = geneNames2,
+      scEx = scEx_log, projections = projections
+    )
+    if (dimCol == "sampleNames") {
+      myColors <- scols
+    } else {
+      myColors <- NULL
+    }
+    if (dimCol == "dbCluster") {
+      myColors <- ccols
+    }
+    
+    p1 <- plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
                            geneNames2, dimX, dimY, clId, grpN, legend.position,
-                           grpNs = grpNs, logx, logy, divXBy, divYBy
+                           grpNs = grpNs, logx, logy, divXBy, divYBy, dimCol, colors = myColors
     )
     return(p1)
   })
@@ -493,7 +529,7 @@ clusterServer <- function(input, output, session,
     geneNames2 <- input$geneIds2
     dimY <- input$dimension_y
     dimX <- input$dimension_x
-    scEx <- scEx()
+    scEx_log <- scEx_log()
     
     if (!myshowCells) {
       return("")
@@ -519,8 +555,7 @@ clusterServer <- function(input, output, session,
       dimX = dimX, dimY = dimY,
       geneNames = geneNames,
       geneNames2 = geneNames2,
-      featureData = featureData,
-      scEx = scEx, projections = projections
+      scEx = scEx_log, projections = projections
     )
     
     # cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))

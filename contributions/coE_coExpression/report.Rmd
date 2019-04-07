@@ -69,6 +69,7 @@ require(pheatmap)
 scEx_matrix <- assays(scEx_log)[[1]]
 genesin <- input$coE_heatmap_geneids
 sampCol = sampleCols$colPal
+ccols <- clusterCols$colPal
 
 genesin2 <- geneName2Index(genesin, featureData)
 genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(scEx_matrix) )],"symbol"], collapse =",", sep=""))
@@ -76,7 +77,7 @@ genesin = (paste0(featureData[genesin2[which (genesin2 %in% rownames(scEx_matrix
 heatmapData <- coE_heatmapFunc(
   featureData = featureData, scEx_matrix = scEx_matrix,
   projections = projections, genesin = genesin, cells = colnames(scEx_matrix),
-  sampCol = sampCol
+  sampCol = sampCol, ccols = ccols
 )
 
 addColNames <- input$"coExpHeatmapModule-ColNames"
@@ -120,6 +121,9 @@ geneNames2 <- input$"coE_selected-geneIds"
 clId <- input$"coE_selected-clusters"
 dimX <- input$"coE_selected-dimension_x"
 dimY <- input$"coE_selected-dimension_y"
+scols <- sampleCols$colPal
+ccols <- clusterCols$colPal
+
 legend.position <- "none"
 grpN <- make.names(input$groupName)
 cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
@@ -127,8 +131,18 @@ cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, 
 # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
 # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
 
-plot2Dprojection(scEx_log, scEx, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
-                 grpNs = groupNames$namesDF)
+
+  if (dimCol == "sampleNames") {
+    myColors <- scols
+  } else {
+    myColors <- NULL
+  }
+if (dimCol == "dbCluster") {
+    myColors <- ccols
+  }
+
+plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
+                 grpNs = groupNames$namesDF, colors = myColors)
 ```
 
 
@@ -164,13 +178,13 @@ inpClusters <- input$"coE_selected-clusters"
 dimX <- brushedPs$mapping$x
 dimY <- brushedPs$mapping$y
 sampCol = sampleCols$colPal
+ccols <- clusterCols$colPal
 
 if(!is.null(brushedPs)){
   
   # geneid <- geneName2Index(geneNames, featureData)
   projections <- updateProjectionsWithUmiCount(dimX = dimX, dimY=dimY, 
                                                geneNames = geneNames,
-                                               featureData = featureData,
                                                scEx = scEx, projections = projections)
   
   subsetData <- subset(projections, dbCluster %in% inpClusters)
@@ -182,7 +196,8 @@ if(!is.null(brushedPs)){
                                  projections,
                                  genesin,
                                  cells = cells.1,
-                                 sampCol = sampCol
+                                 sampCol = sampCol,
+                                 ccols = ccols
   )
   
   # print heatmap
@@ -277,9 +292,6 @@ genesin <- `r input$mclustids`
 
 cl3 <- `r input$clusters3`
 
-dimx3 <- `r input$dimension_x3`
-
-dimy3 <- `r input$dimension_y3`
 
 not really working on this since I don't know if we really need it what this is about..
 
@@ -287,8 +299,8 @@ not really working on this since I don't know if we really need it what this is 
 
 genesin <- input$mclustids
 cl3 <- input$clusters3
-dimx3 <- input$dimension_x3
-dimy3 <- input$dimension_y3
+# dimx3 <- input$dimension_x3
+# dimy3 <- input$dimension_y3
 # posCells <- positiveCells$positiveCells # we use this variable to be able to save the global variable in this context
 # posCellsAll <- positiveCells$positiveCellsAll
 
@@ -323,15 +335,18 @@ geneListStr <- input$coE_geneGrpVioIds
 projectionVar <- input$coE_dimension_xVioiGrp
 minExpr <- input$coEminExpr
 sampCol = sampleCols$colPal
+ccols <- clusterCols$colPal
+
 retVal <- coE_geneGrp_vioFunc(
   genesin = geneListStr,
   projections = projections,
-  scEx = scEx,
+  scEx = scEx_log,
   featureData = featureData,
   minExpr = minExpr,
   dbCluster = projectionVar,
   coE_showPermutations = input$coE_showPermutations,
-  sampCol = sampCol
+  sampCol = sampCol,
+  ccols = ccols
 )
 retVal
 ```

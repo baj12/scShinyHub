@@ -214,18 +214,18 @@ medianENSG <- reactive({
   start.time <- Sys.time()
   if (DEBUG)cat(file = stderr(), "medianENSG\n")
 
-  scEx <- scEx()
+  scEx_log <- scEx_log()
   if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "medianENSG:NULL\n")
     }
     return(0)
   }
-  scEx <- assays(scEx)[["counts"]]
-  if (ncol(scEx) <= 1 | nrow(scEx) < 1) {
+  scEx_log <- assays(scEx_log)[[1]]
+  if (ncol(scEx_log) <= 1 | nrow(scEx_log) < 1) {
     return(0)
   }
-  retVal <- medianENSGfunc(scEx)
+  retVal <- medianENSGfunc(scEx_log)
   printTimeEnd(start.time, "medianENSG")
   exportTestValues(medianENSG = { retVal })
   
@@ -1069,9 +1069,9 @@ geneCount <- reactive({
   start.time <- Sys.time()
   if (DEBUG) cat(file = stderr(), "geneCount\n")
   
-  scEx <- scEx()
+  scEx_log <- scEx_log()
 
-  if (is.null(scEx)) {
+  if (is.null(scEx_log)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -1079,7 +1079,7 @@ geneCount <- reactive({
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
 
-  retVal <- Matrix::colSums(assays(scEx)[["counts"]] > 0)
+  retVal <- Matrix::colSums(assays(scEx_log)[["logcounts"]] > 0)
   
   printTimeEnd(start.time, "geneCount")
   exportTestValues(geneCount = { retVal })

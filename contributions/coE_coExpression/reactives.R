@@ -1,6 +1,6 @@
 # heatmapFunc ---------------------------------
 # used by both selection and all to create input for heatmap module
-coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cells, sampCol) {
+coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cells, sampCol, ccols) {
   start.time <- base::Sys.time()
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/coE_heatmapFunc.RData", list = c(ls(envir = globalenv()), ls()))
@@ -45,13 +45,14 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
   
   nonZeroRows <- which(Matrix::rowSums(expression) > 0)
   
-  annCols <- list("sampleNames" = sampCol)
+  annCols <- list("sampleNames" = sampCol,
+                  "Cluster" = ccols)
   
   retVal <- list(
     mat = expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
     cluster_rows = TRUE,
     cluster_cols = FALSE,
-    scale = "row",
+    # scale = "row",
     fontsize_row = 14,
     labels_col = colnames(expression),
     labels_row = featureData[rownames(expression), "symbol"],
@@ -99,15 +100,16 @@ coE_heatmapSelectedReactive <- reactive({
     showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
   }
   
-  scEx <- scEx()
+  scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$coE_heatmap_geneids2
   sc <- coE_selctedCluster()
   scCL <- sc$cluster
   scCells <- sc$selectedCells()
   sampCol <- sampleCols$colPal
+  ccols <- clusterCols$colPal
   
-  if (is.null(scEx) ||
+  if (is.null(scEx_log) ||
       is.null(projections) || is.null(scCells) || length(scCells) == 0) {
     output$coE_heatmapNull = renderUI(tags$h3(tags$span(style="color:red", "please select some cells")))
     return(
@@ -128,8 +130,8 @@ coE_heatmapSelectedReactive <- reactive({
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   
   
-  scEx_matrix <- assays(scEx)[["counts"]]
-  featureData <- rowData(scEx)
+  scEx_matrix <- assays(scEx_log)[[1]]
+  featureData <- rowData(scEx_log)
   
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
@@ -137,7 +139,7 @@ coE_heatmapSelectedReactive <- reactive({
   # load(file = "~/scShinyHubDebug/selectedHeatmap.RData")
   
   retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin,
-                            cells = scCells, sampCol = sampCol
+                            cells = scCells, sampCol = sampCol, ccols = ccols
   )
   # print debugging information on the console
   printTimeEnd(start.time, "inputData")
@@ -219,7 +221,7 @@ coE_topExpGenesTable <- reactive({
 #' generates a ggplot object with a violin plot
 #' optionally creates all permutations.
 coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1,
-                            dbCluster, coE_showPermutations = FALSE, sampCol) {
+                            dbCluster, coE_showPermutations = FALSE, sampCol, ccols) {
   if (DEBUG) cat(file = stderr(), "coE_geneGrp_vioFunc\n")
   require(gtools)
   require(stringr)
@@ -247,7 +249,7 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
     return(NULL)
   }
   
-  expression <- Matrix::colSums(assays(scEx)[["counts"]][map, ] >= minExpr)
+  expression <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr)
   ylabText <- "number genes from list"
   
   if (coE_showPermutations) {
@@ -266,7 +268,7 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
           rownames(featureData[which(featureData$symbol %in% comb[cIdx, ]), ])
         # permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
         
-        permIdx <- Matrix::colSums(assays(scEx)[["counts"]][map, , drop = FALSE] >= minExpr) == length(comb[cIdx, ])
+        permIdx <- Matrix::colSums(assays(scEx)[[1]][map, , drop = FALSE] >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }
     }
@@ -292,14 +294,46 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
   if (dbCluster == "sampleNames") {
     mycolPal <- sampCol
   }
+  if (dbCluster == "Cluster") {
+    myColors <- ccols
+  }
   
-  p1 <-
+  
+  # p1 <- projections %>% plot_ly(
+  #     x = prj,
+  #     y = ~coExpVal,
+  #      split = prj,
+  #     type = 'violin',
+  #     box = list(
+  #       visible = T
+  #     ),
+  #     meanline = list(
+  #       visible = T
+  #     ), color=prj, colors = ccols
+  #   ) %>% 
+  #     layout(
+  #       xaxis = list(
+  #         title = dbCluster
+  #       ),
+  #       yaxis = list(
+  #         title = ylabText,
+  #         zeroline = F,
+  #         ticknames = permsNames
+  #       ),
+  #       annotations = list(y = permsNames, yref = "y")
+  #     )
+  #   
+  # p1
+  #   
+    
+    
+    p1 <-
     ggplot(projections, aes_string(prj, "coExpVal",
                                    fill = factor(projections[, dbCluster])
     )) +
     geom_violin(scale = "count") +
     scale_fill_manual(values = mycolPal, aesthetics = "fill") +
-    stat_summary(
+    stat_summary( # plot the centered dots
       fun.y = median,
       geom = "point",
       size = 5,
@@ -318,13 +352,13 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
       strip.text.y = element_text(size = 12),
       axis.title.x = element_text(face = "bold", size = 16),
       axis.title.y = element_text(face = "bold", size = 16),
-      legend.position = "none"
+      legend.position = "right"
     ) +
     xlab(dbCluster) +
-    
+
     scale_y_continuous(breaks = 1:length(permsNames), labels = str_wrap(permsNames)) +
     ylab(ylabText)
-  
+   p1 <- ggplotly(p1)
   return(p1)
 }
 
@@ -360,32 +394,33 @@ coE_somFunction <- function(iData, nSom, geneName) {
   return(simGenes)
 }
 
-# coE_coE_heatmapSOMReactive ----
-#' coE_coE_heatmapSOMReactive
+# coE_heatmapSOMReactive ----
+#' coE_heatmapSOMReactive
 #' calculates a self organizing map (SOM) on the expression data and identifies genes
 #' that cluster together with a gene of interest
 # TODO: check that we are using only raw counts and not normalized
-coE_coE_heatmapSOMReactive <- reactive({
+coE_heatmapSOMReactive <- reactive({
   start.time <- Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "coE_coE_heatmapSOMReactive")
+      removeNotification(id = "coE_heatmapSOMReactive")
     }
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("somheatmap", id = "coE_coE_heatmapSOMReactive", duration = NULL)
+    showNotification("somheatmap", id = "coE_heatmapSOMReactive", duration = NULL)
   }
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "heatmapWarning")
   if (DEBUG) cat(file = stderr(), "output$somReactive\n")
   
-  scEx <- scEx()
+  scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$coE_geneSOM
   nSOM <- input$coE_dimSOM
   sampCol <- sampleCols$colPal
+  ccols <- clusterCols$colPal
   
-  if (is.null(scEx)) {
+  if (is.null(scEx_log)) {
     return(
       list(
         src = "empty.png",
@@ -398,12 +433,12 @@ coE_coE_heatmapSOMReactive <- reactive({
   }
 
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/coE_coE_heatmapSOMReactive.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/coE_heatmapSOMReactive.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file = "~/scShinyHubDebug/coE_coE_heatmapSOMReactive.RData")
+  # load(file = "~/scShinyHubDebug/coE_heatmapSOMReactive.RData")
 
-  scEx_matrix <- as.matrix(assays(scEx)[["counts"]])
-  featureData <- rowData(scEx)
+  scEx_matrix <- as.matrix(assays(scEx_log)[[1]])
+  featureData <- rowData(scEx_log)
   # go from readable gene name to ENSG number
   genesin <- geneName2Index(genesin, featureData)
 
@@ -429,13 +464,14 @@ coE_coE_heatmapSOMReactive <- reactive({
   annotation <- data.frame(projections[, c("dbCluster", "sampleNames")])
   rownames(annotation) <- rownames(projections)
   colnames(annotation) <- c("Cluster", "sampleNames")
-  annCols <- list("sampleNames" = sampCol)
+  annCols <- list("sampleNames" = sampCol,
+                  "Cluster" = ccols)
   
   retVal <- list(
     mat = scEx_matrix[geneNames, ],
     cluster_rows = TRUE,
     cluster_cols = TRUE,
-    scale = "row",
+    # scale = "row",
     fontsize_row = 14,
     labels_row = featureData[geneNames, "symbol"],
     show_rownames = TRUE,
@@ -454,7 +490,7 @@ coE_coE_heatmapSOMReactive <- reactive({
   # system.time(do.call(TRONCO::pheatmap, retVal))
   
   printTimeEnd(start.time, "inputData")
-  exportTestValues(coE_coE_heatmapSOMReactive = {retVal })  
+  exportTestValues(coE_heatmapSOMReactive = {retVal })  
   return(retVal)
 })
 
@@ -462,6 +498,10 @@ coE_coE_heatmapSOMReactive <- reactive({
 #' coE_updateInputXviolinPlot
 #' Update x/y axis selection possibilities for violin plot
 #' could probably be an observer, but it works like this as well...
+coE_vioGrp <<- "sampleNames"
+observe({
+  coE_vioGrp <<- input$coE_dimension_xVioiGrp
+})
 coE_updateInputXviolinPlot <- reactive({
   tsneData <- projections()
   
@@ -471,18 +511,18 @@ coE_updateInputXviolinPlot <- reactive({
   }
   
   # Can also set the label and select items
-  updateSelectInput(
-    session,
-    "dimension_x3",
-    choices = colnames(tsneData),
-    selected = colnames(tsneData)[1]
-  )
-  updateSelectInput(
-    session,
-    "dimension_y3",
-    choices = colnames(tsneData),
-    selected = colnames(tsneData)[2]
-  )
+  # updateSelectInput(
+  #   session,
+  #   "dimension_x3",
+  #   choices = colnames(tsneData),
+  #   selected = colnames(tsneData)[1]
+  # )
+  # updateSelectInput(
+  #   session,
+  #   "dimension_y3",
+  #   choices = colnames(tsneData),
+  #   selected = colnames(tsneData)[2]
+  # )
   
   coln <- colnames(tsneData)
   choices <- c()
@@ -498,7 +538,7 @@ coE_updateInputXviolinPlot <- reactive({
     session,
     "coE_dimension_xVioiGrp",
     choices = choices,
-    selected = choices[1]
+    selected = coE_vioGrp
   )
 })
 
@@ -523,6 +563,7 @@ coE_heatmapReactive <- reactive({
   projections <- projections()
   genesin <- input$coE_heatmap_geneids
   sampCol = sampleCols$colPal
+  ccols <- clusterCols$colPal
   
   if (is.null(scEx_log) | is.null(projections)) {
     return(list(
@@ -544,7 +585,7 @@ coE_heatmapReactive <- reactive({
   retVal <- coE_heatmapFunc(
     featureData = featureData, scEx_matrix = scEx_matrix,
     projections = projections, genesin = genesin, cells = colnames(scEx_matrix),
-    sampCol = sampCol
+    sampCol = sampCol, ccols = ccols
   )
   
   printTimeEnd(start.time, "DummyReactive")

@@ -135,7 +135,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 
 ```{r gQC_plotUmiHist, eval=TRUE, echo=FALSE}
 
-hist(Matrix::colSums(assays(scEx)[["counts"]]), breaks = 50, main="histogram of number of UMI per cell")
+hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs
@@ -154,6 +154,8 @@ if(DEBUGSAVE)
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
 sampleInf <- sampleInfoFunc(scEx)
 scols = sampleCols$colPal
+ccols <- clusterCols$colPal
+
 gQC_sampleHistFunc(sampleInf, scols)
 ```
 
