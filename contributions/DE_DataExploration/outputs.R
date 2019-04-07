@@ -104,6 +104,8 @@ output$DE_gene_vio_plot <- renderPlot({
     ggplot(projections, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
     geom_violin(scale = "width") +
     scale_color_manual(values = ccols) +
+    scale_fill_manual(values = ccols, aesthetics = "fill") +
+    
     stat_summary(
       fun.y = median,
       geom = "point",

@@ -129,7 +129,8 @@ tabList <- list(
     br(),
     fluidRow(column(
       12,
-      jqui_resizable(plotlyOutput("coE_geneGrp_vio_plot") )
+      # jqui_resizable(plotlyOutput("coE_geneGrp_vio_plot") )
+      jqui_resizable(plotOutput("coE_geneGrp_vio_plot") )
     ))
   ),
   tabList = tabItem(

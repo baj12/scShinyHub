@@ -40,8 +40,9 @@ callModule(
 )
 
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
-output$coE_geneGrp_vio_plot <- renderPlotly({
-  start.time <- base::Sys.time()
+# output$coE_geneGrp_vio_plot <- renderPlotly({
+  output$coE_geneGrp_vio_plot <- renderPlot({
+    start.time <- base::Sys.time()
   if (DEBUG) cat(file = stderr(), "output$coE_geneGrp_vio_plot\n")
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -57,7 +58,7 @@ output$coE_geneGrp_vio_plot <- renderPlotly({
   projectionVar <- input$coE_dimension_xVioiGrp
   minExpr <- input$coEminExpr
   coE_showPermutations <- input$coE_showPermutations
-  colPal = coE_geneGrp_vioFunc # TODO must be wrong
+  # colPal = coE_geneGrp_vioFunc # TODO must be wrong
   sampCol = sampleCols$colPal
   ccols <- clusterCols$colPal
   

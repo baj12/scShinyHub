@@ -294,8 +294,8 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
   if (dbCluster == "sampleNames") {
     mycolPal <- sampCol
   }
-  if (dbCluster == "Cluster") {
-    myColors <- ccols
+  if (dbCluster == "dbCluster") {
+    mycolPal <- ccols
   }
   
   
@@ -358,7 +358,7 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
 
     scale_y_continuous(breaks = 1:length(permsNames), labels = str_wrap(permsNames)) +
     ylab(ylabText)
-   p1 <- ggplotly(p1)
+   # p1 <- ggplotly(p1)
   return(p1)
 }
 
