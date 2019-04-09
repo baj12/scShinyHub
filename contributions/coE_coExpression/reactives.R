@@ -82,7 +82,6 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
   return(retVal)
 }
 
-output$coE_heatmapNull = NULL
 
 # coE_heatmapSelectedReactive ----
 # reactive function for selected heatmap
@@ -104,14 +103,14 @@ coE_heatmapSelectedReactive <- reactive({
   projections <- projections()
   genesin <- input$coE_heatmap_geneids2
   sc <- coE_selctedCluster()
-  scCL <- sc$cluster
-  scCells <- sc$selectedCells()
+  scCL <- sc$cluster # "1" "2" "3" "4"
+  scCells <- sc$selectedCells() # [1] "AAACCTGAGACACTAA-1" "AAACCTGAGACGACGT-1" "AAACCTGAGTCAAGCG-1" "AAACCTGCAAGAAGAG-1" "AAACCTGCAGACAGGT-1" "AAACCTGCATACAGCT-1" "AAACCTGGTGTGACCC-1"
   sampCol <- sampleCols$colPal
   ccols <- clusterCols$colPal
   
   if (is.null(scEx_log) ||
       is.null(projections) || is.null(scCells) || length(scCells) == 0) {
-    output$coE_heatmapNull = renderUI(tags$h3(tags$span(style="color:red", "please select some cells")))
+    # output$coE_heatmapNull = renderUI(tags$h3(tags$span(style="color:red", "please select some cells")))
     return(
       list(
         src = "empty.png",
@@ -121,9 +120,10 @@ coE_heatmapSelectedReactive <- reactive({
         alt = "heatmap should be here"
       )
     )
-  } else {
-    output$coE_heatmapNull = NULL
-  }
+  } 
+  # else {
+    # output$coE_heatmapNull = NULL
+  # }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/selectedHeatmap.RData", list = c(ls(), ls(envir = globalenv())))
   }

@@ -19,10 +19,12 @@ callModule(
 
 DE_X1 <<- "tsne1"
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: DE_dim_x\n")
   DE_X1 <<- input$DE_dim_x
 })
 DE_Y1 <<- "tsne1"
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: DE_dim_y\n")
   DE_Y1 <<- input$DE_dim_y
 })
 
@@ -147,6 +149,7 @@ output$DE_gene_vio_plot <- renderPlot({
 #' we leave it as it.
 DE_cl1 <<- "All"
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: DE_clusterSelectionPanelPlot\n")
   DE_cl1 <<- input$DE_clusterSelectionPanelPlot
 })
 output$DE_clusterSelectionPanelPlot <- renderUI({

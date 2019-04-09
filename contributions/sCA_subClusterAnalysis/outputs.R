@@ -52,6 +52,33 @@ callModule(
   sCA_dgeTableReac)
 
 
+# sub cluster analysis ( used for 2 panels )
+output$sCA_dgeClustersSelection <- renderUI({
+  projections <- projections()
+  up1 <- updateInputSubclusterAxes()
+  
+  if (DEBUG) cat(file = stderr(), "output$sCA_dgeClustersSelection\n")
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/sCA_dgeClustersSelection.RData", list = c(ls(envir = globalenv(), ls(), "subClusterClusters")))
+  }
+  # load(file="~/scShinyHubDebug/sCA_dgeClustersSelection.RData")
+  
+  
+  if (is.null(projections)) {
+    tags$span(style="color:red", "Please load data first")
+  } else {
+    noOfClusters <- levels(as.factor(projections$dbCluster))
+    # noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
+    selectizeInput(
+      "sCA_dgeClustersSelection",
+      label = "Cluster",
+      choices = noOfClusters,
+      selected = subClusterClusters,
+      multiple = TRUE
+    )
+  }
+})
+
 
 
 

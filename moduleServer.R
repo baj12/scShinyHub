@@ -45,22 +45,28 @@ clusterServer <- function(input, output, session,
   divYBy <- "None"
   mod_cl1 <- ""
   observe({
+    cat(file = stderr(), paste0("observe: clusters\n"))
     mod_cl1 <<- input$clusters
   })
   
   observe({
+    cat(file = stderr(), paste0("observe: dimension_x\n"))
     dim1 <<- input$dimension_x
   })
   observe({
+    cat(file = stderr(), paste0("observe: dimension_y\n"))
     dim2 <<- input$dimension_y
   })
   observe({
+    cat(file = stderr(), paste0("observe: dimension_col\n"))
     dimCol <<- input$dimension_col
   })
   observe({
+    cat(file = stderr(), paste0("observe: devideXBy\n"))
     divXBy <<- input$devideXBy
   })
   observe({
+    cat(file = stderr(), paste0("observe: devideYBy\n"))
     divYBy <<- input$devideYBy
   })
   

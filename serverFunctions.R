@@ -81,7 +81,7 @@ updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NU
 
 
 # append to heavyCalculations
-appendHeavyCalculations <- function(myHeavyCalculations, heavyCalculations) {
+append2list <- function(myHeavyCalculations, heavyCalculations) {
   for (hc in myHeavyCalculations) {
     if (length(hc) == 2 & is.character(hc[1]) & is.character(hc[2])) {
       heavyCalculations[[length(heavyCalculations) + 1]] <- hc

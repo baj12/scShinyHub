@@ -1,3 +1,5 @@
+
+
 # reactive values  ------------------------------------------------------------------
 inputFileStats <- reactiveValues(
   stats = NULL
@@ -169,7 +171,7 @@ inputDataFunc <- function(inFile) {
   # if (is.null(rowData(dataTables$scEx)$symbol)){
   #
   # }
-
+  
   inputFileStats$stats <- stats
   return(dataTables)
 }
@@ -213,7 +215,7 @@ medianENSGfunc <- function(scEx) {
 medianENSG <- reactive({
   start.time <- Sys.time()
   if (DEBUG)cat(file = stderr(), "medianENSG\n")
-
+  
   scEx_log <- scEx_log()
   if (is.null(scEx)) {
     if (DEBUG) {
@@ -241,7 +243,7 @@ medianUMIfunc <- function(scEx) {
 medianUMI <- reactive({
   start.time <- Sys.time()
   if (DEBUG) cat(file = stderr(), "medianUMI\n")
-
+  
   scEx <- scEx()
   if (is.null(scEx)) {
     if (DEBUG) {
@@ -349,7 +351,7 @@ useCellsFunc <-
 useCells <- reactive({
   start.time <- Sys.time()
   if (DEBUG)cat(file = stderr(), "useCells\n")
-
+  
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
       removeNotification(id = "useCells")
@@ -455,8 +457,8 @@ beforeFilterCounts <- reactive({
     }
     return(NULL)
   }
-
-    if (DEBUGSAVE) {
+  
+  if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/beforeFilterCounts.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/beforeFilterCounts.RData")
@@ -469,7 +471,7 @@ beforeFilterCounts <- reactive({
     return(rep(0, nrow(dataTables$featuredata)))
   }
   retVal = Matrix::colSums(assays(dataTables$scEx)[["counts"]][geneIDs, ])
-
+  
   printTimeEnd(start.time, "DummyReactive")
   exportTestValues(beforeFilterCounts = { retVal })
   return(retVal)
@@ -613,7 +615,7 @@ scEx <- reactive({
   )
   start.time <- Sys.time()
   if (DEBUG) cat(file = stderr(), "scEx\n")
-
+  
   dataTables <- inputData()
   useCells <- useCells()
   useGenes <- useGenes()
@@ -662,7 +664,7 @@ rawNormalization <- reactive({
   if (DEBUG) cat(file = stderr(), "rawNormalization\n")
   
   scEx <- scEx()
-
+  
   printTimeEnd(start.time, "rawNormalization")
   exportTestValues(rawNormalization = {str(scEx)})  
   
@@ -818,7 +820,7 @@ pca <- reactive({
 
 
 scranCluster <- function(pca, scEx_log, seed, clusterSource,
-                         geneSelectionClustering, minClusterSize, clusterMethod, featureData) {
+                         geneSelectionClustering="", minClusterSize=2, clusterMethod="PCA", featureData) {
   set.seed(seed)
   geneid <- geneName2Index(geneSelectionClustering, featureData)
   
@@ -855,17 +857,56 @@ scranCluster <- function(pca, scEx_log, seed, clusterSource,
 }
 
 
-kmClustering <- reactive({
+
+# dbCluster ----
+dbCluster <- reactive({
+  start.time <- Sys.time()
+  if (DEBUG) cat(file = stderr(), "dbCluster\n")
+  
+  kNr <- input$kNr
+  clustering <- scran_Cluster()
+  
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/dbCluster.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/dbCluster.RData")
+  
+  if (is.null(clustering)) {
+    if (DEBUG) {
+      cat(file = stderr(), "dbCluster: NULL\n")
+    }
+    return(NULL)
+  }
+  
+  dbCluster <- clustering$Cluster
+  
+  #cluster colors
+  inCols = list()
+  lev <- levels(dbCluster)
+  
+  inCols <- allowedColors[1:length(lev)]
+  names(inCols) = lev
+  
+  clusterCols$colPal = unlist(inCols)
+  
+  printTimeEnd(start.time, "dbCluster")
+  exportTestValues(dbCluster = { dbCluster })
+  return(dbCluster)
+})
+
+
+
+scran_Cluster <- reactive({
   on.exit(
     if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "kmClustering")
+      removeNotification(id = "scran_Cluster")
     }
   )
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("kmClustering", id = "kmClustering", duration = NULL)
+    showNotification("scran_Cluster", id = "scran_Cluster", duration = NULL)
   }
   start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "kmClustering\n")
+  if (DEBUG) cat(file = stderr(), "scran_Cluster\n")
   
   pca <- pca()
   scEx_log <- scEx_log()
@@ -878,14 +919,14 @@ kmClustering <- reactive({
   
   if (is.null(pca) | is.null(scEx_log) | is.na(minClusterSize)) {
     if (DEBUG) {
-      cat(file = stderr(), "kmClustering:NULL\n")
+      cat(file = stderr(), "scran_Cluster:NULL\n")
     }
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/kmClustering.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/scran_Cluster.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/kmClustering.RData")
+  # load(file="~/scShinyHubDebug/scran_Cluster.RData")
   
   featureData <- rowData(scEx_log)
   
@@ -903,11 +944,10 @@ kmClustering <- reactive({
       type = "error",
       duration = NULL
     )
-    
   }
   
-  printTimeEnd(start.time, "kmClustering")
-  exportTestValues(kmClustering = { retVal })
+  printTimeEnd(start.time, "scran_Cluster")
+  exportTestValues(scran_Cluster = { retVal })
   return(retVal)
 })
 
@@ -1011,7 +1051,7 @@ projections <- reactive({
 # TODO shouldn't this be an observer???
 initializeGroupNames <- reactive({
   if (DEBUG) cat(file = stderr(), "initializeGroupNames.\n")
-
+  
   scEx <- scEx()
   if (is.null(scEx)) {
     return(NULL)
@@ -1032,7 +1072,6 @@ initializeGroupNames <- reactive({
 # sample --------
 sample <- reactive({
   start.time <- Sys.time()
-  
   if (DEBUG) cat(file = stderr(), "sample\n")
   
   scEx <- scEx()
@@ -1046,7 +1085,7 @@ sample <- reactive({
     save(file = "~/scShinyHubDebug/sample.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/sample.RData")
-
+  
   pd <- colData(scEx)
   retVal <- NULL
   for (pdColName in colnames(pd)) {
@@ -1070,7 +1109,7 @@ geneCount <- reactive({
   if (DEBUG) cat(file = stderr(), "geneCount\n")
   
   scEx_log <- scEx_log()
-
+  
   if (is.null(scEx_log)) {
     return(NULL)
   }
@@ -1078,7 +1117,7 @@ geneCount <- reactive({
     save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
-
+  
   retVal <- Matrix::colSums(assays(scEx_log)[["logcounts"]] > 0)
   
   printTimeEnd(start.time, "geneCount")
@@ -1086,6 +1125,7 @@ geneCount <- reactive({
   return(retVal)
 })
 
+# beforeFilterPrj ----
 beforeFilterPrj <- reactive({
   start.time <- Sys.time()
   if (DEBUG) cat(file = stderr(), "umiCount\n")
@@ -1109,6 +1149,7 @@ beforeFilterPrj <- reactive({
   return(retVal)
 })
 
+# umiCount ----
 umiCount <- reactive({
   start.time <- Sys.time()
   if (DEBUG) cat(file = stderr(), "umiCount\n")
@@ -1130,7 +1171,7 @@ umiCount <- reactive({
   return(retVal)
 })
 
-
+# sampleInfoFunc ----
 sampleInfoFunc <- function(scEx) {
   # gsub(".*-(.*)", "\\1", scEx$barcode)
   colData(scEx)$sampleNames
@@ -1173,9 +1214,9 @@ inputSample <- reactive({
     }
   )
   if (DEBUG) cat(file = stderr(), "inputSample\n")
-
+  
   dataTables <- inputData()
-
+  
   if (is.null(dataTables)) {
     return(NULL)
   }
@@ -1186,7 +1227,7 @@ inputSample <- reactive({
     save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/inputSample.RData')
-
+  
   # TODO should come from sampleInfo
   sampInf <- gsub(".*-(.*)", "\\1", dataTables$scEx$barcode)
   cellIds <- data.frame(
@@ -1194,7 +1235,7 @@ inputSample <- reactive({
     sample = sampInf,
     ngenes = Matrix::colSums(assays(dataTables$scEx)[[1]])
   )
-
+  
   if (DEBUG) {
     cat(file = stderr(), "inputSample: done\n")
   }
@@ -1236,3 +1277,180 @@ getMemoryUsed <- reactive({
 # })
 
 
+reportFunction <- function(tmpPrjFile) {
+}
+
+reacativeReport <- reactive({
+  start.time <- Sys.time()
+  
+  scEx <- scEx()
+  projections <- projections()
+  scEx_log <- scEx_log()
+  inputNames <- names(input)
+  
+  if (is.null(scEx)) {
+    if (DEBUG) cat(file = stderr(), "output$report:NULL\n")
+    return(NULL)
+  }
+  
+  tmpPrjFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
+  
+  report.env = new.env()
+  # translate reactiveValues to lists
+  # this way they can be saved
+  rectVals = c()
+  isolate({
+    for (var in ls(envir = globalenv())) { 
+      cat(file = stderr(), paste("var: ", var, '---', class(get(var)),  "\n"))
+      if ( var == "reacativeReport") next()
+      if (class(get(var))[1] == "reactivevalues"){
+        cat(file = stderr(), paste("is reactiveValue: ", var, "\n"))
+        rectVals = c(rectVals, var)
+        assign(var, reactiveValuesToList(get(var)), envir = report.env)
+      } else if (class(get(var))[1] == "reactiveExpr") {
+        cat(file = stderr(), paste("is reactiveExpr: ", var, "\n"))
+        rectVals = c(rectVals, var)
+        assign(var, eval(parse(text = paste0(var, "()"))), envir = report.env)
+      }
+    }
+  })
+  
+  base::save(file = tmpPrjFile, list = c("reportTempDir","projections", "scEx_log", "scEx", "report.env"))
+  
+  if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("report.env", "file", ls(), ls(envir = globalenv())))
+  # load('~/scShinyHubDebug/tempReport.1.RData')
+  
+  outZipFile = paste0(reportTempDir, "/report.zip")
+  
+  reactiveFiles <- ""
+  
+  # fixed files -----------
+  tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
+  file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
+  reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
+  
+  # global variables
+  tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
+  save(file = tmpFile, list = c("allowedColors"))
+  reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
+  
+  # Projections -----
+  # projections can contain mannually annotated groups of cells and different normalizations.
+  # to reduce complexity we are going to save those in a separate RData file
+  
+  # return(tmpPrjFile)
+  # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
+  # we copy them to the temp directory and load them in the markdown
+  uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  for (fp in c("serverFunctions.R", "reactives.R", uiFiles)) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".R")
+    file.copy(fp, tmpFile, overwrite = TRUE)
+    reactiveFiles <- paste0(reactiveFiles, "source(\"", tmpFile, "\", local = TRUE)\n", collapse = "\n")
+  }
+  # otherwise reactive might overwrite projections...
+  reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, 
+                          "\")\nfor (n in names(report.env)) {assign(n,report.env[[n]])}\n", collapse = "\n")
+  # encapsulte the load files in an R block
+  LoadReactiveFiles <- paste0("\n\n```{r load-reactives, include=FALSE}\n", reactiveFiles, "\n```\n\n")
+  
+  # handle plugin reports
+  # load contribution reports
+  # parse all report.Rmd files under contributions to include in application
+  uiFiles <- dir(path = "contributions", pattern = "report.Rmd", full.names = TRUE, recursive = TRUE)
+  pluginReportsString <- ""
+  fpRidx <- 1
+  for (fp in uiFiles) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".Rmd")
+    file.copy(fp, tmpFile, overwrite = TRUE)
+    pluginReportsString <- paste0(
+      pluginReportsString,
+      "\n\n```{r child-report-", fpRidx, ", child = '", tmpFile, "', eval=TRUE}\n```\n\n"
+    )
+    fpRidx <- fpRidx + 1
+  }
+  
+  # Copy the report file to a temporary directory before processing it, in
+  # case we don't have write permissions to the current working dir (which
+  # can happen when deployed).
+  tempReport <- file.path(reportTempDir, "report.Rmd")
+  
+  # tempServerFunctions <- file.path(reportTempDir, "serverFunctions.R")
+  # file.copy("serverFunctions.R", tempServerFunctions, overwrite = TRUE)
+  
+  # create a new list of all parameters that can be passed to the markdown doc.
+  
+  params <- list(
+    # tempServerFunctions = tempServerFunctions,
+    # tempprivatePlotFunctions = tempprivatePlotFunctions,
+    calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
+    # save the outputfile name for others to use to save
+    # params$outputFile <- file$datapath[1]
+  )
+  
+  
+  
+  
+  
+  # for (idx in 1:length(names(input))) {
+  #   params[[inputNames[idx]]] <- input[[inputNames[idx]]]
+  # }
+  params[["reportTempDir"]] <- reportTempDir
+  
+  file.copy("report.Rmd", tempReport, overwrite = TRUE)
+  
+  # read the template and replace parameters placeholder with list
+  # of paramters
+  x <- readLines(tempReport)
+  # x <- readLines("report.Rmd")
+  paramString <- paste0("  ", names(params), ": NA", collapse = "\n")
+  y <- gsub("#__PARAMPLACEHOLDER__", paramString, x)
+  y <- gsub("__CHILDREPORTS__", pluginReportsString, y)
+  y <- gsub("__LOAD_REACTIVES__", LoadReactiveFiles, y)
+  # cat(y, file="tempReport.Rmd", sep="\n")
+  cat(y, file = tempReport, sep = "\n")
+  
+  if (DEBUG) cat(file = stderr(), "output$report:scEx:\n")
+  if (DEBUG) cat(file = stderr(), paste("\n", tempReport, "\n"))
+  # Knit the document, passing in the `params` list, and eval it in a
+  # child of the global environment (this isolates the code in the document
+  # from the code in this app)
+  if (DEBUG) file.copy(tempReport, "~/scShinyHubDebug/tempReport.Rmd")
+  myparams <- params # needed for saving as params is already taken by knitr
+  if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.RData", list = c("myparams", ls(), "zippedReportFiles"))
+  # load(file = '~/scShinyHubDebug/tempReport.RData')
+  cat(file = stderr(), paste("workdir: ", getwd()))
+  require(callr)
+  # if (DEBUGSAVE)
+    file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
+  
+  # tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  r(function(input, output_file, params, envir) 
+    rmarkdown::render(input = input, output_file = output_file,
+                                                                  params = params, envir = envir), 
+    args = list(input = tempReport,
+                output_file = "report.html",
+                params = params,
+                envir = new.env())
+  )
+  # file.copy(from = "contributions/sCA_subClusterAnalysis/report.Rmd",
+  #           to = "/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmph1SRTE/file69aa37a47206.Rmd", overwrite = TRUE)
+  # rmarkdown::render(input = tempReport, output_file = "report.html",
+  #                   params = params, envir = new.env())
+  
+  tDir <- paste0(reportTempDir, "/")
+  base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
+  write.csv(as.matrix(assays(scEx_log)[[1]]), file = paste0(reportTempDir, "/normalizedCounts.csv"))
+  base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("scEx", "projections"))
+  zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
+  zip(outZipFile, zippedReportFiles, flags = "-9Xj")
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("Report creation is done", id = "reportDone", duration = 10, type = "message")
+  }
+  if (DEBUG) {
+    end.time <- Sys.time()
+    cat(file = stderr(), "===Report:done", difftime(end.time, start.time, units = "min"), "\n")
+  }
+  return(outZipFile)
+})

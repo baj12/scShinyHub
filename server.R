@@ -27,7 +27,7 @@ library(Matrix)
 library(colourpicker)
 library(shinytest)
 library(scran)
-
+library(callr)
 
 if (file.exists("defaultValues.R")) {
   base::source(file = "defaultValues.R")
@@ -69,8 +69,7 @@ shinyServer(function(input, output, session) {
   # files to be included in report
   # developers can add in outputs.R a variable called "myZippedReportFiles"
   zippedReportFiles <- c("report.html", "sessionData.RData", "normalizedCounts.csv", "variables.used.txt", "inputUsed.RData")
-  reportTempDir <- base::tempdir()
-  
+
   base::options(shiny.maxRequestSize = 2000 * 1024^2)
   
   # TODO check if file exists
@@ -83,7 +82,7 @@ shinyServer(function(input, output, session) {
   # display name, reactive name to be executed
   heavyCalculations <- list(
     c("pca", "pca"),
-    c("kmClustering", "kmClustering"),
+    c("scran_Cluster", "scran_Cluster"),
     c("projections", "projections")
   )
   
@@ -130,10 +129,10 @@ shinyServer(function(input, output, session) {
     myProjections <- NULL
     myDiffExpFunctions <- NULL
     base::source(fp, local = TRUE)
-    # TODO rename appendHeavyCalculations to append2list
-    heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
-    projectionFunctions <- appendHeavyCalculations(myProjections, projectionFunctions)
-    diffExpFunctions <- appendHeavyCalculations(myDiffExpFunctions, diffExpFunctions)
+    
+    heavyCalculations <- append2list(myHeavyCalculations, heavyCalculations)
+    projectionFunctions <- append2list(myProjections, projectionFunctions)
+    diffExpFunctions <- append2list(myDiffExpFunctions, diffExpFunctions)
   }
   
   # update diffExpression radiobutton
@@ -164,8 +163,8 @@ shinyServer(function(input, output, session) {
     myProjections <- NULL
     myZippedReportFiles <- c()
     base::source(fp, local = TRUE)
-    heavyCalculations <- appendHeavyCalculations(myHeavyCalculations, heavyCalculations)
-    projectionFunctions <<- appendHeavyCalculations(myProjections, projectionFunctions)
+    heavyCalculations <- append2list(myHeavyCalculations, heavyCalculations)
+    projectionFunctions <<- append2list(myProjections, projectionFunctions)
     zippedReportFiles <- c(zippedReportFiles, myZippedReportFiles)
   }
 

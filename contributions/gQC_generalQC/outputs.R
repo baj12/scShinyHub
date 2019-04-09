@@ -11,15 +11,19 @@ gQC_X2 <<- "tsne2"
 gQC_X3 <<- "tsne3"
 gQC_col <<- "sampleNames"
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: gQC_dim3D_x\n")
   gQC_X1 <<- input$gQC_dim3D_x
 })
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: gQC_dim3D_y\n")
   gQC_X2 <<- input$gQC_dim3D_y
 })
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: gQC_dim3D_z\n")
   gQC_X3 <<- input$gQC_dim3D_z
 })
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: gQC_col3D\n")
   gQC_col <<- input$gQC_col3D
 })
 

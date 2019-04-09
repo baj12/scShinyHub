@@ -118,14 +118,17 @@ subClusterDim1 <- "PC1"
 subClusterDim2 <- "PC2"
 subClusterClusters <<- NULL
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: sCA_subscluster_x1\n")
   subClusterDim1 <<- input$sCA_subscluster_x1
 })
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: sCA_subscluster_y1\n")
   subClusterDim2 <<- input$sCA_subscluster_y1
 })
 #' TODO
 #' if this observer is really needed we need to get rid of projections
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: projections\n")
   projections <- projections()
   if (!is.null(projections)) {
     noOfClusters <- levels(as.factor(projections$dbCluster))
@@ -136,6 +139,7 @@ observe({
   }
 })
 observe({
+  if (DEBUG) cat(file = stderr(), "observe: sCA_dgeClustersSelection\n")
   subClusterClusters <<- input$sCA_dgeClustersSelection
 })
 
@@ -143,6 +147,7 @@ observe({
 # subcluster axes ----
 # update axes in subcluster analysis
 updateInputSubclusterAxes <- reactive({
+  if (DEBUG) cat(file = stderr(), "observe: updateInputSubclusterAxes\n")
   projections <- projections()
   # we combine the group names with the projections to add ability to select groups
   # gn <- groupNames$namesDF
@@ -169,33 +174,6 @@ updateInputSubclusterAxes <- reactive({
   )
 })
 
-
-# sub cluster analysis ( used for 2 panels )
-output$sCA_dgeClustersSelection <- renderUI({
-  projections <- projections()
-  up1 <- updateInputSubclusterAxes()
-  
-  if (DEBUG) cat(file = stderr(), "output$sCA_dgeClustersSelection\n")
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/sCA_dgeClustersSelection.RData", list = c(ls(envir = globalenv(), ls(), "subClusterClusters")))
-  }
-  # load(file="~/scShinyHubDebug/sCA_dgeClustersSelection.RData")
-  
-  
-  if (is.null(projections)) {
-    tags$span(style="color:red", "Please load data first")
-  } else {
-    noOfClusters <- levels(as.factor(projections$dbCluster))
-    # noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
-    selectizeInput(
-      "sCA_dgeClustersSelection",
-      label = "Cluster",
-      choices = noOfClusters,
-      selected = subClusterClusters,
-      multiple = TRUE
-    )
-  }
-})
 
 
 #' subCluster2Dplot

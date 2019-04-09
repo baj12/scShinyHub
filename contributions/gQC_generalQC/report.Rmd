@@ -65,7 +65,7 @@ if(exists("params")){
   if(DEBUG)cat(file=stderr(), "tsne: done\n")
   if(DEBUG)cat(file=stderr(), "tsne.data\n")
   
-  if(DEBUG)cat(file=stderr(), "kmClustering\n")
+  if(DEBUG)cat(file=stderr(), "scran_Cluster\n")
   clustering=list()
   
   kNr = 10
@@ -75,8 +75,8 @@ if(exists("params")){
     clustering[[paste0("kmeans_",kNr,"_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)), "Cluster" = km$cluster)
   }
   
-  kmClustering = clustering
-  if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
+  scran_Cluster = clustering
+  if(DEBUG)cat(file=stderr(), "scran_Cluster:done\n")
   
   
   tsne.data = data.frame(tsne$Y)
@@ -206,7 +206,7 @@ gQC_sampleHistFunc(sampleInf, scols)
 ```{r savegqcProj, echo=FALSE}
 
 # save full table in tmp folder to be included in report
-  write.csv(projections, file = paste0(input$reportTempDir, "/gqcProjections.csv"))
+  write.csv(projections, file = paste0(reportTempDir, "/gqcProjections.csv"))
 
 ```
 

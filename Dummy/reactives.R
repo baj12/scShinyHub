@@ -74,38 +74,6 @@ DummyReactive <- reactive({
 
 
 
-# dbCluster ----
-dbCluster <- reactive({
-  start.time <- Sys.time()
-  
-  kNr <- input$kNr
-  # kNr = 10
-  if (DEBUG) {
-    cat(file = stderr(), "dbCluster\n")
-  }
-  clustering <- kmClustering()
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/dbCluster.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/dbCluster.RData")
-  
-  if (is.null(clustering)) {
-    if (DEBUG) {
-      cat(file = stderr(), "dbCluster: NULL\n")
-    }
-    return(NULL)
-  }
-  
-  dbCluster <- clustering$Cluster
-  
-  printTimeEnd(start.time, "dbCluster")
-  exportTestValues(dbCluster = { dbCluster })
-  return(dbCluster)
-})
-
-
-
-
 
 
 

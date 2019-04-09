@@ -79,7 +79,7 @@ dimX <- `r input$"DE_expclusters-dimension_x"`
 dimY <- `r input$"DE_expclusters-dimension_y"`
 
 
-```{r bj-DE-2Dprojection, echo=FALSE, eval=TRUE}
+```{r bj-DE-2Dprojection, echo=FALSE, eval=FALSE}
 
 g_id <- input$DE_gene_id
 geneNames <- input$"DE_expclusters-geneIds"
@@ -119,7 +119,7 @@ plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
 
 ## VIOLIN PLOT 
 
-```{r bj-DE-DE_gene_vio_plot, eval=TRUE, echo=FALSE}
+```{r bj-DE-DE_gene_vio_plot, eval=FALSE, echo=FALSE}
 # geneid <- rownames(featureData[which(featureData$symbol %in%
 #                                        toupper(input$DE_gene_id)), ])[1]
   genesin <- toupper(input$DE_gene_id)

@@ -65,7 +65,9 @@ if (exists("params")) {
 
 ```{r coE_heatmapFunc, echo=FALSE}
 require(pheatmap)
-
+saveFile = "~/scShinyHubDebug/coE_heatmapFunc.report.RData"
+save(file = saveFile, list = c(ls(), ls(envir = globalenv())))
+# load(file = saveFile)
 scEx_matrix <- assays(scEx_log)[[1]]
 genesin <- input$coE_heatmap_geneids
 sampCol = sampleCols$colPal
@@ -103,8 +105,6 @@ do.call(pheatmap, heatmapData)
 
 ### 2D plot with selection of cells 
 
-geneNames <- `r input$"coE_selected-geneIds"`
-
 clId <- `r input$"coE_selected-clusters"`
 
 dimX <- `r input$"coE_selected-dimension_x"`
@@ -113,36 +113,43 @@ dimY <- `r input$"coE_selected-dimension_y"`
 
 
 
-```{r selectd2D, echo=FALSE}
-g_id <- input$gene_id
-geneNames <- input$"coE_selected-geneIds"
-#TODO geneNames2 is just added to have a value, need to check how this should behave.
-geneNames2 <- input$"coE_selected-geneIds"
+```{r selectd2D, echo=FALSE, eval=TRUE}
+#TODO uses module and thus not working correctly if not executed
+# g_id <- input$gene_id
+# geneNames <- input$"coE_selected-geneIds"
+# #TODO geneNames2 is just added to have a value, need to check how this should behave.
+# geneNames2 <- input$"coE_selected-geneIds"
 clId <- input$"coE_selected-clusters"
 dimX <- input$"coE_selected-dimension_x"
 dimY <- input$"coE_selected-dimension_y"
 scols <- sampleCols$colPal
 ccols <- clusterCols$colPal
+save("~/Rstudio/shHubgit/tmp.RData")
+# genesin <- input$coE_heatmap_geneids2
+# input$`coE_selected-clusters-selectized`
+# legend.position <- "none"
+# # grpN <- make.names(input$groupName)
+# # cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
+# 
+# # save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
+# # load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
+#   retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin,
+#                             cells = scCells, sampCol = sampCol, ccols = ccols
+#   )
+# 
+# 
+#   if (dimCol == "sampleNames") {
+#     myColors <- scols
+#   } else {
+#     myColors <- NULL
+#   }
+# if (dimCol == "dbCluster") {
+#     myColors <- ccols
+#   }
+# 
+# plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
+#                  grpNs = groupNames$namesDF, colors = myColors)
 
-legend.position <- "none"
-grpN <- make.names(input$groupName)
-cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
-
-# save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
-# load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
-
-
-  if (dimCol == "sampleNames") {
-    myColors <- scols
-  } else {
-    myColors <- NULL
-  }
-if (dimCol == "dbCluster") {
-    myColors <- ccols
-  }
-
-plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, 
-                 grpNs = groupNames$namesDF, colors = myColors)
 ```
 
 
@@ -279,7 +286,7 @@ if(!is.null(brushedPs)){
 
 ```{r saveTOPGENES, echo=FALSE}
 # save full table in tmp folder to be included in report
-write.csv(outMat, file = paste0(input$reportTempDir, "/output_coE_topExpGenes.csv"))
+write.csv(outMat, file = paste0(reportTempDir, "/output_coE_topExpGenes.csv"))
 
 ```
 
