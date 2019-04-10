@@ -3,6 +3,7 @@ title: "PostAnalysis.specialPlots.Rmd"
 author: "Bernd Jagla"
 date: "11/28/2018"
 output: html_document
+  code_folding: hide
 ---
 
 ```{r, echo=TRUE}
