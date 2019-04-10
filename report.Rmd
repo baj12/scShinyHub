@@ -93,7 +93,7 @@ __LOAD_REACTIVES__
 
 # parameters
 
-```{r setup, include=TRUE, echo=FALSE, warning=FALSE, eval=FALSE}
+```{r setup, include=TRUE, echo=TRUE, warning=FALSE, eval=FALSE}
 # not needed anymore
 # input <- params
 print(str(input$file1$name))
@@ -158,7 +158,7 @@ if (is.null(input$geneSelectionClustering)) {
 ```
 
 
-```{r inputData, echo=FALSE, eval=TRUE}
+```{r inputData, echo=TRUE, eval=TRUE}
 # if ( !exists("dataTables")) {# needed when working with ~/scShinyHubDebug/reports.Data
 cat(file = stderr(), paste("loading dataTables\n"))
 # in case the file is not in the root directory is has to be manually loaded during debugging
@@ -168,7 +168,7 @@ dataTables <- inputData
 # }
 ```
 
-```{r useCells, echo=FALSE, eval=FALSE}
+```{r useCells, echo=TRUE, eval=FALSE}
 # not needed anymore
 geneNames <- input$minExpGenes
 rmCells <- input$cellsFiltersOut
@@ -184,7 +184,7 @@ useCells <- useCellsFunc(dataTables,
 )
 ```
 
-```{r useGenes, echo=FALSE, eval=FALSE}
+```{r useGenes, echo=TRUE, eval=FALSE}
 # not needed anymore
 # base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list = ls())
 ipIDs <- input$selectIds
@@ -196,13 +196,13 @@ useGenes <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLi
 ```
 
 
-```{r featureDataReact, echo=FALSE, eval=TRUE}
+```{r featureDataReact, echo=TRUE, eval=TRUE}
 
 featureDataReact <- dataTables$featuredata[useGenes, ]
 featureData <- dataTables$featuredata[useGenes, ]
 ```
 
-```{r scEx, echo=FALSE, eval=FALSE}
+```{r scEx, echo=TRUE, eval=FALSE}
 # not needed anymore
 if (DEBUG) cat(file = stderr(), "scEx\n")
 minGene <- input$minGenesGS # min number of reads per gene
@@ -216,12 +216,12 @@ if (DEBUG) cat(file = stderr(), paste("scEx:", class(scEx), "\n"))
 ```
 
 
-```{r medianENSG, echo=FALSE, eval=TRUE}
+```{r medianENSG, echo=TRUE, eval=TRUE}
 medianENSG <- medianENSGfunc(as.matrix(assays(scEx)[[1]]))
 ```
 
 
-```{r medianUMI, echo=FALSE, eval=TRUE}
+```{r medianUMI, echo=TRUE, eval=TRUE}
 medianUMI <- medianUMIfunc(as.matrix(assays(scEx)[[1]]))
 ```
 
@@ -248,7 +248,7 @@ scExLogMatrixDisplay <- retVal
 ```
 
 
-```{r pca, eval=TRUE, echo=FALSE, eval=FALSE}
+```{r pca, eval=TRUE, echo=TRUE, eval=FALSE}
 # not needed anymore
 if (DEBUG) cat(file = stderr(), "pca\n")
 
@@ -256,7 +256,7 @@ pca <- pcaFunc(scEx_log)
 ```
 
 
-```{r scran_Cluster, echo=FALSE, eval=FALSE}
+```{r scran_Cluster, echo=TRUE, eval=FALSE}
 # not needed anymore output is dbCluster
 if (DEBUG) cat(file = stderr(), "scran_Cluster\n")
   geneSelectionClustering <- input$geneSelectionClustering
@@ -282,7 +282,7 @@ if (DEBUG) cat(file = stderr(), "scran_Cluster:done\n")
 
 Creating `r input$gQC_tsneDim` tSNE clusters.
 
-```{r tsne, echo=FALSE, eval=FALSE}
+```{r tsne, echo=TRUE, eval=FALSE}
 #not needed anymore 
 if (DEBUG) cat(file = stderr(), "tsne\n")
 gQC_tsneDim <- input$gQC_tsneDim
@@ -427,7 +427,7 @@ printVars(params, fileConn)
 
 # Session information
 
-```{r sessionInfo, echo=FALSE}
+```{r sessionInfo, echo=TRUE}
 if (!LOCALEXECUTION) {
   # save(file = "~/scShinyHubDebug/report.RData", list=ls())
 }

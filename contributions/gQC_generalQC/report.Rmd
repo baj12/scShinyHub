@@ -7,7 +7,7 @@ output: html_document
 
 
 
-```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
+```{r bj-gQC-setup, echo=TRUE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
 if(exists("params")){
   cat(file = stderr(), paste("Scater Plot report\n"))
 }else{
@@ -97,7 +97,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsneData), "\n"))
 
 
 
-```{r bj-gQC-tsne3d, eval=FALSE, echo=FALSE}
+```{r bj-gQC-tsne3d, eval=FALSE, echo=TRUE}
 # TODO: not working because tsne.data is not available
 cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
   
@@ -133,14 +133,14 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 ## UMI histogram
 
 
-```{r gQC_plotUmiHist, eval=TRUE, echo=FALSE}
+```{r gQC_plotUmiHist, eval=TRUE, echo=TRUE}
 
 hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs
 
-```{r gQC_variancePCA, eval=TRUE, echo=FALSE}
+```{r gQC_variancePCA, eval=TRUE, echo=TRUE}
 # if(exists("pca$var_pcs")){
   barplot(pca$var_pcs, main="Variance captured by first PCs")
 # }
@@ -149,7 +149,7 @@ hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main="histogram of number 
 ## Histogram of samples
 
 
-```{r histSamples, eval=TRUE, echo=FALSE}
+```{r histSamples, eval=TRUE, echo=TRUE}
 if(DEBUGSAVE) 
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
 sampleInf <- sampleInfoFunc(scEx)
@@ -161,7 +161,7 @@ gQC_sampleHistFunc(sampleInf, scols)
 
 ## TSNE plot
 
-```{r bj-GC-tsne, echo=FALSE}
+```{r bj-GC-tsne, echo=TRUE}
 
 
   dimX = input$gQC_dim3D_x
@@ -203,7 +203,7 @@ gQC_sampleHistFunc(sampleInf, scols)
 
 ## Projections table
 
-```{r savegqcProj, echo=FALSE}
+```{r savegqcProj, echo=TRUE}
 
 # save full table in tmp folder to be included in report
   write.csv(projections, file = paste0(reportTempDir, "/gqcProjections.csv"))

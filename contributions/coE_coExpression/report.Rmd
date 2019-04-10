@@ -8,7 +8,7 @@ output: html_document
 
 # Co-expression
 
-```{r bj-coExp-setup, echo=FALSE, warning=FALSE}
+```{r bj-coExp-setup, echo=TRUE, warning=FALSE}
 if (exists("params")) {
   cat(file = stderr(), paste("Scater Plot report\n"))
 } else {
@@ -95,7 +95,7 @@ dimY <- `r input$"coE_selected-dimension_y"`
 
 
 
-```{r selectd2D, echo=FALSE, eval=TRUE, warning=FALSE}
+```{r selectd2D, echo=TRUE, eval=TRUE, warning=FALSE}
 
 DEBUGSAVE <- FALSE
 grpNs <- groupNames$namesDF
@@ -190,7 +190,7 @@ orderColNames : `r input$'coE_heatmapSelectedModule-orderNames'`
 moreOptions <- `r input$'coE_heatmapSelectedModule-moreOptions'`
 
 
-```{r coE_heatmapSelectedModule, echo=FALSE, eval=TRUE}
+```{r coE_heatmapSelectedModule, echo=TRUE, eval=TRUE}
 # save(file = "~/scShinyHubDebug/selectedHeatmap.1.RData", list = c(ls(), ls(envir = globalenv())))
 genesin <- input$coE_heatmapselected_geneids
 
@@ -234,7 +234,7 @@ heatmapPlotFromModule(heatmapData, moduleName, input, projections)
 
 #### table of selected cells
 
-```{r topexpCells, echo=FALSE, eval=TRUE}
+```{r topexpCells, echo=TRUE, eval=TRUE}
 
 
 coEtgPerc <- input$coEtgPerc
@@ -288,7 +288,7 @@ if (dim(dataTables)[1] > 1) {
 }
 ```
 
-```{r saveTOPGENES, echo=FALSE, eval=TRUE}
+```{r saveTOPGENES, echo=TRUE, eval=TRUE}
 # save full table in tmp folder to be included in report
 write.csv(dataTables, file = paste0(reportTempDir, "/output_coE_topExpGenes.csv"))
 ```
@@ -305,7 +305,7 @@ projectionVar <- `r input$coE_dimension_xVioiGrp`
 
 minExpr <- `r input$coEminExpr`
 
-```{r violinPlot, echo=FALSE, eval=TRUE}
+```{r violinPlot, echo=TRUE, eval=TRUE}
 
 geneListStr <- input$coE_geneGrpVioIds
 projectionVar <- input$coE_dimension_xVioiGrp

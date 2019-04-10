@@ -5,7 +5,7 @@ output: html_document
 
 # sub cluster analysis
 
-```{r dge, eval=TRUE, echo=FALSE, results='asis'}
+```{r dge, eval=TRUE, echo=TRUE, results='asis'}
   
 if(DEBUG)cat(file=stderr(), "dge\n")
 
@@ -28,7 +28,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
 
 
 
-```{r sCA_selectedDge1, eval=TRUE, echo=FALSE}
+```{r sCA_selectedDge1, eval=TRUE, echo=TRUE}
 # TODO module?  
   x1 = input$sCA_subscluster_x1
   y1 = input$sCA_subscluster_y1
@@ -83,7 +83,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
   inpCl1 <- `r input$sCA_dgeClustersSelection`
 
 
-```{r dgePlot2, echo=FALSE}
+```{r dgePlot2, echo=TRUE}
 
   inpCl1 <- input$sCA_dgeClustersSelection
   
@@ -135,7 +135,7 @@ if (is.null(input$db1) | is.null(input$db2)) {
   
   
 
-```{r DGETable, eval=TRUE, echo=FALSE}
+```{r DGETable, eval=TRUE, echo=TRUE}
 
 
   cl1 <- input$sCA_dgeClustersSelection

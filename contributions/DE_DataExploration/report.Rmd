@@ -5,7 +5,7 @@ output: html_document
 
 # Data exploration
 
-```{r bj-DE-setup, echo=FALSE, warning=FALSE}
+```{r bj-DE-setup, echo=TRUE, warning=FALSE}
 if(exists("params")){
   cat(file=stderr(), paste("Scater Plot report\n"))
 }else{
@@ -79,7 +79,7 @@ dimX <- `r input$"DE_expclusters-dimension_x"`
 dimY <- `r input$"DE_expclusters-dimension_y"`
 
 
-```{r bj-DE-2Dprojection, echo=FALSE, eval=FALSE}
+```{r bj-DE-2Dprojection, echo=TRUE, eval=FALSE}
 
 g_id <- input$DE_gene_id
 geneNames <- input$"DE_expclusters-geneIds"
@@ -119,7 +119,7 @@ plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
 
 ## VIOLIN PLOT 
 
-```{r bj-DE-DE_gene_vio_plot, eval=FALSE, echo=FALSE}
+```{r bj-DE-DE_gene_vio_plot, eval=FALSE, echo=TRUE}
 # geneid <- rownames(featureData[which(featureData$symbol %in%
 #                                        toupper(input$DE_gene_id)), ])[1]
   genesin <- toupper(input$DE_gene_id)
@@ -178,7 +178,7 @@ input$DE_dim_x : `r input$DE_dim_x`
 
 input$DE_dim_y : `r input$DE_dim_y`
 
-```{r bj-DE-DE_panelPlot, eval=FALSE, echo=FALSE}
+```{r bj-DE-DE_panelPlot, eval=FALSE, echo=TRUE}
 
 #@DO fix
 # output$DE_panelPlot
@@ -243,7 +243,7 @@ if (input$DE_clusterSelectionPanelPlot == 'All')
 
 ## 3D TSNE plot
 
-```{r bj-DE-DE_tsne_plt, eval=TRUE, echo=FALSE}
+```{r bj-DE-DE_tsne_plt, eval=TRUE, echo=TRUE}
 if(DEBUG)cat(file=stderr(), "output$DE_tsne_plt\n")
 geneid <- rownames(featureData[which(featureData$symbol ==
                                        toupper(input$DE_gene_id)), ])[1]
@@ -276,7 +276,7 @@ layout(p, title = toupper(input$DE_gene_id))
 
 ## scater QC
 
-```{r bj-DE-scater, eval=FALSE, echo=FALSE, warning=FALSE }
+```{r bj-DE-scater, eval=FALSE, echo=TRUE, warning=FALSE }
 cat(file = stderr(), paste(class(scEx_log), collapse = "\n"))
 featureDataReact <- dataTables$featuredata[useGenes, ]
 # featureData = dataTables$featuredata[useGenes, ]
