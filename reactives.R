@@ -1282,6 +1282,15 @@ reportFunction <- function(tmpPrjFile) {
 
 reacativeReport <- reactive({
   start.time <- Sys.time()
+  # remove any notification on exit that we don't want
+  on.exit(
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "creating_Report")
+  )
+  # show in the app that this is running
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("creating Report", id = "creating_Report", duration = NULL)
+  }
   
   scEx <- scEx()
   projections <- projections()
@@ -1300,7 +1309,7 @@ reacativeReport <- reactive({
   # this way they can be saved
   rectVals = c()
   isolate({
-    for (var in ls(envir = globalenv())) { 
+    for (var in c(names(globalenv()),names(parent.env(environment())))) { 
       cat(file = stderr(), paste("var: ", var, '---', class(get(var)),  "\n"))
       if ( var == "reacativeReport") next()
       if (class(get(var))[1] == "reactivevalues"){
@@ -1308,16 +1317,28 @@ reacativeReport <- reactive({
         rectVals = c(rectVals, var)
         assign(var, reactiveValuesToList(get(var)), envir = report.env)
       } else if (class(get(var))[1] == "reactiveExpr") {
-        cat(file = stderr(), paste("is reactiveExpr: ", var, "\n"))
+        cat(file = stderr(), paste("is reactiveExpr: ", var, "--", class(get(var)), "\n"))
         rectVals = c(rectVals, var)
         assign(var, eval(parse(text = paste0(var, "()"))), envir = report.env)
+        # for modules we have to take care of return values
+        # this has to be done manually (for the moment)
+        # and is only required for clusterServer
+        if (class(report.env[[var]])[1] == "reactivevalues") {
+          if(all(c("cluster", "selectedCells") %in% names(report.env[[var]]))) {
+            assign(paste0(var,"-cluster"), eval(report.env[[var]][["cluster"]]), envir = report.env)
+            tempVar = report.env[[var]][["selectedCells"]]
+            assign(paste0(var,"-selectedCells"), eval(parse(text = "tempVar()")), envir = report.env)
+          }
+        }
       }
     }
+    
+    assign("input", reactiveValuesToList(get("input")), envir = report.env)
   })
-  
   base::save(file = tmpPrjFile, list = c("reportTempDir","projections", "scEx_log", "scEx", "report.env"))
-  
-  if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("report.env", "file", ls(), ls(envir = globalenv())))
+  userDataEnv <- as.environment(as.list(session$userData, all.names=TRUE))
+  # browser()
+  if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("session", "report.env", "file", ls(), ls(envir = globalenv())))
   # load('~/scShinyHubDebug/tempReport.1.RData')
   
   outZipFile = paste0(reportTempDir, "/report.zip")
@@ -1418,14 +1439,17 @@ reacativeReport <- reactive({
   # from the code in this app)
   if (DEBUG) file.copy(tempReport, "~/scShinyHubDebug/tempReport.Rmd")
   myparams <- params # needed for saving as params is already taken by knitr
-  if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.RData", list = c("myparams", ls(), "zippedReportFiles"))
+  # if (DEBUGSAVE) 
+    save(file = "~/scShinyHubDebug/tempReport.RData", list = c("session", "myparams", ls(), "zippedReportFiles"))
   # load(file = '~/scShinyHubDebug/tempReport.RData')
   cat(file = stderr(), paste("workdir: ", getwd()))
   require(callr)
   # if (DEBUGSAVE)
     file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
   
-  # tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  file.copy("contributions/coE_coExpression/report.Rmd",
+            '/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmp5uuY0f/file92087e386a11.Rmd', overwrite = TRUE)
   r(function(input, output_file, params, envir) 
     rmarkdown::render(input = input, output_file = output_file,
                                                                   params = params, envir = envir), 

@@ -4,9 +4,10 @@ myZippedReportFiles <- c("output_coE_topExpGenes.csv")
 
 # All clusters heat map ------
 callModule(
-  pHeatMapModule, 
-  "coExpHeatmapModule", 
-  coE_heatmapReactive)
+  pHeatMapModule,
+  "coExpHeatmapModule",
+  coE_heatmapReactive
+)
 
 # 2D plot with selection of cells ------
 # assigning it to a variable allows us to interact with the plot and collect selection events
@@ -14,7 +15,7 @@ coE_selctedCluster <-
   callModule(
     clusterServer,
     "coE_selected",
-    projections #,
+    projections # ,
     # reactive(input$coE_gene_id_sch)
   )
 
@@ -41,17 +42,18 @@ callModule(
 
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
 # output$coE_geneGrp_vio_plot <- renderPlotly({
-  output$coE_geneGrp_vio_plot <- renderPlot({
-    start.time <- base::Sys.time()
+output$coE_geneGrp_vio_plot <- renderPlot({
+  start.time <- base::Sys.time()
   if (DEBUG) cat(file = stderr(), "output$coE_geneGrp_vio_plot\n")
   on.exit(
-    if (!is.null(getDefaultReactiveDomain()))
+    if (!is.null(getDefaultReactiveDomain())) {
       removeNotification(id = "coE_geneGrp_vio_plot")
+    }
   )
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("coE_geneGrp_vio_plot", id = "coE_geneGrp_vio_plot", duration = NULL)
   }
-  
+
   projections <- projections()
   scEx_log <- scEx_log()
   geneListStr <- input$coE_geneGrpVioIds
@@ -59,9 +61,9 @@ callModule(
   minExpr <- input$coEminExpr
   coE_showPermutations <- input$coE_showPermutations
   # colPal = coE_geneGrp_vioFunc # TODO must be wrong
-  sampCol = sampleCols$colPal
+  sampCol <- sampleCols$colPal
   ccols <- clusterCols$colPal
-  
+
   upI <- coE_updateInputXviolinPlot() # no need to check because this is done in projections
   if (is.null(projections)) {
     if (DEBUG) cat(file = stderr(), "output$coE_geneGrp_vio_plot:NULL\n")
@@ -71,7 +73,7 @@ callModule(
     save(file = "~/scShinyHubDebug/coE_geneGrp_vio_plot.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/coE_geneGrp_vio_plot.RData")
-  
+
   featureData <- rowData(scEx_log)
   retVal <- coE_geneGrp_vioFunc(
     genesin = geneListStr,
@@ -84,8 +86,10 @@ callModule(
     sampCol = sampCol,
     ccols = ccols
   )
-  
+
   printTimeEnd(start.time, "coE_geneGrp_vio_plot")
-  exportTestValues(coE_geneGrp_vio_plot = {retVal})  
+  exportTestValues(coE_geneGrp_vio_plot = {
+    retVal
+  })
   return(retVal)
 })

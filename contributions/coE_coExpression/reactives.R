@@ -101,7 +101,7 @@ coE_heatmapSelectedReactive <- reactive({
   
   scEx_log <- scEx_log()
   projections <- projections()
-  genesin <- input$coE_heatmap_geneids2
+  genesin <- input$coE_heatmapselected_geneids
   sc <- coE_selctedCluster()
   scCL <- sc$cluster # "1" "2" "3" "4"
   scCells <- sc$selectedCells() # [1] "AAACCTGAGACACTAA-1" "AAACCTGAGACGACGT-1" "AAACCTGAGTCAAGCG-1" "AAACCTGCAAGAAGAG-1" "AAACCTGCAGACAGGT-1" "AAACCTGCATACAGCT-1" "AAACCTGGTGTGACCC-1"

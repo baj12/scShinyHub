@@ -30,11 +30,12 @@ clusterServer <- function(input, output, session,
                           # ,
                           # defaultValues = c("tsne1", "tsne2")
 ) {
-  # TODO
   ns <- session$ns
   subsetData <- NULL
   selectedGroupName <- ""
   groupName <- ""
+  addToGroupValue <- FALSE
+  
   
   # dim1 <- defaultValues[1]
   # dim2 <- defaultValues[2]
@@ -70,6 +71,7 @@ clusterServer <- function(input, output, session,
     divYBy <<- input$devideYBy
   })
   
+  # clusterServer - updateInput ----
   updateInput <- reactive({
     tsneData <- projections()
     
@@ -108,6 +110,7 @@ clusterServer <- function(input, output, session,
     
   })
   
+  # clusterServer - selectedCellNames ----
   selectedCellNames <- reactive({
     start.time <- Sys.time()
     brushedPs <- event_data("plotly_selected", source = "subset")
@@ -151,6 +154,7 @@ clusterServer <- function(input, output, session,
     return(cells.names)
   })
   
+  # clusterServer - returnValues ----
   returnValues <- reactiveValues(
     cluster = reactive(input$clusters),
     selectedCells = reactive({
@@ -205,10 +209,11 @@ clusterServer <- function(input, output, session,
     })
   )
   
-  if (DEBUG) {
-    cat(file = stderr(), paste("clusterServers", session$ns("clusters"), "\n"))
-  }
+  # if (DEBUG) {
+  #   cat(file = stderr(), paste("clusterServers", session$ns("clusters"), "\n"))
+  # }
   
+  # clusterServer - output$clusters ----
   output$clusters <- renderUI({
     si <- NULL
     projections <- tData()
@@ -233,11 +238,11 @@ clusterServer <- function(input, output, session,
     si
   })
   
+  # clusterServer - output$clusterPlot ----
   output$clusterPlot <- renderPlotly({
     if (DEBUG) {
       cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
     }
-    scEx_log <- scEx_log()
     scEx_log <- scEx_log()
     projections <- tData()
     grpNs <- groupNames$namesDF
@@ -311,7 +316,9 @@ clusterServer <- function(input, output, session,
   # })
   
   
+  # clusterServer - observe input$groupNames ----
   observe({
+    if (DEBUG) cat(file = stderr(), "observe input$groupNames \n")
     input$groupNames # dropdown list with names of cell groups
     isolate({
       updateTextInput(
@@ -321,6 +328,7 @@ clusterServer <- function(input, output, session,
     })
   })
   
+  # clusterServer - visibleCellNames ----
   visibleCellNames <- reactive({
     if (DEBUG) {
       cat(file = stderr(), "cluster: selectedCellNames\n")
@@ -334,15 +342,10 @@ clusterServer <- function(input, output, session,
     # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
     return(subsetData)
   })
-  
-  
-  
-  addToGroupValue <- FALSE
-  
+
+  # clusterServer - observe input$addToGroup ----
   observe({
-    if (DEBUG) {
-      cat(file = stderr(), "input$addToGroup changed\n")
-    }
+    if (DEBUG) cat(file = stderr(), "observe input$addToGroup \n")
     if (!is.null(input$addToGroup)) {
       if (input$addToGroup) {
         addToGroupValue <<- TRUE
@@ -352,7 +355,9 @@ clusterServer <- function(input, output, session,
     }
   })
   
+  # clusterServer - observe input$changeGroups ----
   observe({
+    if (DEBUG) cat(file = stderr(), "observe input$changeGroups \n")
     ns <- session$ns
     input$changeGroups # action button
     addToSelection <- addToGroupValue
@@ -426,6 +431,7 @@ clusterServer <- function(input, output, session,
     selectedGroupName <<- grpN
   })
   
+  # clusterServer - output$nCellsVisibleSelected ----
   # display the number of cells that belong to the group, but only from the visible ones
   output$nCellsVisibleSelected <- renderText({
     grpN <- make.names(input$groupName)
@@ -445,6 +451,7 @@ clusterServer <- function(input, output, session,
     return(retVal)
   })
   
+  # clusterServer - output$nCellsAllSelected ----
   # display the number of cells that belong to the group, including the cells from non visible clusters
   output$nCellsAllSelected <- renderText({
     grpNs <- groupNames$namesDF
@@ -457,6 +464,7 @@ clusterServer <- function(input, output, session,
   })
   
   
+  # clusterServer - output$additionalOptions ----
   output$additionalOptions <- renderUI({
     if (DEBUG) cat(file = stderr(), "cluster: additionalOptions\n")
     ns <- session$ns
@@ -518,6 +526,7 @@ clusterServer <- function(input, output, session,
     )
   })
   
+  # clusterServer - output$cellSelection ----
   output$cellSelection <- renderText({
     start.time <- Sys.time()
     on.exit(
@@ -580,6 +589,7 @@ clusterServer <- function(input, output, session,
     return(retVal)
   })
   
+  # clusterServer - return ----
   return(reactive({
     returnValues
   }))
@@ -798,6 +808,7 @@ pHeatMapModule <- function(input, output, session,
   
   outfilePH <- NULL
   
+  # pHeatMapModule - updateInput ----
   updateInput <- reactive({
     proje <- projections()
     
@@ -818,6 +829,7 @@ pHeatMapModule <- function(input, output, session,
     # )
   })
   
+  # pHeatMapModule - pHeatMapPlot ----
   output$pHeatMapPlot <- renderImage({
     on.exit(
       if (!is.null(getDefaultReactiveDomain())) {
@@ -900,6 +912,7 @@ pHeatMapModule <- function(input, output, session,
     ))
   })
   
+  # pHeatMapModule - additionalOptions ----
   output$additionalOptions <- renderUI({
     if (DEBUG) cat(file = stderr(), "heatmapModule: additionalOptions\n")
     ns <- session$ns
@@ -935,6 +948,8 @@ pHeatMapModule <- function(input, output, session,
       )
     )
   })
+
+  # pHeatMapModule - download_pHeatMapUI ----
   output$download_pHeatMapUI <- downloadHandler(
     filename = function() {
       paste("pHeatMap", "data.zip", sep = "_")

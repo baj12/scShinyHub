@@ -56,7 +56,7 @@ tabList <- list(
       6,
       offset = 1,
 
-      textInput("coE_heatmap_geneids2", "Comma seperated gene names", value = defaultValueMultiGenes)
+      textInput("coE_heatmapselected_geneids", "Comma seperated gene names", value = defaultValueMultiGenes)
     )),
     fluidRow(column(
       12,

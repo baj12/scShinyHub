@@ -9,6 +9,7 @@ output:
     fig_width: 9
     number_sections: yes
     toc: yes
+    code_folding: hide
 params:
 #__PARAMPLACEHOLDER__
 ---

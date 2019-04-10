@@ -302,3 +302,35 @@ DiffExpTest <- function(expression, cells.1, cells.2, genes.use = NULL, print.ba
   to.return <- data.frame(p_val, row.names = genes.use)
   return(to.return)
 }
+
+
+heatmapPlotFromModule <- function(heatmapData, moduleName, input, projections) {
+  
+  addColNames <- input[[paste0(moduleName, "-ColNames")]]
+  orderColNames <- input[[paste0(moduleName, "-orderNames")]]
+  moreOptions <- input[[paste0(moduleName, "-moreOptions")]]
+  colTree <- input[[paste0(moduleName, "-showColTree")]]
+  
+  if (is.null(heatmapData) | is.null(projections) | is.null(heatmapData$mat)) {
+    return(NULL)
+  }
+  
+  heatmapData$filename <- NULL
+  
+  if (length(addColNames) > 0 & moreOptions) {
+    heatmapData$annotation_col <- projections[rownames(heatmapData$annotation_col), addColNames, drop = FALSE]
+  }
+  if (sum(orderColNames %in% colnames(projections)) > 0 & moreOptions) {
+    heatmapData$cluster_cols <- FALSE
+    colN <- rownames(psych::dfOrder(projections, orderColNames))
+    colN <- colN[colN %in% colnames(heatmapData$mat)]
+    heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
+    # return()
+  }
+  if (moreOptions) {
+    heatmapData$cluster_cols = colTree
+  }
+  heatmapData$fontsize <- 14
+  system.time(do.call(TRONCO::pheatmap, heatmapData))
+  
+}
