@@ -649,9 +649,9 @@ tableSelectionServer <- function(input, output, session,
   observeEvent(input$selectAll, {
     if (DEBUG) cat(file = stderr(), "observe input$selectAll\n")
     ipSelect <- input$selectAll
-    prox <- proxy
+    # prox <- proxy
     allrows <- input$cellNameTable_rows_all
-    proxy %>% selectRows(NULL)
+    
     if (DEBUGSAVE) {
       save(
         file = paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."),
@@ -661,6 +661,8 @@ tableSelectionServer <- function(input, output, session,
     # load(file=paste0("~/scShinyHubDebug/inputselectAll.RData", collapse = "."))
     if (ipSelect) {
       proxy %>% selectRows(allrows)
+    } else {
+      proxy %>% selectRows(NULL)
     }
   })
   
@@ -668,6 +670,7 @@ tableSelectionServer <- function(input, output, session,
   #   
   # })
   observe({
+    if (DEBUG) cat(file = stderr(), "observe input$cellNameTable_rows_selected\n")
     modSelectedRows <<- input$cellNameTable_rows_selected
   })
   
@@ -737,87 +740,6 @@ tableSelectionServer <- function(input, output, session,
   )
 }
 
-# heatmapModuleFunc <- function(
-#                               featureData,
-#                               scEx_matrix,
-#                               projections,
-#                               # genesin,
-#                               cells) {
-#   # genesin <- geneName2Index(genesin, featureData)
-#   # expression <- scEx_matrix[genesin, cells]
-#   expression <- scEx_matrix[, cells]
-# 
-#   validate(need(
-#     is.na(sum(expression)) != TRUE,
-#     "Gene symbol incorrect or genes not expressed"
-#   ))
-# 
-#   projections <- projections[order(as.numeric(as.character(projections$dbCluster))), ]
-# 
-#   expression <- expression[complete.cases(expression), ]
-# 
-#   if (!("sampleNames" %in% colnames(projections))) {
-#     projections$sample <- 1
-#   }
-#   annotation <- data.frame(projections[cells, c("dbCluster", "sampleNames")])
-#   rownames(annotation) <- colnames(expression)
-#   colnames(annotation) <- c("Cluster", "sampleNames")
-# 
-#   # For high-res displays, this will be greater than 1
-#   pixelratio <- session$clientData$pixelratio
-#   if (is.null(pixelratio)) pixelratio <- 1
-#   width <- session$clientData$output_plot_width
-#   height <- session$clientData$output_plot_height
-#   if (is.null(width)) {
-#     width <- 96 * 7
-#   } # 7x7 inch output
-#   if (is.null(height)) {
-#     height <- 96 * 7
-#   }
-#   outfile <- paste0(tempdir(), "/heatmap", base::sample(1:10000, 1), ".png")
-#   cat(file = stderr(), paste("saving to: ", outfile, "\n"))
-#   # this can fail with na/inf in hclust error message if there is a row with all the same values
-#   # med = median(as.vector(as.matrix(expression)))
-#   # stDev = sd(as.vector(as.matrix(expression)))
-#   # minBreak = max(0, med - 3* stDev)
-#   # maxBreak = med + 3* stDev
-#   # stepBreak = (maxBreak - minBreak) / 6
-#   nonZeroRows <- which(rowSums(expression) > 0)
-#   mycolPal <- colorRampPalette(brewer.pal(
-#     n = 6, name =
-#       "RdYlBu"
-#   ))(6)
-#   if (dbCluster == "sampleNames"){
-#     mycolPal = sampleCols$colPal
-#   }
-#   
-#   TRONCO::pheatmap(
-#     expression[nonZeroRows, order(annotation[, 1], annotation[, 2])],
-#     cluster_rows = TRUE,
-#     cluster_cols = TRUE,
-#     scale = "row",
-#     fontsize_row = 14,
-#     labels_col = colnames(expression),
-#     labels_row = featureData[rownames(expression), "symbol"],
-#     show_rownames = TRUE,
-#     annotation_col = annotation,
-#     show_colnames = FALSE,
-#     annotation_legend = TRUE,
-#     # breaks = seq(minBreak, maxBreak, by = stepBreak),
-#     # filename = 'test.png',
-#     filename = normalizePath(outfile, mustWork = FALSE),
-#     color = mycolPal
-#   )
-#   return(list(
-#     src = normalizePath(outfile, mustWork = FALSE),
-#     contentType = "image/png",
-#     width = width,
-#     height = height,
-#     alt = "heatmap should be here"
-#   ))
-# }
-# 
-# 
 
 pHeatMapModule <- function(input, output, session,
                            pheatmapList # list with arguments for pheatmap
