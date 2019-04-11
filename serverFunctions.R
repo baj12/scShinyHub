@@ -51,29 +51,29 @@ updateProjectionsWithUmiCount <- function(dimX, dimY, geneNames, geneNames2 = NU
   # if ((dimY == "UmiCountPerGenes") | (dimX == "UmiCountPerGenes")) {
   geneNames <- geneName2Index(geneNames, featureData)
   # if (length(geneNames) > 0) {
-    if ((length(geneNames) > 0) && (length(geneNames[[1]]) > 0)) {
-      if (length(geneNames) == 1) {
-        projections$UmiCountPerGenes <- assays(scEx)[[1]][geneNames, ]
-      } else {
-        projections$UmiCountPerGenes <- Matrix::colSums(assays(scEx)[[1]][geneNames, ])
-      }
+  if ((length(geneNames) > 0) && (length(geneNames[[1]]) > 0)) {
+    if (length(geneNames) == 1) {
+      projections$UmiCountPerGenes <- assays(scEx)[[1]][geneNames, ]
     } else {
-      projections$UmiCountPerGenes <- 0
+      projections$UmiCountPerGenes <- Matrix::colSums(assays(scEx)[[1]][geneNames, ])
     }
+  } else {
+    projections$UmiCountPerGenes <- 0
+  }
   # }
   # }
   # if ((dimY == "UmiCountPerGenes2") | (dimX == "UmiCountPerGenes2")) {
   geneNames <- geneName2Index(geneNames2, featureData)
   # if (length(geneNames) > 0) {
-    if ((length(geneNames) > 0) && (length(geneNames[[1]]) > 0)) {
-      if (length(geneNames) == 1) {
-        projections$UmiCountPerGenes2 <- assays(scEx)[[1]][geneNames, ]
-      } else {
-        projections$UmiCountPerGenes2 <- Matrix::colSums(assays(scEx)[[1]][geneNames, ])
-      }
+  if ((length(geneNames) > 0) && (length(geneNames[[1]]) > 0)) {
+    if (length(geneNames) == 1) {
+      projections$UmiCountPerGenes2 <- assays(scEx)[[1]][geneNames, ]
     } else {
-      projections$UmiCountPerGenes2 <- 0
+      projections$UmiCountPerGenes2 <- Matrix::colSums(assays(scEx)[[1]][geneNames, ])
     }
+  } else {
+    projections$UmiCountPerGenes2 <- 0
+  }
   # }
   # }
   return(projections)
@@ -188,8 +188,14 @@ plot2Dprojection <- function(scEx_log, projections, g_id, featureData,
     titlefont = f,
     type = typeY
   )
-
-
+  
+  
+  if (is.factor(subsetData[,dimX])) {
+    subsetData[,dimX] = as.character(subsetData[,dimX])
+  }
+  if (is.factor(subsetData[,dimY])) {
+    subsetData[,dimY] = as.character(subsetData[,dimY])
+  }
   # dimCol = "Gene.count"
   # dimCol = "sampleNames"
   p1 <- plot_ly(data = subsetData, source = "subset") %>%
@@ -200,7 +206,7 @@ plot2Dprojection <- function(scEx_log, projections, g_id, featureData,
               ,color = ~ get(dimCol)
               ,colors = colors
               ,showlegend =  TRUE
-     ) %>% 
+    ) %>% 
     layout(
       xaxis = xAxis,
       yaxis = yAxis,
@@ -212,7 +218,7 @@ plot2Dprojection <- function(scEx_log, projections, g_id, featureData,
   } else {
     p1 = colorbar(p1, title = dimCol)
   }
- 
+  
   selectedCells <- NULL
   if (length(grpN) > 0) {
     if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {
@@ -227,7 +233,7 @@ plot2Dprojection <- function(scEx_log, projections, g_id, featureData,
     x1 <- subsetData[selectedCells, dimX, drop = FALSE]
     y1 <- subsetData[selectedCells, dimY, drop = FALSE]
     p1 <- p1 %>%
-      add_trace(
+      add_trace(data = subsetData[selectedCells, ],
         x = x1[, 1], y = y1[, 1],
         marker = list(
           color = rep("green", nrow(x1)),

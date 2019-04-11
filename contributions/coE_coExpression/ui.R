@@ -4,10 +4,10 @@ source("modulesUI.R")
 # list of menu Items
 menuList <- list(
   menuItem("Co-expression",
+           # id="coexpressionID",
     tabName = "coexpression", startExpanded = FALSE,
     menuSubItem("All clusters", tabName = "coexpressionAll"),
     menuSubItem("Selected", tabName = "coexpressionSelected"),
-    # menuSubItem("binarized", tabName = "coexpressionBinarized"),
     menuSubItem("Co-expression Violin plot", tabName = "CoExpressionViolin"),
     menuSubItem("SOM cluster", tabName = "SOMcluster")
   )

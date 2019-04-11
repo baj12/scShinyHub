@@ -1,5 +1,6 @@
 menuList <- list(
   menuItem("Subcluster analysis",
+           # id = 'subclusterID',
     tabName = "subcluster", startExpanded = FALSE,
     menuSubItem("DGE analysis", tabName = "sCA_dge")
   )

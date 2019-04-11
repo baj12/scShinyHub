@@ -208,6 +208,7 @@ output$DE_panelPlot <- renderPlot({
   genesin <- genesin[[1]]
  
   featureData <- rowData(scEx_log)
+  featureData$symbol = toupper(featureData$symbol)
   genesin <- genesin[which(genesin %in% featureData$symbol)]
 
   par(mfrow = c(ceiling(length(genesin) / 4), 4), mai = c(0., .3, .3, .3))

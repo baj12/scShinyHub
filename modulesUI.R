@@ -83,7 +83,11 @@ tableSelectionUi <- function(id) {
     ),
     fluidRow(
       h4("Cells", offset = 1),
-      checkboxInput(ns("selectAll"), "Select all rows", FALSE), br(),
+      column(3,
+             checkboxInput(ns("selectAll"), "Select all rows", FALSE)), 
+      column(3,
+             checkboxInput(ns("reorderCells"), "reorder cells by sum of selected genes", FALSE)), 
+      br(),
       column(
         width = 12,
         DTOutput(ns("cellNameTable")) %>% withSpinner(),

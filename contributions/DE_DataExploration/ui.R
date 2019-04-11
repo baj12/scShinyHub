@@ -2,6 +2,7 @@
 # list of menu Items
 menuList <- list(
   menuItem("Data Exploration",
+           # id="dataExplorationID",
     tabName = "expore", startExpanded = FALSE,
     menuSubItem("Expression", tabName = "DE_expression"),
     menuSubItem("Panel plot", tabName = "DE_panelPlot"),

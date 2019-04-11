@@ -1,5 +1,6 @@
 menuList <- list(
   menuItem("General QC",
+           # id="generalQCID",
     tabName = "generalQC", startExpanded = FALSE,
     menuSubItem("UMI histogram", tabName = "gQC_umiHist"),
     menuSubItem("Sample histogram", tabName = "gQC_sampleHist"),

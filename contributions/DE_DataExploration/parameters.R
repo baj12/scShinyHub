@@ -16,6 +16,7 @@ myNormalizationParameters <- list(
 #' DE_logNormalization
 #' reactive for normalizing data according to seurat
 DE_logNormalization <- reactive({
+  if (DEBUG) cat(file = stderr(), paste("======DE_logNormalization", session$ns(input$clusters), "\n"))
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -57,6 +58,7 @@ DE_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
   bc_sums <- Matrix::colSums(assays(scEx)[[1]])
   median_sum <- median(bc_sums)
   A <- as(assays(scEx)[[1]], "dgCMatrix")
+  assays(scEx)[[1]] = as(assays(scEx)[[1]], "dgTMatrix")
   A@x <- A@x / Matrix::colSums(A)[assays(scEx)[[1]]@j + 1L]
   scEx_bcnorm <- SingleCellExperiment(assay = list(logcounts = as(A,"dgTMatrix")),
                                       colData = colData(scEx),

@@ -279,7 +279,7 @@ clusterServer <- function(input, output, session,
       cat(file = stderr(), paste("cluster plot saving done\n"))
     }
     
-    # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."))
+    # load(file=paste0("~/scShinyHubDebug/clusterPlot", "ns", ".RData", collapse = "."));DEBUGSAVE=FALSE
     if (is.null(g_id) || nchar(g_id) == 0) {
       g_id <- featureData$symbol
     }
@@ -600,6 +600,7 @@ tableSelectionServer <- function(input, output, session,
                                  dataTab) {
   if (DEBUG) cat(file = stderr(), paste("tableSelectionServer", session$ns("test"), "\n"))
   ns <- session$ns
+  modSelectedRows <- c()
   
   output$cellSelection <- renderText({
     start.time <- Sys.time()
@@ -663,8 +664,11 @@ tableSelectionServer <- function(input, output, session,
     }
   })
   
-  output$columnSelection <- renderUI({
-    
+  # output$columnSelection <- renderUI({
+  #   
+  # })
+  observe({
+    modSelectedRows <<- input$cellNameTable_rows_selected
   })
   
   output$cellNameTable <- renderDT({
@@ -676,6 +680,8 @@ tableSelectionServer <- function(input, output, session,
     if (DEBUG) cat(file = stderr(), "output$cellNameTable\n")
     dataTables <- dataTab()
     ns <- session$ns
+    reorderCells <- input$reorderCells
+    selectedRows <- input$cellNameTable_rows_selected
     
     if (is.null(dataTables)) {
       return(NULL)
@@ -691,12 +697,25 @@ tableSelectionServer <- function(input, output, session,
     }
     # load(file=paste0("~/scShinyHubDebug/cellNameTable", "ns", ".RData", collapse = "."))
     
-    if (DEBUG) cat(file = stderr(), "cellNameTable: done\n")
+    
     maxCol <- min(20, ncol(dataTables))
-    dataTables = as.data.frame(dataTables)
     if (dim(dataTables)[1] > 1) {
-      return(DT::datatable(dataTables[, 1:maxCol],
-                           rownames = F, filter = "top",
+      numericCols <- colnames(dataTables %>% select_if(is.numeric))
+      nonNumericCols  <- which(!colnames(dataTables) %in% numericCols) # to keep non numeric columns...
+      numericCols  <- which(colnames(dataTables) %in% numericCols)
+      if (reorderCells &&  length(selectedRows) > 0) {
+        csums <- colSums(dataTables[selectedRows, numericCols])
+        cols2disp = numericCols[order(csums, decreasing = TRUE)]
+      } else {
+        cols2disp = numericCols
+      }
+      cols2disp = c(nonNumericCols, cols2disp)[1:maxCol]
+      dataTables = as.data.frame(dataTables[, cols2disp])
+      if (DEBUG) cat(file = stderr(), "cellNameTable: done\n")
+      return(DT::datatable(dataTables,
+                           rownames = F, 
+                           filter = "top",
+                           selection = list(mode = 'multiple', selected = modSelectedRows),
                            options = list(
                              orderClasses = TRUE,
                              autoWidth = TRUE

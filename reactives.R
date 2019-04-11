@@ -108,6 +108,7 @@ inputDataFunc <- function(inFile) {
   }
   if ("symbol" %in% colnames(featuredata)) {
     featuredata$symbol = toupper(featuredata$symbol)
+    rowData(scEx) <- featuredata
   }
   
   # dataTables$featuredataOrg <- rowData(scEx)
@@ -743,7 +744,9 @@ scExLogMatrixDisplay <- reactive({
   if (ncol(scEx_log) > 20000) {
     
   }
-  retVal <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
+  retVal <- data.frame(symbol=make.names(rowData(scEx_log)$symbol, unique = TRUE), stringsAsFactors = FALSE)
+  retVal <- cbind(retVal,
+                          as.matrix(assays(scEx_log)[[1]]))
   rownames(retVal) <- make.names(rowData(scEx_log)$symbol, unique = TRUE)
   
   printTimeEnd(start.time, "scExLogMatrixDisplay")

@@ -210,7 +210,7 @@ ccols <- clusterCols$colPal
 projections <- updateProjectionsWithUmiCount(
   dimX = dimX, dimY = dimY,
   geneNames = geneNames,
-  scEx = scEx, projections = projections
+  scEx = scEx_log, projections = projections
 )
 
 subsetData <- subset(projections, dbCluster %in% inpClusters)
