@@ -46,33 +46,34 @@ clusterServer <- function(input, output, session,
   divYBy <- "None"
   mod_cl1 <- ""
   observe({
-    cat(file = stderr(), paste0("observe: clusters\n"))
+    if (DEBUG) cat(file = stderr(), paste0("observe: clusters\n"))
     mod_cl1 <<- input$clusters
   })
   
   observe({
-    cat(file = stderr(), paste0("observe: dimension_x\n"))
+    if (DEBUG) cat(file = stderr(), paste0("observe: dimension_x\n"))
     dim1 <<- input$dimension_x
   })
   observe({
-    cat(file = stderr(), paste0("observe: dimension_y\n"))
+    if (DEBUG) cat(file = stderr(), paste0("observe: dimension_y\n"))
     dim2 <<- input$dimension_y
   })
   observe({
-    cat(file = stderr(), paste0("observe: dimension_col\n"))
+    if (DEBUG) cat(file = stderr(), paste0("observe: dimension_col\n"))
     dimCol <<- input$dimension_col
   })
   observe({
-    cat(file = stderr(), paste0("observe: devideXBy\n"))
+    if (DEBUG) cat(file = stderr(), paste0("observe: devideXBy\n"))
     divXBy <<- input$devideXBy
   })
   observe({
-    cat(file = stderr(), paste0("observe: devideYBy\n"))
+    if (DEBUG) cat(file = stderr(), paste0("observe: devideYBy\n"))
     divYBy <<- input$devideYBy
   })
   
   # clusterServer - updateInput ----
   updateInput <- reactive({
+    if (DEBUG) cat(file = stderr(), paste0("updateInput\n"))
     tsneData <- projections()
     
     # Can use character(0) to remove all choices
@@ -112,20 +113,25 @@ clusterServer <- function(input, output, session,
   
   # clusterServer - selectedCellNames ----
   selectedCellNames <- reactive({
-    start.time <- Sys.time()
+    start.time <- base::Sys.time()
+    if (DEBUG) cat(file = stderr(), "+++cluster: selectedCellNames\n")
+    on.exit(
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "selectedCellNames")
+    )
+    # show in the app that this is running
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("selectedCellNames", id = "selectedCellNames", duration = NULL)
+    }
+    
     brushedPs <- event_data("plotly_selected", source = "subset")
-    # brushedPs <- input$b1
     projections <- projections()
     dimY <- input$dimension_y
     dimX <- input$dimension_x
     geneNames <- input$geneIds
     geneNames2 <- input$geneIds2
-    # scEx <- scEx()
     scEx_log <- scEx_log()
-    if (DEBUG) {
-      cat(file = stderr(), "+++cluster: selectedCellNames\n")
-    }
-    if (is.null(projections) | is.null(brushedPs)) {
+     if (is.null(projections) | is.null(brushedPs)) {
       return(NULL)
     }
     inpClusters <- input$clusters
@@ -158,12 +164,10 @@ clusterServer <- function(input, output, session,
   returnValues <- reactiveValues(
     cluster = reactive(input$clusters),
     selectedCells = reactive({
+      if (DEBUG) cat(file = stderr(), "reactiveValues: selectedCells.\n")
       start.time <- Sys.time()
       
-      if (DEBUG) {
-        cat(file = stderr(), paste("clusterServers selectedCells\n"))
-      }
-      retVal <- selectedCellNames()
+       retVal <- selectedCellNames()
       if (length(retVal) == 0) {
         cat(file = stderr(), paste("selectedCellNames is null\n"))
         retVal <- NULL
@@ -215,18 +219,18 @@ clusterServer <- function(input, output, session,
   
   # clusterServer - output$clusters ----
   output$clusters <- renderUI({
-    si <- NULL
+    if (DEBUG) cat(file = stderr(), paste("2observe: ns(input$clusters)", session$ns(input$clusters), "\n"))
+    retVal <- NULL
     projections <- tData()
     upI <- updateInput() # needed to update input of this module
     ns <- session$ns
-    cat(file = stderr(), paste("2observe: ns(input$clusters)", session$ns(input$clusters), "\n"))
-    cat(file = stderr(), paste("2observe: ns(mod_cl1)", ns(mod_cl1), "\n"))
+     if (DEBUG) cat(file = stderr(), paste("2observe: ns(mod_cl1)", ns(mod_cl1), "\n"))
     if (is.null(projections)) {
       HTML("Please load data first")
     } else {
       noOfClusters <- levels(as.factor(projections$dbCluster))
       # noOfClusters <- max(as.numeric(as.character(projections$dbCluster)))
-      si <- selectizeInput(
+      retVal <- selectizeInput(
         ns("clusters"),
         label = "Cluster",
         choices = noOfClusters,
@@ -235,14 +239,24 @@ clusterServer <- function(input, output, session,
         multiple = TRUE
       )
     }
-    si
+    retVal
   })
   
   # clusterServer - output$clusterPlot ----
   output$clusterPlot <- renderPlotly({
-    if (DEBUG) {
-      cat(file = stderr(), paste("Module: output$clusterPlot", session$ns(input$clusters), "\n"))
+    if (DEBUG) cat(file = stderr(), paste("Module: output$clusterPlot\n"))
+    start.time <- base::Sys.time()
+    
+    # remove any notification on exit that we don't want
+    on.exit(
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "clusterPlot")
+    )
+    # show in the app that this is running
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("clusterPlot", id = "clusterPlot", duration = NULL)
     }
+    
     scEx_log <- scEx_log()
     projections <- tData()
     grpNs <- groupNames$namesDF
@@ -307,6 +321,8 @@ clusterServer <- function(input, output, session,
                            geneNames2, dimX, dimY, clId, grpN, legend.position,
                            grpNs = grpNs, logx, logy, divXBy, divYBy, dimCol, colors = myColors
     )
+    printTimeEnd(start.time, "clusterPlot")
+    exportTestValues(clusterPlot = {p1})  
     return(p1)
   })
   
@@ -330,16 +346,25 @@ clusterServer <- function(input, output, session,
   
   # clusterServer - visibleCellNames ----
   visibleCellNames <- reactive({
-    if (DEBUG) {
-      cat(file = stderr(), "cluster: selectedCellNames\n")
+    if (DEBUG) cat(file = stderr(), "cluster: selectedCellNames\n")
+    start.time <- base::Sys.time()
+    on.exit(
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "visibleCellNames")
+    )
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("visibleCellNames", id = "visibleCellNames", duration = NULL)
     }
+    
     projections <- projections()
     if (is.null(projections)) {
       return(NULL)
     }
     inpClusters <- input$clusters
     subsetData <- subset(projections, dbCluster %in% inpClusters)
-    # if(DEBUG)cat(file=stderr(),rownames(subsetData)[1:5])
+
+    printTimeEnd(start.time, "visibleCellNames")
+    exportTestValues(visibleCellNames = {subsetData})  
     return(subsetData)
   })
 
@@ -358,13 +383,19 @@ clusterServer <- function(input, output, session,
   # clusterServer - observe input$changeGroups ----
   observe({
     if (DEBUG) cat(file = stderr(), "observe input$changeGroups \n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "observe input$changeGroups")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "input-changeGroups")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("observe: changeGroups", id = "input-changeGroups", duration = NULL)
+    }
+    
     ns <- session$ns
     input$changeGroups # action button
     addToSelection <- addToGroupValue
-    
-    if (DEBUG) {
-      cat(file = stderr(), "cluster: changeGroups\n")
-    }
     
     # we isolate here because we only want to change if the button is clicked.
     # TODO what happens if new file is loaded??? => problem!
@@ -434,6 +465,18 @@ clusterServer <- function(input, output, session,
   # clusterServer - output$nCellsVisibleSelected ----
   # display the number of cells that belong to the group, but only from the visible ones
   output$nCellsVisibleSelected <- renderText({
+    if (DEBUG) cat(file = stderr(), "nCellsVisibleSelected.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "nCellsVisibleSelected")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "nCellsVisibleSelected")
+    })
+    # show in the app that this is running
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("nCellsVisibleSelected", id = "nCellsVisibleSelected", duration = NULL)
+    }
+    
     grpN <- make.names(input$groupName)
     grpNs <- groupNames$namesDF
     inpClusters <- input$clusters
@@ -448,25 +491,52 @@ clusterServer <- function(input, output, session,
     
     subsetData <- subset(projections, dbCluster %in% inpClusters)
     retVal <- paste("Number of visible cells in section", sum(grpNs[rownames(subsetData), grpN]))
+    
+    exportTestValues(DummyReactive = {retVal})  
     return(retVal)
   })
   
   # clusterServer - output$nCellsAllSelected ----
   # display the number of cells that belong to the group, including the cells from non visible clusters
   output$nCellsAllSelected <- renderText({
-    grpNs <- groupNames$namesDF
+    if (DEBUG) cat(file = stderr(), "nCellsAllSelected started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "nCellsAllSelected")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "nCellsAllSelected")
+    })
+    # show in the app that this is running
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("nCellsAllSelected", id = "nCellsAllSelected", duration = NULL)
+    }
+
+        grpNs <- groupNames$namesDF
     grpN <- make.names(input$groupName)
     val = 0
     if (grpN %in% colnames(grpNs))
       val = sum(grpNs[, grpN])
     retVal <- paste("number of cells in group over all cells", val)
+    
+    exportTestValues(DummyReactive = {retVal})  
     return(retVal)
   })
   
   
   # clusterServer - output$additionalOptions ----
   output$additionalOptions <- renderUI({
-    if (DEBUG) cat(file = stderr(), "cluster: additionalOptions\n")
+    if (DEBUG) cat(file = stderr(), "additionalOptions started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "additionalOptions")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "additionalOptions")
+    })
+    # show in the app that this is running
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("additionalOptions", id = "additionalOptions", duration = NULL)
+    }
+
     ns <- session$ns
     moreOptions <- input$moreOptions
     groupNs <- groupNames$namesDF
@@ -528,14 +598,19 @@ clusterServer <- function(input, output, session,
   
   # clusterServer - output$cellSelection ----
   output$cellSelection <- renderText({
-    start.time <- Sys.time()
-    on.exit(
-      if (!is.null(getDefaultReactiveDomain())) {
-        removeNotification(id = "clustercellSelection")
-      }
-    )
-    if (DEBUG) cat(file = stderr(), "cluster: cellSelection\n")
-    ns <- session$ns
+    if (DEBUG) cat(file = stderr(), "cellSelection started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "cellSelection")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "cellSelection")
+    })
+    # show in the app that this is running
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("cellSelection", id = "cellSelection", duration = NULL)
+    }
+
+        ns <- session$ns
     brushedPs <- event_data("plotly_selected", source = "subset")
     projections <- projections()
     inpClusters <- (input$clusters)
@@ -573,18 +648,9 @@ clusterServer <- function(input, output, session,
       scEx = scEx_log, projections = projections
     )
     
-    # cat(file = stderr(), paste(brushedPs$xmin, brushedPs$xmax, "\n"))
-    # for (axis in c("x", "y")) {
-    #   if (class(subsetData[, brushedPs$mapping[axis][[1]]]) == "factor") {
-    #     subsetData[, brushedPs$mapping[axis][[1]]] <- as.numeric(droplevels(subsetData[, brushedPs$mapping[axis][[1]]]))
-    #   }
-    # }
-    # cells.names <- brushedPoints(subsetData, brushedPs)
     cells.names <- rownames(projections)[subset(brushedPs, curveNumber == 0)$pointNumber + 1]
-    
     retVal <- paste(cells.names, collapse = ", ")
     
-    printTimeEnd(start.time, "cellSelection")
     exportTestValues(ClusterCellSelection = { retVal })
     return(retVal)
   })
@@ -603,13 +669,18 @@ tableSelectionServer <- function(input, output, session,
   modSelectedRows <- c()
   
   output$cellSelection <- renderText({
+    if (DEBUG) cat(file = stderr(), "cellSelection\n")
     start.time <- Sys.time()
     on.exit(
       if (!is.null(getDefaultReactiveDomain())) {
+        printTimeEnd(start.time, "cellSelection")
         removeNotification(id = "cellSelection")
       }
     )
-    if (DEBUG) cat(file = stderr(), "cellSelection\n")
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("cellSelection", id = "cellSelection", duration = NULL)
+    }
+    
     ns <- session$ns
     
     dataTables <- dataTab()
@@ -675,12 +746,18 @@ tableSelectionServer <- function(input, output, session,
   })
   
   output$cellNameTable <- renderDT({
+    if (DEBUG) cat(file = stderr(), "output$cellNameTable\n")
+    start.time <- base::Sys.time()
     on.exit(
       if (!is.null(getDefaultReactiveDomain())) {
+        printTimeEnd(start.time, "cellNameTable")
         removeNotification(id = "cellNameTable")
       }
     )
-    if (DEBUG) cat(file = stderr(), "output$cellNameTable\n")
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("cellNameTable", id = "cellNameTable", duration = NULL)
+    }
+    
     dataTables <- dataTab()
     ns <- session$ns
     reorderCells <- input$reorderCells
@@ -688,9 +765,6 @@ tableSelectionServer <- function(input, output, session,
     
     if (is.null(dataTables)) {
       return(NULL)
-    }
-    if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("cellNameTable", id = "cellNameTable", duration = NULL)
     }
     if (DEBUGSAVE) {
       save(
@@ -734,6 +808,17 @@ tableSelectionServer <- function(input, output, session,
       paste("cellNameTable", "table.csv", sep = "_")
     },
     content = function(file) {
+      if (DEBUG) cat(file = stderr(), "download_cellNameTable started.\n")
+      start.time <- base::Sys.time()
+      on.exit({
+        printTimeEnd(start.time, "download_cellNameTable")
+        if (!is.null(getDefaultReactiveDomain()))
+          removeNotification(id = "download_cellNameTable")
+      })
+      if (!is.null(getDefaultReactiveDomain())) {
+        showNotification("download_cellNameTable", id = "download_cellNameTable", duration = NULL)
+      }
+      
       dataTables <- dataTab()
       write.csv(dataTables, file)
     }
@@ -751,6 +836,17 @@ pHeatMapModule <- function(input, output, session,
   
   # pHeatMapModule - updateInput ----
   updateInput <- reactive({
+    if (DEBUG) cat(file = stderr(), "updateInput started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "updateInput")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "updateInput")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("updateInput", id = "updateInput", duration = NULL)
+    }
+    
     proje <- projections()
     
     # Can use character(0) to remove all choices
@@ -772,15 +868,18 @@ pHeatMapModule <- function(input, output, session,
   
   # pHeatMapModule - pHeatMapPlot ----
   output$pHeatMapPlot <- renderImage({
-    on.exit(
-      if (!is.null(getDefaultReactiveDomain())) {
-        removeNotification(id = "pHeatMapPlotModule")
-      }
-    )
+    if (DEBUG) cat(file = stderr(), "pHeatMapPlot started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "pHeatMapPlot")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "pHeatMapPlot")
+    })
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("pHeatMapPlotModule", id = "pHeatMapPlotModule", duration = NULL)
+      showNotification("pHeatMapPlot", id = "pHeatMapPlot", duration = NULL)
     }
-    ns <- session$ns
+
+        ns <- session$ns
     heatmapData <- pheatmapList()
     addColNames <- input$ColNames
     orderColNames <- input$orderNames
@@ -855,8 +954,18 @@ pHeatMapModule <- function(input, output, session,
   
   # pHeatMapModule - additionalOptions ----
   output$additionalOptions <- renderUI({
-    if (DEBUG) cat(file = stderr(), "heatmapModule: additionalOptions\n")
-    ns <- session$ns
+    if (DEBUG) cat(file = stderr(), "additionalOptions started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "additionalOptions")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "additionalOptions")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("additionalOptions", id = "additionalOptions", duration = NULL)
+    }
+
+        ns <- session$ns
     moreOptions <- (input$moreOptions)
     groupNs <- groupNames$namesDF
     proje <- projections()
@@ -896,6 +1005,17 @@ pHeatMapModule <- function(input, output, session,
       paste("pHeatMap", "data.zip", sep = "_")
     },
     content = function(file) {
+      if (DEBUG) cat(file = stderr(), "download_pHeatMapUI started.\n")
+      start.time <- base::Sys.time()
+      on.exit({
+        printTimeEnd(start.time, "download_pHeatMapUI")
+        if (!is.null(getDefaultReactiveDomain()))
+          removeNotification(id = "download_pHeatMapUI")
+      })
+      if (!is.null(getDefaultReactiveDomain())) {
+        showNotification("download_pHeatMapUI", id = "download_pHeatMapUI", duration = NULL)
+      }
+      
       heatmapData <- pheatmapList()
       addColNames <- input$ColNames
       orderColNames <- input$orderNames

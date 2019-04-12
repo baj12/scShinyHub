@@ -1,7 +1,16 @@
 # heatmapFunc ---------------------------------
 # used by both selection and all to create input for heatmap module
 coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cells, sampCol, ccols) {
+  if (DEBUG) cat(file = stderr(), "coE_heatmapFunc started.\n")
   start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "coE_heatmapFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "coE_heatmapFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("coE_heatmapFunc", id = "coE_heatmapFunc", duration = NULL)
+  }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/coE_heatmapFunc.RData", list = c(ls(envir = globalenv()), ls()))
   }
@@ -86,17 +95,15 @@ coE_heatmapFunc <- function(featureData, scEx_matrix, projections, genesin, cell
 # coE_heatmapSelectedReactive ----
 # reactive function for selected heatmap
 coE_heatmapSelectedReactive <- reactive({
+  if (DEBUG) cat(file = stderr(), "coE_heatmapSelectedReactive started.\n")
   start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "selectedHeatmap")
-    }
-  )
-  if (DEBUG) {
-    cat(file = stderr(), "output$coE_heatmapSelectedReactive\n")
-  }
+  on.exit({
+    printTimeEnd(start.time, "coE_heatmapSelectedReactive")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "coE_heatmapSelectedReactive")
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("selectedheatmap", id = "selectedHeatmap", duration = NULL)
+    showNotification("coE_heatmapSelectedReactive", id = "coE_heatmapSelectedReactive", duration = NULL)
   }
   
   scEx_log <- scEx_log()
@@ -141,9 +148,7 @@ coE_heatmapSelectedReactive <- reactive({
   retval <- coE_heatmapFunc(featureData, scEx_matrix, projections, genesin,
                             cells = scCells, sampCol = sampCol, ccols = ccols
   )
-  # print debugging information on the console
-  printTimeEnd(start.time, "inputData")
-  # for automated shiny testing using shinytest
+
   exportTestValues(coE_heatmapSelectedReactive = {retVal})  
   return(retval)
 })
@@ -155,16 +160,16 @@ coE_heatmapSelectedReactive <- reactive({
 #' coEtgPerc = genes shown have to be expressed in at least X % of cells
 #' coEtgMinExpr = genes shown have at least to X UMIs expressed 
 coE_topExpGenesTable <- reactive({
+  if (DEBUG) cat(file = stderr(), "coE_topExpGenesTable started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "coE_topExpGenesTable")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "coE_topExpGenesTable")
-  )
-  # show in the app that this is running
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("coE_topExpGenesTable", id = "coE_topExpGenesTable", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "coE_topExpGenesTable\n")
   
   scEx_log <- scEx_log()
   coEtgPerc <- input$coEtgPerc
@@ -210,7 +215,6 @@ coE_topExpGenesTable <- reactive({
     retVal = as.data.frame(outMat)
   } 
   
-  printTimeEnd(start.time, "coE_topExpGenesTable")
   exportTestValues(coE_topExpGenesTable = {retVal})  
   return(retVal)
 })
@@ -222,7 +226,17 @@ coE_topExpGenesTable <- reactive({
 #' optionally creates all permutations.
 coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr = 1,
                             dbCluster, coE_showPermutations = FALSE, sampCol, ccols) {
-  if (DEBUG) cat(file = stderr(), "coE_geneGrp_vioFunc\n")
+  if (DEBUG) cat(file = stderr(), "coE_geneGrp_vioFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "coE_geneGrp_vioFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "coE_geneGrp_vioFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("coE_geneGrp_vioFunc", id = "coE_geneGrp_vioFunc", duration = NULL)
+  }
+  
   require(gtools)
   require(stringr)
   
@@ -367,7 +381,18 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
 #' cluster genes in SOM 
 #' returns genes associated together within a som-node
 coE_somFunction <- function(iData, nSom, geneName) {
-  require(kohonen)
+  if (DEBUG) cat(file = stderr(), "coE_somFunction started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "coE_somFunction")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "coE_somFunction")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("coE_somFunction", id = "coE_somFunction", duration = NULL)
+  }
+
+    require(kohonen)
   require(Rsomoclu)
   if (sum(geneName %in% rownames(iData)) == 0) return(NULL)
   res2 <- Rsomoclu.train(
@@ -400,19 +425,20 @@ coE_somFunction <- function(iData, nSom, geneName) {
 #' that cluster together with a gene of interest
 # TODO: check that we are using only raw counts and not normalized
 coE_heatmapSOMReactive <- reactive({
-  start.time <- Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "coE_heatmapSOMReactive started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "coE_heatmapSOMReactive")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "coE_heatmapSOMReactive")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("somheatmap", id = "coE_heatmapSOMReactive", duration = NULL)
+    showNotification("coE_heatmapSOMReactive", id = "coE_heatmapSOMReactive", duration = NULL)
   }
+  
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "heatmapWarning")
-  if (DEBUG) cat(file = stderr(), "output$somReactive\n")
-  
+
   scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$coE_geneSOM
@@ -489,7 +515,6 @@ coE_heatmapSOMReactive <- reactive({
   )
   # system.time(do.call(TRONCO::pheatmap, retVal))
   
-  printTimeEnd(start.time, "inputData")
   exportTestValues(coE_heatmapSOMReactive = {retVal })  
   return(retVal)
 })
@@ -500,10 +525,23 @@ coE_heatmapSOMReactive <- reactive({
 #' could probably be an observer, but it works like this as well...
 coE_vioGrp <<- "sampleNames"
 observe({
+  if (DEBUG) cat(file = stderr(), paste0("observe: coE_dimension_xVioiGrp\n"))
   coE_vioGrp <<- input$coE_dimension_xVioiGrp
 })
+
 coE_updateInputXviolinPlot <- reactive({
-  tsneData <- projections()
+  if (DEBUG) cat(file = stderr(), "coE_updateInputXviolinPlot started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "coE_updateInputXviolinPlot")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "coE_updateInputXviolinPlot")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("coE_updateInputXviolinPlot", id = "coE_updateInputXviolinPlot", duration = NULL)
+  }
+
+    tsneData <- projections()
   
   # Can use character(0) to remove all choices
   if (is.null(tsneData)) {
@@ -547,18 +585,17 @@ coE_updateInputXviolinPlot <- reactive({
 # reactive for module pHeatMapModule
 # for all clusters menu item
 coE_heatmapReactive <- reactive({
+  if (DEBUG) cat(file = stderr(), "coE_heatmapReactive started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "coE_heatmapReactive")
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "heatmap")
-  )
-  if (!is.null(getDefaultReactiveDomain()))
-    removeNotification(id = "heatmapWarning")
+      removeNotification(id = "coE_heatmapReactive")
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("heatmap", id = "heatmap", duration = NULL)
+    showNotification("coE_heatmapReactive", id = "coE_heatmapReactive", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "output$heatmap\n")
-
+  
   scEx_log <- scEx_log()
   projections <- projections()
   genesin <- input$coE_heatmap_geneids
@@ -588,7 +625,6 @@ coE_heatmapReactive <- reactive({
     sampCol = sampCol, ccols = ccols
   )
   
-  printTimeEnd(start.time, "DummyReactive")
   exportTestValues(coE_heatmapReactive = {retVal})  
   return(retVal)
 })

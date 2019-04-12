@@ -31,46 +31,60 @@ observe({
 #' gQC_update3DInput
 #' update axes for tsne display
 gQC_update3DInput <- reactive({
+  if (DEBUG) cat(file = stderr(), "gQC_update3DInput started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "gQC_update3DInput")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "gQC_update3DInput")
+    }
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gQC_update3DInput", id = "gQC_update3DInput", duration = NULL)
+  }
+
   projections <- projections()
-  
+
   # Can use character(0) to remove all choices
   if (is.null(projections)) {
     return(NULL)
   }
   # choices = colnames(projections)[unlist(lapply(colnames(projections), function(x) !is.factor(projections[,x])))]
-  choices = colnames(projections)
+  choices <- colnames(projections)
   # Can also set the label and select items
   updateSelectInput(session, "gQC_dim3D_x",
-                    choices = choices,
-                    selected = gQC_X1
+    choices = choices,
+    selected = gQC_X1
   )
-  
+
   updateSelectInput(session, "gQC_dim3D_y",
-                    choices = choices,
-                    selected = gQC_X2
+    choices = choices,
+    selected = gQC_X2
   )
   updateSelectInput(session, "gQC_dim3D_z",
-                    choices = choices,
-                    selected = gQC_X3
+    choices = choices,
+    selected = gQC_X3
   )
   updateSelectInput(session, "gQC_col3D",
-                    choices = colnames(projections),
-                    selected = gQC_col
+    choices = colnames(projections),
+    selected = gQC_col
   )
 })
 
 # gQC_tsne_main ----
 output$gQC_tsne_main <- renderPlotly({
+  if (DEBUG) cat(file = stderr(), "gQC_tsne_main started.\n")
   start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain()))
+  on.exit({
+    printTimeEnd(start.time, "gQC_tsne_main")
+    if (!is.null(getDefaultReactiveDomain())) {
       removeNotification(id = "gQC_tsne_main")
-  )
+    }
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("gQC_tsne_main", id = "gQC_tsne_main", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "output$gQC_tsne_main\n")
-  
+
   upI <- gQC_update3DInput()
   projections <- projections()
   dimX <- input$gQC_dim3D_x
@@ -79,7 +93,7 @@ output$gQC_tsne_main <- renderPlotly({
   dimCol <- input$gQC_col3D
   scols <- sampleCols$colPal
   ccols <- clusterCols$colPal
-  
+
   if (is.null(projections)) {
     if (DEBUG) cat(file = stderr(), "output$gQC_tsne_main:NULL\n")
     return(NULL)
@@ -88,20 +102,33 @@ output$gQC_tsne_main <- renderPlotly({
     save(file = "~/scShinyHubDebug/gQC_tsne_main.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/gQC_tsne_main.RData")
-  
+
   retVal <- tsnePlot(projections, dimX, dimY, dimZ, dimCol, scols, ccols)
-  
-  printTimeEnd(start.time, "tsnePlot")
-  exportTestValues(tsnePlot = {str(retVal)})  
+
+  exportTestValues(tsnePlot = {
+    str(retVal)
+  })
   return(layout(retVal))
 })
 
 #' tsnePlot
 #' function that plots in 3D the tsne projection
 tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols, ccols) {
+  if (DEBUG) cat(file = stderr(), "tsnePlot started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "tsnePlot")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "tsnePlot")
+    }
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("tsnePlot", id = "tsnePlot", duration = NULL)
+  }
+
   projections <- as.data.frame(projections)
   projections$dbCluster <- as.factor(projections$dbCluster)
-  
+
   if (dimCol == "sampleNames") {
     myColors <- scols
   } else {
@@ -109,8 +136,8 @@ tsnePlot <- function(projections, dimX, dimY, dimZ, dimCol, scols, ccols) {
   }
   if (dimCol == "dbCluster") {
     myColors <- ccols
-  } 
-  
+  }
+
   p <-
     plot_ly(
       projections,
@@ -142,13 +169,25 @@ callModule(
 
 # gQC_projectionTableMod ----
 callModule(
-  tableSelectionServer, 
-  "gQC_projectionTableMod", 
-  projectionTable)
+  tableSelectionServer,
+  "gQC_projectionTableMod",
+  projectionTable
+)
 
 # gQC_plotUmiHist ----
 output$gQC_plotUmiHist <- renderPlot({
-  if (DEBUG) cat(file = stderr(), "output_gQC_plotUmiHist\n")
+  if (DEBUG) cat(file = stderr(), "gQC_plotUmiHist started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "gQC_plotUmiHist")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "gQC_plotUmiHist")
+    }
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gQC_plotUmiHist", id = "gQC_plotUmiHist", duration = NULL)
+  }
+
   scEx <- scEx()
   scols <- sampleCols$colPal
 
@@ -166,14 +205,24 @@ output$gQC_plotUmiHist <- renderPlot({
     geom_histogram(bins = 50) +
     labs(title = "Histogram for raw counts", x = "count", y = "Frequency") +
     scale_fill_manual(values = scols, aesthetics = "fill")
-  
 })
 
 output$gQC_plotSampleHist <- renderPlot({
-  if (DEBUG) cat(file = stderr(), "output_sampleHist\n")
+  if (DEBUG) cat(file = stderr(), "gQC_plotSampleHist started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "gQC_plotSampleHist")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "gQC_plotSampleHist")
+    }
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gQC_plotSampleHist", id = "gQC_plotSampleHist", duration = NULL)
+  }
+
   sampleInf <- sampleInfo()
   scols <- sampleCols$colPal
-  
+
   if (is.null(sampleInf)) {
     return(NULL)
   }
@@ -185,6 +234,18 @@ output$gQC_plotSampleHist <- renderPlot({
 })
 
 output$gQC_variancePCA <- renderPlot({
+  if (DEBUG) cat(file = stderr(), "gQC_variancePCA started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "gQC_variancePCA")
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification(id = "gQC_variancePCA")
+    }
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gQC_variancePCA", id = "gQC_variancePCA", duration = NULL)
+  }
+
   if (DEBUG) cat(file = stderr(), "output$gQC_variancePCA\n")
   h2("Variances of PCs")
   pca <- pca()

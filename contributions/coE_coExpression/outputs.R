@@ -43,17 +43,17 @@ callModule(
 # EXPLORE TAB VIOLIN PLOT ------------------------------------------------------------------
 # output$coE_geneGrp_vio_plot <- renderPlotly({
 output$coE_geneGrp_vio_plot <- renderPlot({
+  if (DEBUG) cat(file = stderr(), "coE_geneGrp_vio_plot started.\n")
   start.time <- base::Sys.time()
-  if (DEBUG) cat(file = stderr(), "output$coE_geneGrp_vio_plot\n")
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  on.exit({
+    printTimeEnd(start.time, "coE_geneGrp_vio_plot")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "coE_geneGrp_vio_plot")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("coE_geneGrp_vio_plot", id = "coE_geneGrp_vio_plot", duration = NULL)
   }
-
+  
   projections <- projections()
   scEx_log <- scEx_log()
   geneListStr <- input$coE_geneGrpVioIds
@@ -87,7 +87,6 @@ output$coE_geneGrp_vio_plot <- renderPlot({
     ccols = ccols
   )
 
-  printTimeEnd(start.time, "coE_geneGrp_vio_plot")
   exportTestValues(coE_geneGrp_vio_plot = {
     retVal
   })

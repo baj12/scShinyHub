@@ -1,7 +1,7 @@
 
 if (DEBUG) cat(file = stderr(), paste("parameters:", length(allTabs), " ", "\n"))
 
-normaliztionChoices <- list(raw = "rawNormalization")
+normaliztionChoices <- list(rawNormalization = "rawNormalization")
 # parameterContributions = list()
 parFiles <- dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
 save(file = "normalizationCH.RData", list = ls())

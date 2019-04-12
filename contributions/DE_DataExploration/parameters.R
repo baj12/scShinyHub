@@ -16,13 +16,13 @@ myNormalizationParameters <- list(
 #' DE_logNormalization
 #' reactive for normalizing data according to seurat
 DE_logNormalization <- reactive({
-  if (DEBUG) cat(file = stderr(), paste("======DE_logNormalization", session$ns(input$clusters), "\n"))
+  if (DEBUG) cat(file = stderr(), "DE_logNormalization started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "DE_logNormalization")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "DE_logNormalization")
-  )
-  if (DEBUG) cat(file = stderr(), "DE_logNormalization\n")
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("DE_logNormalization", id = "DE_logNormalization", duration = NULL)
   }
@@ -44,7 +44,6 @@ DE_logNormalization <- reactive({
   sfactor = max(max(assays(scEx)[["counts"]]),1000)
   retVal <- DE_logNormalizationfunc(scEx, scalingFactor = sfactor)
   
-  printTimeEnd(start.time, "DE_logNormalization")
   exportTestValues(DE_logNormalization = {assays(retVal)[["logcounts"]]})  
   return(retVal)
 })
@@ -52,6 +51,17 @@ DE_logNormalization <- reactive({
 #' DE_logNormalizationfunc
 #' actual computation of the normalization as it is done in seurat
 DE_logNormalizationfunc <- function(scEx, scalingFactor = 10000) {
+  if (DEBUG) cat(file = stderr(), "DE_logNormalizationfunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "DE_logNormalizationfunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "DE_logNormalizationfunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("DE_logNormalizationfunc", id = "DE_logNormalizationfunc", duration = NULL)
+  }
+  
   use_genes <- sort(unique(1 + slot(as(assays(scEx)[[1]], "dgTMatrix"), 
                                     "i")))
   

@@ -29,6 +29,17 @@ observe({
 })
 
 DE_updateInputExpPanel <- reactive({
+  if (DEBUG) cat(file = stderr(), "DE_updateInputExpPanel started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "DE_updateInputExpPanel")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "DE_updateInputExpPanel")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("DE_updateInputExpPanel", id = "DE_updateInputExpPanel", duration = NULL)
+  }
+  
   projections <- projections()
 
   # Can use character(0) to remove all choices

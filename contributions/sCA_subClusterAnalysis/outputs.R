@@ -18,7 +18,17 @@ output$sCA_dge_plot2 <- subCluster2Dplot()
 #' Table with differential expressed genes
 
 sCA_dgeTableReac <- reactive({
-  if (DEBUG) cat(file = stderr(), "output$dge\n")
+  if (DEBUG) cat(file = stderr(), "sCA_dgeTableReac started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sCA_dgeTableReac")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sCA_dgeTableReac")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sCA_dgeTableReac", id = "sCA_dgeTableReac", duration = NULL)
+  }
+  
   scEx <- scEx()
   top.genes <- sCA_dge()
   
@@ -54,6 +64,17 @@ callModule(
 
 # sub cluster analysis ( used for 2 panels )
 output$sCA_dgeClustersSelection <- renderUI({
+  if (DEBUG) cat(file = stderr(), "sCA_dgeClustersSelection started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sCA_dgeClustersSelection")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sCA_dgeClustersSelection")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sCA_dgeClustersSelection", id = "sCA_dgeClustersSelection", duration = NULL)
+  }
+  
   projections <- projections()
   up1 <- updateInputSubclusterAxes()
   

@@ -9,9 +9,17 @@ printTimeEnd <- function(start.time, messtr) {
 
 
 geneName2Index <- function(g_id, featureData) {
-  if (DEBUG) {
-    cat(file = stderr(), paste("geneName2Index\n"))
+  if (DEBUG) cat(file = stderr(), "geneName2Index started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "geneName2Index")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "geneName2Index")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("geneName2Index", id = "geneName2Index", duration = NULL)
   }
+  
   if(is.null(g_id)){
     return(NULL)
   }

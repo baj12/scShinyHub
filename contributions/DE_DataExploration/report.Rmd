@@ -73,13 +73,17 @@ Normalization method used: `r input$normalizationRadioButton` used.
 2D plot 
 
 g_id <- `r input$DE_gene_id`
+
 geneNames <- `r input$"DE_expclusters-geneIds"`
+
 clId <- `r input$"DE_expclusters-clusters"`
+
 dimX <- `r input$"DE_expclusters-dimension_x"`
+
 dimY <- `r input$"DE_expclusters-dimension_y"`
 
 
-```{r bj-DE-2Dprojection, echo=TRUE, eval=FALSE}
+```{r bj-DE-2Dprojection, echo=TRUE, eval=TRUE}
 
 g_id <- input$DE_gene_id
 geneNames <- input$"DE_expclusters-geneIds"
@@ -119,7 +123,7 @@ plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
 
 ## VIOLIN PLOT 
 
-```{r bj-DE-DE_gene_vio_plot, eval=FALSE, echo=TRUE}
+```{r bj-DE-DE_gene_vio_plot, eval=TRUE, echo=TRUE}
 # geneid <- rownames(featureData[which(featureData$symbol %in%
 #                                        toupper(input$DE_gene_id)), ])[1]
   genesin <- toupper(input$DE_gene_id)
@@ -178,7 +182,7 @@ input$DE_dim_x : `r input$DE_dim_x`
 
 input$DE_dim_y : `r input$DE_dim_y`
 
-```{r bj-DE-DE_panelPlot, eval=FALSE, echo=TRUE}
+```{r bj-DE-DE_panelPlot, eval=TRUE, echo=TRUE}
 
 #@DO fix
 # output$DE_panelPlot
@@ -244,45 +248,19 @@ if (input$DE_clusterSelectionPanelPlot == 'All')
 ## 3D TSNE plot
 
 ```{r bj-DE-DE_tsne_plt, eval=TRUE, echo=TRUE}
-if(DEBUG)cat(file=stderr(), "output$DE_tsne_plt\n")
-geneid <- rownames(featureData[which(featureData$symbol ==
-                                       toupper(input$DE_gene_id)), ])[1]
 
-expression <- log2cpm[geneid, ]
+  g_id <- input$DE_gene_id
 
-tsneData <- cbind(projections, t(expression))
-names(tsneData)[names(tsneData) == geneid] <- 'values'
-
-p <-
-  plot_ly(
-    tsneData,
-    x = ~ tsne1,
-    y = ~ tsne2,
-    z = ~ tsne3,
-    type = "scatter3d",
-    hoverinfo = "text",
-    text = paste('Cluster:', as.numeric(as.character(projections$dbCluster))),
-    mode = 'markers',
-    marker = list(
-      size = 2,
-      line = list(width = 0),
-      color =  ~ values,
-      colors = 'Greens'
-    )
-  )
-layout(p, title = toupper(input$DE_gene_id))
+ DE_dataExpltSNEPlot(scEx_log, g_id, projections)
 
 ```
 
 ## scater QC
 
-```{r bj-DE-scater, eval=FALSE, echo=TRUE, warning=FALSE }
-cat(file = stderr(), paste(class(scEx_log), collapse = "\n"))
-featureDataReact <- dataTables$featuredata[useGenes, ]
-# featureData = dataTables$featuredata[useGenes, ]
-scaterReads <- gQC_scaterReadsFunc(scEx, featureDataReact)
-n = min(nrow(scaterReads),50)
-scater::plotQC(scaterReads, type = "highest-expression", colour_cells_by = "fixed", n = n)
+```{r bj-DE-scater, eval=TRUE, echo=TRUE, warning=FALSE }
+library(png)
+img=DE_scaterPNG
+readPNG(img$src)
 ```
 
 

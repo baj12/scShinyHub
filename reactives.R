@@ -30,6 +30,16 @@ sessionProjections <- reactiveValues(
 # loads singleCellExperiment
 #   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
+  if (DEBUG) cat(file = stderr(), "inputDataFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "inputDataFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "inputDataFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("inputDataFunc", id = "inputDataFunc", duration = NULL)
+  }
   
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
@@ -182,13 +192,16 @@ inputDataFunc <- function(inFile) {
 # inputData ----
 # internal, should not be used by plug-ins
 inputData <- reactive({
+  if (DEBUG) cat(file = stderr(), "inputData started.\n")
   start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "inputDataFunc")
-    }
-  )
-  if (DEBUG) cat(file = stderr(), "DEBUG:inputData\n")
+  on.exit({
+    printTimeEnd(start.time, "inputData")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "inputData")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("inputData", id = "inputData", duration = NULL)
+  }
   
   inFile <- input$file1
   if (is.null(inFile)) {
@@ -202,20 +215,38 @@ inputData <- reactive({
   
   retVal <- inputDataFunc(inFile)
   
-  printTimeEnd(start.time, "inputData")
   exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
   return(retVal)
 })
 
 medianENSGfunc <- function(scEx) {
+  if (DEBUG) cat(file = stderr(), "medianENSGfunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianENSGfunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianENSGfunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianENSGfunc", id = "medianENSGfunc", duration = NULL)
+  }
+  
   geneC <- Matrix::colSums(scEx > 0, na.rm = TRUE)
   return(median(t(geneC)))
 }
 
 # medianENSG ----
 medianENSG <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG)cat(file = stderr(), "medianENSG\n")
+  if (DEBUG) cat(file = stderr(), "medianENSG started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianENSG")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianENSG")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianENSG", id = "medianENSG", duration = NULL)
+  }
   
   scEx_log <- scEx_log()
   if (is.null(scEx)) {
@@ -229,21 +260,40 @@ medianENSG <- reactive({
     return(0)
   }
   retVal <- medianENSGfunc(scEx_log)
-  printTimeEnd(start.time, "medianENSG")
-  exportTestValues(medianENSG = { retVal })
   
+  exportTestValues(medianENSG = { retVal })
   return(retVal)
 })
 
 medianUMIfunc <- function(scEx) {
+  if (DEBUG) cat(file = stderr(), "medianUMIfunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianUMIfunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianUMIfunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianUMIfunc", id = "medianUMIfunc", duration = NULL)
+  }
+  
   umiC <- Matrix::colSums(scEx, na.rm = TRUE)
+  
   return(median(t(umiC)))
 }
 
 # medianUMI ----
 medianUMI <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "medianUMI\n")
+  if (DEBUG) cat(file = stderr(), "medianUMI started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianUMI")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianUMI")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianUMI", id = "medianUMI", duration = NULL)
+  }
   
   scEx <- scEx()
   if (is.null(scEx)) {
@@ -259,7 +309,6 @@ medianUMI <- reactive({
   scEx <- assays(scEx)[["counts"]]
   retVal <- medianUMIfunc(scEx)
   
-  printTimeEnd(start.time, "medianUMI")
   exportTestValues(medianUMI = { retVal })
   return(retVal)
 })
@@ -274,6 +323,17 @@ useCellsFunc <-
            rmPattern,
            keepCells,
            cellKeepOnly) {
+    if (DEBUG) cat(file = stderr(), "useCellsFunc started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "useCellsFunc")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "useCellsFunc")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("useCellsFunc", id = "useCellsFunc", duration = NULL)
+    }
+    
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls()))
     }
@@ -350,14 +410,16 @@ useCellsFunc <-
 # works on cells only
 # internal, should not be used by plug-ins
 useCells <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG)cat(file = stderr(), "useCells\n")
-  
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "useCells started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "useCells")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "useCells")
-    }
-  )
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("useCells", id = "useCells", duration = NULL)
+  }
   
   dataTables <- inputData()
   geneNames <- input$minExpGenes
@@ -372,10 +434,8 @@ useCells <- reactive({
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("which cells to use", id = "useCells", duration = NULL)
-  }
-  retVal <- useCellsFunc(
+
+    retVal <- useCellsFunc(
     dataTables,
     geneNames,
     rmCells,
@@ -384,7 +444,6 @@ useCells <- reactive({
     cellKeepOnly
   )
   
-  printTimeEnd(start.time, "useCells")
   exportTestValues(useCells = { retVal })
   return(retVal)
 })
@@ -396,7 +455,18 @@ useGenesFunc <-
            geneListSelection,
            genesKeep,
            geneLists) {
-    gList <- geneLists # global variable, assigning it locally ensures that it will be saved
+    if (DEBUG) cat(file = stderr(), "useGenesFunc started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "useGenesFunc")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "useGenesFunc")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("useGenesFunc", id = "useGenesFunc", duration = NULL)
+    }
+
+        gList <- geneLists # global variable, assigning it locally ensures that it will be saved
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/useGenesFunc.Rdata", list = c(ls(), ls(envir = globalenv())))
     }
@@ -437,12 +507,13 @@ useGenesFunc <-
 
 # before gene filtering -----
 beforeFilterCounts <- reactive({
+  if (DEBUG) cat(file = stderr(), "beforeFilterCounts started.\n")
   start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  on.exit({
+    printTimeEnd(start.time, "beforeFilterCounts")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "beforeFilterCounts")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("beforeFilterCounts", id = "beforeFilterCounts", duration = NULL)
   }
@@ -473,7 +544,6 @@ beforeFilterCounts <- reactive({
   }
   retVal = Matrix::colSums(assays(dataTables$scEx)[["counts"]][geneIDs, ])
   
-  printTimeEnd(start.time, "DummyReactive")
   exportTestValues(beforeFilterCounts = { retVal })
   return(retVal)
 })
@@ -481,13 +551,16 @@ beforeFilterCounts <- reactive({
 # useGenes ----
 # collects information from all places where genes being removed or specified
 useGenes <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "useGenes started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "useGenes")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "useGenes")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "useGenes\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("useGenes", id = "useGenes", duration = NULL)
+  }
   
   dataTables <- inputData()
   ipIDs <- input$selectIds # regular expression of genes to be removed
@@ -508,7 +581,6 @@ useGenes <- reactive({
   
   retVal <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
   
-  printTimeEnd(start.time, "useGenes")
   exportTestValues(useGenes = { retVal })
   return(retVal)
 })
@@ -522,14 +594,20 @@ scExFunc <-
            minGene,
            minG,
            maxG) {
-    if (DEBUG) {
-      cat(file = stderr(), "scExFunc\n")
+    if (DEBUG) cat(file = stderr(), "scExFunc started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "scExFunc")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "scExFunc")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("scExFunc", id = "scExFunc", duration = NULL)
     }
-    # if(DEBUG)cat(file=stderr(), paste("col:",ncol(scExOrg),"\n"))
-    # if(DEBUG)cat(file=stderr(), paste("l useCells:",length(useCells),"\n"))
-    # if(DEBUG)cat(file=stderr(), paste("row:",nrow(scExOrg),"\n"))
-    # if(DEBUG)cat(file=stderr(), paste("l useGenes:",length(useGenes),"\n"))
-    # scExOrg, useCells, useGenes cannot be NULL
+    if (!is.null(getDefaultReactiveDomain())){
+      removeNotification(id = "scExFunc1")
+      removeNotification(id = "scExFunc2")
+    }
     
     # change names to be hopefully a bit more clear
     changed <- FALSE # trace if something changed
@@ -572,6 +650,7 @@ scExFunc <-
     if (sum(keepCells) == 0) {
       showNotification("not enough cells left",
                        type = "warning",
+                       id = "scExFunc1",
                        duration = NULL
       )
       return(NULL)
@@ -579,6 +658,7 @@ scExFunc <-
     if (sum(keepGenes) == 0) {
       showNotification("not enough genes left",
                        type = "warning",
+                       id = "scExFunc1",
                        duration = NULL
       )
       return(NULL)
@@ -609,13 +689,16 @@ scExFunc <-
 # apply filters that depend on genes & cells
 # it is here that useCells and useGenes are combined and applied to select for
 scEx <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "scEx started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scEx")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "scEx")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "scEx\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scEx", id = "scEx", duration = NULL)
+  }
   
   dataTables <- inputData()
   useCells <- useCells()
@@ -630,10 +713,8 @@ scEx <- reactive({
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("scEx", id = "scEx", duration = NULL)
-  }
-  if (DEBUGSAVE) {
+
+    if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scEx.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/scEx.RData")
@@ -647,43 +728,42 @@ scEx <- reactive({
     maxG = maxG
   )
   
-  printTimeEnd(start.time, "scEx")
   exportTestValues(scEx = { list(rowData(retVal), colData(retVal)) })
   return(retVal)
 })
 
 # rawNormalization ----
 rawNormalization <- reactive({
+  if (DEBUG) cat(file = stderr(), "rawNormalization started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "rawNormalization")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "rawNormalization")
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("rawNormalization", id = "rawNormalization", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "rawNormalization\n")
   
   scEx <- scEx()
+  names(assays(scEx)) = "logcounts"
   
-  printTimeEnd(start.time, "rawNormalization")
   exportTestValues(rawNormalization = {str(scEx)})  
-  
   return(scEx)
 })
 
 # scEx_log ----
 scEx_log <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "scEx_log started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scEx_log")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "scEx_log")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Normalizing data", id = "scEx_log", duration = NULL)
+    showNotification("scEx_log", id = "scEx_log", duration = NULL)
   }
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "scEx_log\n")
   
   scEx <- scEx()
   normMethod <- input$normalizationRadioButton
@@ -701,7 +781,6 @@ scEx_log <- reactive({
   
   scEx_log <- do.call(normMethod, args = list())
   
-  printTimeEnd(start.time, "scEx_log")
   exportTestValues(scEx_log = { assays(scEx_log)["logcounts"] })
   return(scEx_log)
 })
@@ -711,13 +790,16 @@ scEx_log <- reactive({
 # TODO
 # we should probably just rename the rows and then have an option to tableSelectionServer that shows (or not) rownames
 scExLogMatrixDisplay <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "scExLogMatrixDisplay started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scExLogMatrixDisplay")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "scExLogMatrixDisplay")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "scExLogMatrixDisplay\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scExLogMatrixDisplay", id = "scExLogMatrixDisplay", duration = NULL)
+  }
   
   # dataTables = inputData()
   # useCells = useCells()
@@ -728,12 +810,6 @@ scExLogMatrixDisplay <- reactive({
       cat(file = stderr(), "scExLogMatrixDisplay:NULL\n")
     }
     return(NULL)
-  }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Calculating scExLogmatrix",
-                     id = "scExLogMatrixDisplay",
-                     duration = NULL
-    )
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scExLogMatrixDisplay.RData", list = c(ls(), ls(envir = globalenv())))
@@ -746,15 +822,27 @@ scExLogMatrixDisplay <- reactive({
   }
   retVal <- data.frame(symbol=make.names(rowData(scEx_log)$symbol, unique = TRUE), stringsAsFactors = FALSE)
   retVal <- cbind(retVal,
-                          as.matrix(assays(scEx_log)[[1]]))
+                  as.matrix(assays(scEx_log)[[1]]))
   rownames(retVal) <- make.names(rowData(scEx_log)$symbol, unique = TRUE)
   
-  printTimeEnd(start.time, "scExLogMatrixDisplay")
   return(retVal)
 })
 
 pcaFunc <- function(scEx_log) {
-  if (DEBUGSAVE) {
+  if (DEBUG) cat(file = stderr(), "pcaFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "pcaFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "pcaFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("pcaFunc", id = "pcaFunc", duration = NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "pcawarning")
+  
+    if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/pcaFunc.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
@@ -793,19 +881,16 @@ pcaFunc <- function(scEx_log) {
 
 # pca ----
 pca <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "pca started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "pca")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "pca")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("pca", id = "pca", duration = NULL)
   }
-  start.time <- Sys.time()
-  if (!is.null(getDefaultReactiveDomain())) {
-    removeNotification(id = "pcawarning")
-  }
-  if (DEBUG) cat(file = stderr(), "pca\n")
   
   scEx_log <- scEx_log()
   if (is.null(scEx_log)) {
@@ -824,7 +909,18 @@ pca <- reactive({
 
 scranCluster <- function(pca, scEx_log, seed, clusterSource,
                          geneSelectionClustering="", minClusterSize=2, clusterMethod="PCA", featureData) {
-  set.seed(seed)
+  if (DEBUG) cat(file = stderr(), "scranCluster started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scranCluster")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scranCluster")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scranCluster", id = "scranCluster", duration = NULL)
+  }
+
+    set.seed(seed)
   geneid <- geneName2Index(geneSelectionClustering, featureData)
   
   params <- list(
@@ -863,8 +959,16 @@ scranCluster <- function(pca, scEx_log, seed, clusterSource,
 
 # dbCluster ----
 dbCluster <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "dbCluster\n")
+  if (DEBUG) cat(file = stderr(), "dbCluster started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "dbCluster")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "dbCluster")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("dbCluster", id = "dbCluster", duration = NULL)
+  }
   
   kNr <- input$kNr
   clustering <- scran_Cluster()
@@ -892,7 +996,6 @@ dbCluster <- reactive({
   
   clusterCols$colPal = unlist(inCols)
   
-  printTimeEnd(start.time, "dbCluster")
   exportTestValues(dbCluster = { dbCluster })
   return(dbCluster)
 })
@@ -900,18 +1003,20 @@ dbCluster <- reactive({
 
 
 scran_Cluster <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "scran_Cluster started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scran_Cluster")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "scran_Cluster")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("scran_Cluster", id = "scran_Cluster", duration = NULL)
   }
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "scran_Cluster\n")
-  
-  pca <- pca()
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "dbClusterError")
+
+    pca <- pca()
   scEx_log <- scEx_log()
   seed <- input$seed
   kNr <- input$kNr
@@ -945,11 +1050,11 @@ scran_Cluster <- reactive({
     showNotification(
       paste("error: clustering didn't produce a result"),
       type = "error",
+      id = "dbClusterError",
       duration = NULL
     )
   }
   
-  printTimeEnd(start.time, "scran_Cluster")
   exportTestValues(scran_Cluster = { retVal })
   return(retVal)
 })
@@ -963,8 +1068,16 @@ scran_Cluster <- reactive({
 #' projections is a reactive and cannot be used in reports. Reports have to organize
 #' themselves as it is done here with tsne.data.
 projections <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG)cat(file = stderr(), "projections\n")
+  if (DEBUG) cat(file = stderr(), "projections started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "projections")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "projections")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("projections", id = "projections", duration = NULL)
+  }
   # scEx is the fundamental variable with the raw data, which is available after loading
   # data. Here we ensure that everything is loaded and all varialbles are set by waiting
   # input data being loaded
@@ -1045,7 +1158,6 @@ projections <- reactive({
     projections <- cbind(projections, prjs)
   }
   
-  printTimeEnd(start.time, "projections")
   exportTestValues(projections = { projections })
   return(projections)
 })
@@ -1053,7 +1165,16 @@ projections <- reactive({
 # initializeGroupNames ----
 # TODO shouldn't this be an observer???
 initializeGroupNames <- reactive({
-  if (DEBUG) cat(file = stderr(), "initializeGroupNames.\n")
+  if (DEBUG) cat(file = stderr(), "initializeGroupNames started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "initializeGroupNames")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "initializeGroupNames")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("initializeGroupNames", id = "initializeGroupNames", duration = NULL)
+  }
   
   scEx <- scEx()
   if (is.null(scEx)) {
@@ -1074,8 +1195,16 @@ initializeGroupNames <- reactive({
 
 # sample --------
 sample <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "sample\n")
+  if (DEBUG) cat(file = stderr(), "sample started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sample")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sample")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sample", id = "sample", duration = NULL)
+  }
   
   scEx <- scEx()
   if (is.null(scEx)) {
@@ -1101,15 +1230,22 @@ sample <- reactive({
     }
   }
   
-  printTimeEnd(start.time, "sample")
   exportTestValues(sample = { retVal })
   return(retVal)
 })
 
 # geneCount --------
 geneCount <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "geneCount\n")
+  if (DEBUG) cat(file = stderr(), "geneCount started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "geneCount")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "geneCount")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("geneCount", id = "geneCount", duration = NULL)
+  }
   
   scEx_log <- scEx_log()
   
@@ -1123,15 +1259,22 @@ geneCount <- reactive({
   
   retVal <- Matrix::colSums(assays(scEx_log)[["logcounts"]] > 0)
   
-  printTimeEnd(start.time, "geneCount")
   exportTestValues(geneCount = { retVal })
   return(retVal)
 })
 
 # beforeFilterPrj ----
 beforeFilterPrj <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "umiCount\n")
+  if (DEBUG) cat(file = stderr(), "beforeFilterPrj started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "beforeFilterPrj")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "beforeFilterPrj")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("beforeFilterPrj", id = "beforeFilterPrj", duration = NULL)
+  }
   
   scEx <- scEx()
   bfc <- beforeFilterCounts()
@@ -1147,15 +1290,22 @@ beforeFilterPrj <- reactive({
   cn <- colnames(scEx)
   retVal <- bfc[cn]
   
-  printTimeEnd(start.time, "beforeFilterPrj")
   exportTestValues(beforeFilterPrj = { retVal })
   return(retVal)
 })
 
 # umiCount ----
 umiCount <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) cat(file = stderr(), "umiCount\n")
+  if (DEBUG) cat(file = stderr(), "umiCount started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "umiCount")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "umiCount")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("umiCount", id = "umiCount", duration = NULL)
+  }
   
   scEx <- scEx()
   
@@ -1169,7 +1319,6 @@ umiCount <- reactive({
   
   retVal <- Matrix::colSums(assays(scEx)[["counts"]])
   
-  printTimeEnd(start.time, "umiCount")
   exportTestValues(umiCount = { retVal })
   return(retVal)
 })
@@ -1184,8 +1333,16 @@ sampleInfoFunc <- function(scEx) {
 # sampleInfo -------
 # sample information
 sampleInfo <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG)  cat(file = stderr(), "sampleInfo\n")
+  if (DEBUG) cat(file = stderr(), "sampleInfo started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sampleInfo")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sampleInfo")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sampleInfo", id = "sampleInfo", duration = NULL)
+  }
   
   scEx <- scEx()
   if (!exists("scEx")) {
@@ -1201,7 +1358,6 @@ sampleInfo <- reactive({
   
   retVal <- sampleInfoFunc(scEx)
   
-  printTimeEnd(start.time, "sampleInfo")
   exportTestValues(sampleInfo = { retVal })
   return(retVal)
 })
@@ -1210,13 +1366,16 @@ sampleInfo <- reactive({
 # table of input cells with sample information
 # TODO: used in tableSeletionServer table; should be divided into function and reactive
 inputSample <- reactive({
+  if (DEBUG) cat(file = stderr(), "inputSample started.\n")
   start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  on.exit({
+    printTimeEnd(start.time, "inputSample")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "inputSample")
-    }
-  )
-  if (DEBUG) cat(file = stderr(), "inputSample\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("inputSample", id = "inputSample", duration = NULL)
+  }
   
   dataTables <- inputData()
   
@@ -1252,8 +1411,15 @@ inputSample <- reactive({
 
 getMemoryUsed <- reactive({
   require(pryr)
-  if (DEBUG) {
-    cat(file = stderr(), "getMemoryUsed\n")
+  if (DEBUG) cat(file = stderr(), "getMemoryUsed started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "getMemoryUsed")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "getMemoryUsed")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("getMemoryUsed", id = "getMemoryUsed", duration = NULL)
   }
   # number of times memory was calculated 
   # not used anymore
@@ -1283,16 +1449,17 @@ getMemoryUsed <- reactive({
 reportFunction <- function(tmpPrjFile) {
 }
 
+# reacativeReport ----
 reacativeReport <- reactive({
-  start.time <- Sys.time()
-  # remove any notification on exit that we don't want
-  on.exit(
+  if (DEBUG) cat(file = stderr(), "reacativeReport started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "reacativeReport")
     if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "creating_Report")
-  )
-  # show in the app that this is running
+      removeNotification(id = "reacativeReport")
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("creating Report", id = "creating_Report", duration = NULL)
+    showNotification("reacativeReport", id = "reacativeReport", duration = NULL)
   }
   
   scEx <- scEx()
@@ -1443,19 +1610,19 @@ reacativeReport <- reactive({
   if (DEBUG) file.copy(tempReport, "~/scShinyHubDebug/tempReport.Rmd")
   myparams <- params # needed for saving as params is already taken by knitr
   # if (DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/tempReport.RData", list = c("session", "myparams", ls(), "zippedReportFiles"))
+  save(file = "~/scShinyHubDebug/tempReport.RData", list = c("session", "myparams", ls(), "zippedReportFiles"))
   # load(file = '~/scShinyHubDebug/tempReport.RData')
   cat(file = stderr(), paste("workdir: ", getwd()))
   require(callr)
   # if (DEBUGSAVE)
-    file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
+  file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
   
-  tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
-  file.copy("contributions/coE_coExpression/report.Rmd",
-            '/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmp5uuY0f/file92087e386a11.Rmd', overwrite = TRUE)
-  r(function(input, output_file, params, envir) 
+  # tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  file.copy("contributions/DE_DataExploration/report.Rmd",
+            '/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//RtmpmEtKbJ/filed2127f12a7b0.Rmd', overwrite = TRUE)
+  r(function(input, output_file, params, envir)
     rmarkdown::render(input = input, output_file = output_file,
-                                                                  params = params, envir = envir), 
+                      params = params, envir = envir), 
     args = list(input = tempReport,
                 output_file = "report.html",
                 params = params,
@@ -1463,8 +1630,8 @@ reacativeReport <- reactive({
   )
   # file.copy(from = "contributions/sCA_subClusterAnalysis/report.Rmd",
   #           to = "/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmph1SRTE/file69aa37a47206.Rmd", overwrite = TRUE)
-  # rmarkdown::render(input = tempReport, output_file = "report.html",
-  #                   params = params, envir = new.env())
+  rmarkdown::render(input = tempReport, output_file = "report.html",
+                    params = params, envir = new.env())
   
   tDir <- paste0(reportTempDir, "/")
   base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
@@ -1472,9 +1639,6 @@ reacativeReport <- reactive({
   base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("scEx", "projections"))
   zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
   zip(outZipFile, zippedReportFiles, flags = "-9Xj")
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Report creation is done", id = "reportDone", duration = 10, type = "message")
-  }
   if (DEBUG) {
     end.time <- Sys.time()
     cat(file = stderr(), "===Report:done", difftime(end.time, start.time, units = "min"), "\n")

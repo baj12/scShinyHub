@@ -9,7 +9,17 @@ require(SingleCellExperiment)
 #' calculate the QC metrix and return updated singleCellExperiment object
 #' TODO make the 200 a parameter
 gQC_scaterReadsFunc <- function(scEx) {
-
+  if (DEBUG) cat(file = stderr(), "gQC_scaterReadsFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "gQC_scaterReadsFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "gQC_scaterReadsFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gQC_scaterReadsFunc", id = "gQC_scaterReadsFunc", duration = NULL)
+  }
+  
   if (class(assays(scEx)[[1]]) == "dgTMatrix") {
     assays(scEx)[["counts"]] = as(assays(scEx)[["counts"]], "dgCMatrix")
   }
@@ -40,15 +50,16 @@ gQC_scaterReadsFunc <- function(scEx) {
 #' scaterReads
 #' singleCellExperiment object/reactive with QC metrix
 scaterReads <- reactive({
+  if (DEBUG) cat(file = stderr(), "scaterReads started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "scaterReads")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "scaterReads")
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("scaterReads", id = "scaterReads", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "scaterReads\n")
   
   scEx <- scEx()
   # scEx_log = scEx_log()
@@ -57,7 +68,6 @@ scaterReads <- reactive({
   }
   retVal <- gQC_scaterReadsFunc(scEx)
 
-  printTimeEnd(start.time, "scaterReads")
   exportTestValues(scaterReads = {str(retVal)})  
   return(retVal)
 })
@@ -67,6 +77,17 @@ scaterReads <- reactive({
 #' gQC_sampleHistFunc
 #' create a histogram from samples
 gQC_sampleHistFunc <- function(samples, scols) {
+  if (DEBUG) cat(file = stderr(), "gQC_sampleHistFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "gQC_sampleHistFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "gQC_sampleHistFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("gQC_sampleHistFunc", id = "gQC_sampleHistFunc", duration = NULL)
+  }
+  
   counts <- table(samples)
   barplot(counts,
           main = "histogram of number of cell per sample",
@@ -81,15 +102,16 @@ gQC_sampleHistFunc <- function(samples, scols) {
 #' input for tableSelectionServer
 #' presents all projections
 projectionTable <- reactive({
+  if (DEBUG) cat(file = stderr(), "projectionTable started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "projectionTable")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "projectionTable")
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("projectionTable", id = "projectionTable", duration = NULL)
   }
-  if (DEBUG) cat(file = stderr(), "projectionTable\n")
   
   projections <- projections()
   
@@ -111,18 +133,16 @@ projectionTable <- reactive({
 #' tsne
 #' reactive calculating the tSNE projections
 tsne <- reactive({
+  if (DEBUG) cat(file = stderr(), "tsne started.\n")
   start.time <- base::Sys.time()
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "tsne")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "tsne")
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("tsne", id = "tsne", duration = NULL)
   }
-  if (!is.null(getDefaultReactiveDomain()))
-    removeNotification(id = "gQC_tsneWarning")
-  
-  if (DEBUG) cat(file = stderr(), "tsne\n")
   
   pca <- pca()
   gQC_tsneDim <- input$gQC_tsneDim
@@ -147,12 +167,22 @@ tsne <- reactive({
     return(NULL)
   }
   
-  printTimeEnd(start.time, "tsne")
   exportTestValues(tsne = {retVal})  
   return(retVal)
 })
 
 tsneFunc <- function(pca, gQC_tsneDim, gQC_tsnePerplexity, gQC_tsneTheta, gQC_tsneSeed) {
+  if (DEBUG) cat(file = stderr(), "tsneFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "tsneFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "tsneFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("tsneFunc", id = "tsneFunc", duration = NULL)
+  }
+  
   set.seed(seed = gQC_tsneSeed)
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/tsne.RData", list = c(ls(), ls(envir = globalenv())))
@@ -184,6 +214,17 @@ tsneFunc <- function(pca, gQC_tsneDim, gQC_tsnePerplexity, gQC_tsneTheta, gQC_ts
 #' umapReact
 #' reactive for calculating UMAP projection
 umapReact <- reactive({
+  if (DEBUG) cat(file = stderr(), "umapReact started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "umapReact")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "umapReact")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("umapReact", id = "umapReact", duration = NULL)
+  }
+  
   start.time <- base::Sys.time()
   on.exit(
     if (!is.null(getDefaultReactiveDomain()))
@@ -259,7 +300,6 @@ umapReact <- reactive({
   colnames(embedding) = paste0("UMAP", 1:n_components)
   rownames(embedding) = colnames(scEx_log)
   
-  printTimeEnd(start.time, "umapReact")
   exportTestValues(umapReact = {embedding})  
   return(embedding)
 })

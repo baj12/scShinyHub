@@ -10,14 +10,17 @@ DummyFunc <- function(scEx_log) {
 #' DummyReactive
 #' controls the calculation for the shiny widget
 DummyReactive <- reactive({
+  # some debugging messages saying that we start the process
+  if (DEBUG) cat(file = stderr(), "DummyReactive started.\n")
   # track how much time is spent here
   start.time <- base::Sys.time()
   
   # remove any notification on exit that we don't want
-  on.exit(
+  on.exit({
+    printTimeEnd(start.time, "DummyReactive")
     if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "DummyFunc")
-  )
+  })
   # show in the app that this is running
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("loading", id = "DummyFunc", duration = NULL)
@@ -26,8 +29,6 @@ DummyReactive <- reactive({
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "DummyFuncPerm")
   
-  # some debugging messages
-  if (DEBUG) cat(file = stderr(), "DummyReactive started.\n")
   
   # call dependancies (reactives)
   scEx <- scEx()                 # raw data, filtered by genes/cells
@@ -72,6 +73,8 @@ DummyReactive <- reactive({
 
 
 
+exportTestValues(DummyReactive = {retVal})  
+return(retVal)
 
 
 

@@ -8,7 +8,18 @@ sCA_selectedDge <- reactiveValues(
 #' sCA_getCells
 #' get list of cells from selctions 
 sCA_getCells <- function(projections, cl1, db1, db2) {
-  dbCluster = projections$dbCluster
+  if (DEBUG) cat(file = stderr(), "sCA_getCells started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sCA_getCells")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sCA_getCells")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sCA_getCells", id = "sCA_getCells", duration = NULL)
+  }
+
+    dbCluster = projections$dbCluster
   subsetData <- subset(projections, dbCluster %in% cl1)
   cells.1 <- rownames(shiny::brushedPoints(subsetData, db1))
   cells.2 <- rownames(shiny::brushedPoints(subsetData, db2))
@@ -26,6 +37,16 @@ myDiffExpFunctions = list(
 #' sCA_dge_CellViewfunc
 #' calculate differentically expressed genes given 2 sets of cells
 sCA_dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
+  if (DEBUG) cat(file = stderr(), "sCA_dge_CellViewfunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sCA_dge_CellViewfunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sCA_dge_CellViewfunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sCA_dge_CellViewfunc", id = "sCA_dge_CellViewfunc", duration = NULL)
+  }
   
   featureData <- rowData(scEx_log)
   scEx_log <- as.matrix(assays(scEx_log)[[1]])
@@ -50,6 +71,17 @@ sCA_dge_CellViewfunc <- function(scEx_log, cells.1, cells.2) {
 #' sCA_dge_ttest
 #' t-test on selected cells
 sCA_dge_ttest <- function(scEx_log, cells.1, cells.2) {
+  if (DEBUG) cat(file = stderr(), "sCA_dge_ttest started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sCA_dge_ttest")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sCA_dge_ttest")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sCA_dge_ttest", id = "sCA_dge_ttest", duration = NULL)
+  }
+  
   featureData <- rowData(scEx_log)
   scEx_log <- as.matrix(assays(scEx_log)[[1]])
   subsetExpression <- scEx_log[complete.cases(scEx_log[, union(cells.1, cells.2)]),]
@@ -65,19 +97,17 @@ sCA_dge_ttest <- function(scEx_log, cells.1, cells.2) {
 #' sCA_dge
 #' manage calculation for differential expression analysis
 sCA_dge <- reactive({
+  if (DEBUG) cat(file = stderr(), "sCA_dge started.\n")
   start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  on.exit({
+    printTimeEnd(start.time, "sCA_dge")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "sCA_dge")
-    }
-  )
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("dge", id = "sCA_dge", duration = NULL)
+    showNotification("sCA_dge", id = "sCA_dge", duration = NULL)
   }
-  if (!is.null(getDefaultReactiveDomain()))
-    removeNotification(id = "dgewarning")
-  if (DEBUG) cat(file = stderr(), "sCA_dge\n")
-
+  
   scEx_log <- scEx_log()
   projections <- projections()
   cl1 <- input$sCA_dgeClustersSelection
@@ -108,7 +138,6 @@ sCA_dge <- reactive({
   # update reactiveValue
   sCA_selectedDge$sCA_dgeTable <- retVal
   
-  printTimeEnd(start.time, "dge")
   exportTestValues(sCA_dge = {retVal})  
   return(retVal)
 })
@@ -117,14 +146,17 @@ sCA_dge <- reactive({
 subClusterDim1 <- "PC1"
 subClusterDim2 <- "PC2"
 subClusterClusters <<- NULL
+
 observe({
   if (DEBUG) cat(file = stderr(), "observe: sCA_subscluster_x1\n")
   subClusterDim1 <<- input$sCA_subscluster_x1
 })
+
 observe({
   if (DEBUG) cat(file = stderr(), "observe: sCA_subscluster_y1\n")
   subClusterDim2 <<- input$sCA_subscluster_y1
 })
+
 #' TODO
 #' if this observer is really needed we need to get rid of projections
 observe({
@@ -138,6 +170,7 @@ observe({
     }
   }
 })
+
 observe({
   if (DEBUG) cat(file = stderr(), "observe: sCA_dgeClustersSelection\n")
   subClusterClusters <<- input$sCA_dgeClustersSelection
@@ -147,8 +180,18 @@ observe({
 # subcluster axes ----
 # update axes in subcluster analysis
 updateInputSubclusterAxes <- reactive({
-  if (DEBUG) cat(file = stderr(), "observe: updateInputSubclusterAxes\n")
-  projections <- projections()
+  if (DEBUG) cat(file = stderr(), "updateInputSubclusterAxes started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "updateInputSubclusterAxes")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "updateInputSubclusterAxes")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("updateInputSubclusterAxes", id = "updateInputSubclusterAxes", duration = NULL)
+  }
+
+    projections <- projections()
   # we combine the group names with the projections to add ability to select groups
   # gn <- groupNames$namesDF
   # Can use character(0) to remove all choices
@@ -180,6 +223,17 @@ updateInputSubclusterAxes <- reactive({
 #' plots cells in 2D for the subcluster anlaysis. The handling of the selection is done
 #' outside this function
 subCluster2Dplot <- function() {
+  if (DEBUG) cat(file = stderr(), "subCluster2Dplot started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "subCluster2Dplot")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "subCluster2Dplot")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("subCluster2Dplot", id = "subCluster2Dplot", duration = NULL)
+  }
+  
   renderPlot({
     if (DEBUG) cat(file = stderr(), "output$sCA_dge_plot2\n")
     

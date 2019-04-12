@@ -25,6 +25,10 @@ output$Dummy_plot <- renderPlot({
 
 })
 
+observe({
+  if (DEBUG) cat(file = stderr(), paste0("observe: clusters\n"))
+  mod_cl1 <<- input$clusters
+})
 
 output$DummySavedPlot <- renderImage({
   # track how much time is spent here
