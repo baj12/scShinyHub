@@ -126,3 +126,55 @@ DE_dataExpltSNEPlot <- function(scEx_log, g_id, projections) {
     )
   layout(p, title = paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
 }
+
+DE_geneViolinFunc <- function(scEx_log, g_id, projections, ccols) {
+  featureData <- rowData(scEx_log)
+  geneid <- geneName2Index(g_id, featureData)
+  
+  if (length(geneid) == 0) {
+    return(NULL)
+  }
+  
+  # expression <- exprs(scEx_log)[geneid, ]
+  if (length(geneid) == 1) {
+    expression <- assays(scEx_log)[[1]][geneid, ]
+  } else {
+    expression <- Matrix::colSums(assays(scEx_log)[[1]][geneid, ])
+  }
+  
+  projections <- cbind(projections, expression)
+  names(projections)[length(projections)] <- "values"
+  
+  p1 <-
+    ggplot(projections, aes(factor(dbCluster), values, fill = factor(dbCluster))) +
+    geom_violin(scale = "width") +
+    scale_color_manual(values = ccols) +
+    scale_fill_manual(values = ccols, aesthetics = "fill") +
+    
+    stat_summary(
+      fun.y = median,
+      geom = "point",
+      size = 5,
+      color = "black"
+    ) +
+    stat_summary(fun.data = n_fun, geom = "text") +
+    theme_bw() +
+    theme(
+      axis.text.x = element_text(
+        angle = 90,
+        size = 12,
+        vjust = 0.5
+      ),
+      axis.text.y = element_text(size = 12),
+      strip.text.x = element_text(size = 16),
+      strip.text.y = element_text(size = 14),
+      axis.title.x = element_text(face = "bold", size = 16),
+      axis.title.y = element_text(face = "bold", size = 16),
+      legend.position = "none"
+    ) +
+    xlab("Cluster") +
+    ylab("Expression") +
+    ggtitle(paste(toupper(featureData[geneid, "symbol"]), collapse = ", "))
+  
+  return(p1)
+}
