@@ -30,6 +30,8 @@ sessionProjections <- reactiveValues(
 # loads singleCellExperiment
 #   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
+  "!DEBUG start shiny"
+  debugme::debug("plot render start", pkg = ".")
   if (DEBUG) cat(file = stderr(), "inputDataFunc started.\n")
   start.time <- base::Sys.time()
   on.exit({
@@ -1488,13 +1490,18 @@ reacativeReport <- reactive({
         assign(var, reactiveValuesToList(get(var)), envir = report.env)
       } else if (class(get(var))[1] == "reactiveExpr") {
         cat(file = stderr(), paste("is reactiveExpr: ", var, "--", class(get(var)), "\n"))
+        # if ( var == "coE_selctedCluster-cluster")
+        #   browser()
         rectVals = c(rectVals, var)
-        assign(var, eval(parse(text = paste0(var, "()"))), envir = report.env)
+        assign(var, eval(parse(text = paste0("\`",var, "\`()"))), envir = report.env)
         # for modules we have to take care of return values
         # this has to be done manually (for the moment)
         # and is only required for clusterServer
         if (class(report.env[[var]])[1] == "reactivevalues") {
-          if(all(c("cluster", "selectedCells") %in% names(report.env[[var]]))) {
+          if (all(c("cluster", "selectedCells") %in% names(report.env[[var]]))) {
+            cat(file = stderr(), paste("is reactivevalues2: ", paste0(var,"-cluster"), "\n"))
+            # if( paste0(var,"-cluster") == "coE_selctedCluster-cluster")
+            #   browser()
             assign(paste0(var,"-cluster"), eval(report.env[[var]][["cluster"]]), envir = report.env)
             tempVar = report.env[[var]][["selectedCells"]]
             assign(paste0(var,"-selectedCells"), eval(parse(text = "tempVar()")), envir = report.env)
@@ -1617,9 +1624,9 @@ reacativeReport <- reactive({
   # if (DEBUGSAVE)
   file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
   
-  # tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
-  file.copy("contributions/DE_DataExploration/report.Rmd",
-            '/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//RtmpmEtKbJ/filed2127f12a7b0.Rmd', overwrite = TRUE)
+  tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  # file.copy("contributions/gQC_generalQC//report.Rmd",
+  #           '/var/folders/tf/jwlc7r3d48z7pkq0w38_v7t40000gp/T//RtmpTx4l4G/file1a6e471a698.Rmd', overwrite = TRUE)
   r(function(input, output_file, params, envir)
     rmarkdown::render(input = input, output_file = output_file,
                       params = params, envir = envir), 
@@ -1630,8 +1637,8 @@ reacativeReport <- reactive({
   )
   # file.copy(from = "contributions/sCA_subClusterAnalysis/report.Rmd",
   #           to = "/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmph1SRTE/file69aa37a47206.Rmd", overwrite = TRUE)
-  rmarkdown::render(input = tempReport, output_file = "report.html",
-                    params = params, envir = new.env())
+  # rmarkdown::render(input = tempReport, output_file = "report.html",
+  #                   params = params, envir = new.env())
   
   tDir <- paste0(reportTempDir, "/")
   base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))

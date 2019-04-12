@@ -85,37 +85,15 @@ dimY <- `r input$"DE_expclusters-dimension_y"`
 
 ```{r bj-DE-2Dprojection, echo=TRUE, eval=TRUE}
 
-g_id <- input$DE_gene_id
-geneNames <- input$"DE_expclusters-geneIds"
-#TODO geneNames2 is just added to have a value, need to check how this should behave.
-geneNames2 <- input$"DE_expclusters-geneIds"
-clId <- input$"DE_expclusters-clusters"
-dimX <- input$"DE_expclusters-dimension_x"
-dimY <- input$"DE_expclusters-dimension_y"
-divXBy <- input$devideXBy
-divYBy <- input$devideYBy
-scols <- sampleCols$colPal
-ccols <- clusterCols$colPal
+data2plot = projections
+gene_id <- input$DE_gene_id
+moduleName = "DE_expclusters"
 
-legend.position <- "none"
-grpN <- make.names(input$groupName)
-cat(file = stderr(), paste("2Dprojection", c(g_id, geneNames, dimX, dimY, clId, grpN, legend.position)))
+p2 <- twoDplotFromModule(twoDData = data2plot, moduleName = moduleName, input = input, projections = projections, g_id = gene_id) 
 
-# save(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata", list = ls())
-# load(file = "~/scShinyHubDebug/bj.DE.2Dprojection.Rdata")
- if (dimCol == "sampleNames") {
-    myColors <- scols
-  } else {
-    myColors <- NULL
-  }
-if (dimCol == "dbCluster") {
-    myColors <- ccols
-  }
+# TODO selected cells
 
-
-plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames, 
-                 geneNames2, dimX, dimY, clId, grpN, legend.position, 
-                 grpNs = groupNames$namesDF, divXBy = divXBy, divYBy = divYBy, dimCol = dimCol, colors = myColors)
+p2
 
 ```
 
@@ -124,49 +102,11 @@ plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
 ## VIOLIN PLOT 
 
 ```{r bj-DE-DE_gene_vio_plot, eval=TRUE, echo=TRUE}
-# geneid <- rownames(featureData[which(featureData$symbol %in%
-#                                        toupper(input$DE_gene_id)), ])[1]
-  genesin <- toupper(input$DE_gene_id)
-  genesin <- gsub(" ", "", genesin, fixed = TRUE)
-  genesin <- strsplit(genesin, ",")
-  geneid <- rownames(featureData[which(featureData$symbol %in%
-                                       genesin[[1]]), ])
-  map <-
-    rownames(featureData[which(featureData$symbol %in% genesin[[1]]), ])
-  
- # expression <- Matrix::colSums(exprs(scEx[map, ]) >= minExpr)
- expression <- Matrix::colSums(assays(scEx)[[1]][map, ] >= minExpr)
 
-  projections <- cbind(projections, coExpVal = expression)
-  # if(class(projections[,dbCluster])=="factor"){
-  
+  g_id <- input$DE_gene_id
+  ccols <- clusterCols$colPal
 
-  p1 <-
-    ggplot(projections, aes_string(factor(projections[, "dbCluster"]), "coExpVal", fill = factor(projections[, "dbCluster"]))) +
-    geom_violin(scale = "width") +
-    stat_summary(
-      fun.y = median,
-      geom = "point",
-      size = 5,
-      color = "black"
-    ) +
-    stat_summary(fun.data = n_fun, geom = "text") +
-    theme_bw() +
-    theme(
-      axis.text.x = element_text(
-        angle = 60,
-        size = 12,
-        vjust = 0.5
-      ),
-      axis.text.y = element_text(size = 12),
-      strip.text.x = element_text(size = 16),
-      strip.text.y = element_text(size = 14),
-      axis.title.x = element_text(face = "bold", size = 16),
-      axis.title.y = element_text(face = "bold", size = 16),
-      legend.position = "none"
-    ) +
-    xlab("dbCluster") +
-    ylab("number genes from list")
+  p1 <- DE_geneViolinFunc(scEx_log, g_id, projections, ccols)
 p1
 
 ```
@@ -184,63 +124,91 @@ input$DE_dim_y : `r input$DE_dim_y`
 
 ```{r bj-DE-DE_panelPlot, eval=TRUE, echo=TRUE}
 
-#@DO fix
-# output$DE_panelPlot
-# Quitting from lines 164-211 (/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmpw4FHir/filee53f2f5d5938.Rmd) 
-# Quitting from lines NA-260 (/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmpw4FHir/filee53f2f5d5938.Rmd) 
-# 
-# 
-# Warning: Error in seq.int: 'from' must be a finite number
-#   [No stack trace available]
+  genesin <- input$DE_panelplotids
+  cl4 <- input$DE_clusterSelectionPanelPlot
+  dimx4 <- input$DE_dim_x
+  dimy4 <- input$DE_dim_y
 
+  genesin <- toupper(genesin)
+  genesin <- gsub(" ", "", genesin, fixed = TRUE)
+  genesin <- strsplit(genesin, ",")
+  genesin <- genesin[[1]]
+ 
+  featureData <- rowData(scEx_log)
+  featureData$symbol = toupper(featureData$symbol)
+  genesin <- genesin[which(genesin %in% featureData$symbol)]
 
-if(DEBUG)cat(file=stderr(), "output$DE_panelPlot\n")
-
-genesin <- input$DE_panelplotids
-genesin <- toupper(genesin)
-genesin <- gsub(" ", "", genesin, fixed = TRUE)
-genesin <- strsplit(genesin, ',')
-genesin<-genesin[[1]]
-
-par(mfrow=c(ceiling(length(genesin)/4),4), mai = c(0, 0., 0., 0.))
-rbPal <- colorRampPalette(c('#f0f0f0','red'))
-
-if (input$DE_clusterSelectionPanelPlot == 'All') 
-{
-  for (i in 1:length(genesin)){
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$symbol==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    plot(projections[,input$DE_dim_x],projections[,input$DE_dim_y],col=Col,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
+  par(mfrow = c(ceiling(length(genesin) / 4), 4), mai = c(0., .3, .3, .3))
+  rbPal <- colorRampPalette(c("#f0f0f0", "red"))
+  ylim <- c(min(projections[, dimy4]), max(projections[, dimy4]))
+  if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
+    ymax <- 0
+    for (i in 1:length(genesin)) {
+      geneIdx <- which(featureData$symbol == genesin[i])
+      ymax <- max(ymax, max(Matrix::colSums(assays(scEx_log)[["logcounts"]][geneIdx, , drop = FALSE])))
+    }
+    ylim <- c(0, ymax)
   }
-}else{
-  for (i in 1:length(genesin)){
-    
-    subsetTSNE <- subset(projections, dbCluster == input$DE_clusterSelectionPanelPlot)
-    
-    Col <- rbPal(10)[
-      as.numeric(
-        cut(
-          as.numeric(
-            log2cpm[
-              rownames(featureData[which(featureData$symbol==genesin[i]),])
-              ,]
-          ),breaks = 10))]
-    
-    names(Col)<-rownames(projections)
-    plotCol<-Col[rownames(subsetTSNE)]
-    plot(subsetTSNE[,input$DE_dim_x],subsetTSNE[,input$DE_dim_y],col=plotCol,pch=16,axes = FALSE,frame.plot = TRUE, ann=FALSE)
-    title(genesin[i],line=-1.2,adj = 0.05,cex.main=2)
-    
-  }
-}
+  if (cl4 == "All") {
+    for (i in 1:length(genesin)) {
+      geneIdx <- which(featureData$symbol == genesin[i])
+      Col <- rbPal(10)[
+        as.numeric(
+          cut(
+            as.numeric(
+              assays(scEx_log)[[1]][
+                rownames(featureData[geneIdx, ]),
+              ]
+            ),
+            breaks = 10
+          )
+        )
+      ]
+      if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
+        projections[, dimy4] <- Matrix::colSums(assays(scEx_log)[["logcounts"]][geneIdx, , drop = FALSE])
+      }
 
+      plot(projections[, dimx4], projections[, dimy4],
+        col = Col, pch = 16, frame.plot = TRUE, ann = FALSE, ylim = ylim
+      )
+      title(genesin[i], line = -1.2, adj = 0.05, cex.main = 2)
+      if (DEBUG) cat(file = stderr(), genesin[i])
+    }
+  } else {
+    for (i in 1:length(genesin)) {
+      geneIdx <- which(featureData$symbol == genesin[i])
+      subsetTSNE <- subset(projections, dbCluster == cl4)
+
+      Col <- rbPal(10)[
+        as.numeric(
+          cut(
+            as.numeric(
+              assays(scEx_log)[[1]][
+                rownames(featureData[geneIdx, ]),
+              ]
+            ),
+            breaks = 10
+          )
+        )
+      ]
+
+      names(Col) <- rownames(projections)
+      plotCol <- Col[rownames(subsetTSNE)]
+      if (class(projections[, dimx4]) == "factor" & dimy4 == "UMI.count") {
+        projections[, dimy4] <- Matrix::colSums(assays(scEx_log)[["logcounts"]][geneIdx, , drop = FALSE])
+        subsetTSNE <- subset(projections, dbCluster == cl4)
+      }
+
+      plot(subsetTSNE[, dimx4], subsetTSNE[, dimy4],
+        col = plotCol, pch = 16, frame.plot = TRUE,
+        ann = FALSE, ylim = ylim
+      )
+      title(genesin[i], line = -1.2, adj = 0.05, cex.main = 2)
+      if (DEBUG) cat(file = stderr(), cl4)
+    }
+  }
+  
+ 
 ```
 
 
@@ -260,7 +228,9 @@ if (input$DE_clusterSelectionPanelPlot == 'All')
 ```{r bj-DE-scater, eval=TRUE, echo=TRUE, warning=FALSE }
 library(png)
 img=DE_scaterPNG
-readPNG(img$src)
+if (file.exists(img$src))
+  include_graphics(img$src)
+
 ```
 
 

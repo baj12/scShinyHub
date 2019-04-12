@@ -302,7 +302,7 @@ clusterServer <- function(input, output, session,
     if (is.null(divXBy)) divXBy <- "None"
     if (is.null(divYBy)) divYBy <- "None"
     
-    subsetData <- updateProjectionsWithUmiCount(
+    updateProjectionsWithUmiCount(
       dimX = dimX, dimY = dimY,
       geneNames = geneNames,
       geneNames2 = geneNames2,
@@ -878,7 +878,10 @@ pHeatMapModule <- function(input, output, session,
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("pHeatMapPlot", id = "pHeatMapPlot", duration = NULL)
     }
-
+    if (!is.null(getDefaultReactiveDomain())) {
+      removeNotification( id = "pHeatMapPlotWARNING")
+    }
+    
         ns <- session$ns
     heatmapData <- pheatmapList()
     addColNames <- input$ColNames
@@ -930,6 +933,16 @@ pHeatMapModule <- function(input, output, session,
     heatmapData$fontsize <- 14
     # heatmapData$fontsize_row = 18
     # heatmapData$filename=NULL
+    if ( nrow(heatmapData$mat) > 100 ) {
+      showNotification(
+        "more than 100 row in heatmap. This can be very slow to display. Only showing first 100 rows",
+        id = "pHeatMapPlotWARNING",
+        type = "warning",
+        duration = 20
+      )
+      heatmapData$mat = heatmapData$mat[1:100,]
+    }
+    
     system.time(do.call(TRONCO::pheatmap, heatmapData))
     
     pixelratio <- session$clientData$pixelratio
@@ -1022,7 +1035,9 @@ pHeatMapModule <- function(input, output, session,
       moreOptions <- input$moreOptions
       groupNs <- groupNames$namesDF
       proje <- projections()
-      save(file = "~/scShinyHubDebug/download_pHeatMapUI.RData", list = c("outfilePH", ls(), ls(envir = globalenv())))
+      if (DEBUGSAVE)
+        save(file = "~/scShinyHubDebug/download_pHeatMapUI.RData", list = c("outfilePH", ls(), ls(envir = globalenv())))
+      # load("~/scShinyHubDebug/download_pHeatMapUI.RData")
       dfilename <- paste0(reportTempDir, "/sessionData.RData")
       base::save(
         file = dfilename, list =
@@ -1045,7 +1060,6 @@ pHeatMapModule <- function(input, output, session,
         colN <- colN[colN %in% colnames(heatmapData$mat)]
         heatmapData$mat <- heatmapData$mat[, colN, drop = FALSE]
       }
-      
       do.call(pheatmap, heatmapData)
       
       

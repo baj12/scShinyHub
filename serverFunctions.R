@@ -348,3 +348,57 @@ heatmapPlotFromModule <- function(heatmapData, moduleName, input, projections) {
   system.time(do.call(TRONCO::pheatmap, heatmapData))
   
 }
+
+# twoDplotFromModule ----
+#' function to be used in markdown docs to ease the plotting of the clusterServer module
+twoDplotFromModule <- function(twoDData, moduleName, input, projections, g_id, legend.position = "none") {
+
+    grpNs <- groupNames$namesDF
+  grpN <- make.names(input$groupName)
+  
+  dimY <- input[[paste0(moduleName,"-dimension_y")]]
+  dimX <- input[[paste0(moduleName,"-dimension_x")]]
+  dimCol <- input[[paste0(moduleName,"-dimension_col")]]
+  clId <- input[[paste0(moduleName,"-clusters")]]
+
+  geneNames <- input[[paste0(moduleName,"-geneIds")]]
+  geneNames2 <- input[[paste0(moduleName,"-geneIds2")]]
+  logx <- input[[paste0(moduleName,"-logX")]]
+  logy <- input[[paste0(moduleName,"-logY")]]
+  divXBy <- input[[paste0(moduleName,"-devideXBy")]]
+  divYBy <- input[[paste0(moduleName,"-devideYBy")]]
+  scols <- sampleCols$colPal
+  ccols <- clusterCols$colPal
+  
+  
+  if (is.null(scEx_log) | is.null(scEx_log) | is.null(projections)) {
+    if (DEBUG) cat(file = stderr(), paste("output$clusterPlot:NULL\n"))
+    return(NULL)
+  }
+  
+  featureData <- rowData(scEx_log)
+  if (is.null(g_id) || nchar(g_id) == 0) {
+    g_id <- featureData$symbol
+  }
+  if (is.null(logx)) logx <- FALSE
+  if (is.null(logy)) logy <- FALSE
+  if (is.null(divXBy)) divXBy <- "None"
+  if (is.null(divYBy)) divYBy <- "None"
+  
+ 
+  if (dimCol == "sampleNames") {
+    myColors <- scols
+  } else {
+    myColors <- NULL
+  }
+  if (dimCol == "dbCluster") {
+    myColors <- ccols
+  }
+  
+  p1 <- plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
+                         geneNames2, dimX, dimY, clId, grpN, legend.position,
+                         grpNs = grpNs, logx, logy, divXBy, divYBy, dimCol, colors = myColors
+  )
+  return(p1)
+  
+}

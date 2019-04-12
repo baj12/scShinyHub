@@ -28,6 +28,7 @@ library(colourpicker)
 library(shinytest)
 library(scran)
 library(callr)
+library(debugme)
 
 if (file.exists("defaultValues.R")) {
   base::source(file = "defaultValues.R")
@@ -44,7 +45,7 @@ if (!exists("allowedColors")) {
                            "#b2182b","#ef8a62","#fddbc7","#d1e5f0","#67a9cf","#2166ac","#b2182b","#ef8a62",
                            "#fddbc7","#e0e0e0","#999999","#4d4d4d"))
 }
-
+Sys.setenv(DEBUGME = ".")
 base::source("serverFunctions.R")
 
 # TODO needs to be an option
@@ -56,7 +57,7 @@ seed <- 2
 reportTempDir <<- base::tempdir()
 
 shinyServer(function(input, output, session) {
-  
+  "!DEBUG start shiny"
   base::set.seed(seed)
   # check that directory is availabl, otherwise create it
   if (DEBUG) {

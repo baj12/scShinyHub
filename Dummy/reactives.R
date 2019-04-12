@@ -69,30 +69,6 @@ DummyReactive <- reactive({
   return(retVal)
 })
 
-
-
-
-
-exportTestValues(DummyReactive = {retVal})  
-return(retVal)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # imageDummyPrecompute ----
 #' imageDummyPrecompute
 #' this is an example of calculating an image to a file and returning the local reference
