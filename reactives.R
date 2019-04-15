@@ -30,6 +30,8 @@ sessionProjections <- reactiveValues(
 # loads singleCellExperiment
 #   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
+  "!DEBUG start shiny"
+  debugme::debug("plot render start", pkg = ".")
   if (DEBUG) cat(file = stderr(), "inputDataFunc started.\n")
   start.time <- base::Sys.time()
   on.exit({
