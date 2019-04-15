@@ -1,14 +1,7 @@
-# tabList = list(
-#   tabItem("umiHist",
-#           c(tags$h3("Histogram of UMI counts"),
-#           fluidRow(column(
-#             10, offset = 1,
-#             plotOutput('plotUmiHist') %>% withSpinner()
-#           )))
-#   ))
+
 if (DEBUG) cat(file = stderr(), paste("parameters:", length(allTabs), " ", "\n"))
 
-normaliztionChoices <- list(raw = "rawNormalization")
+normaliztionChoices <- list(rawNormalization = "rawNormalization")
 # parameterContributions = list()
 parFiles <- dir(path = "contributions", pattern = "parameters.R", full.names = TRUE, recursive = TRUE)
 save(file = "normalizationCH.RData", list = ls())
@@ -51,12 +44,10 @@ allTabs[[length(allTabs) + 1]] <- list(
           inputId = "normalizationRadioButton",
           label = "Normalization to use",
           choices = normaliztionChoices,
-          selected = "gbm_logNormalization",
+          selected = "DE_logNormalization",
           width = "100%"
         )
-        # 10, offset = 1,
-        # plotOutput('plotUmiHist') %>% withSpinner()
-      )),
+       )),
       fluidRow(column(10, verbatimTextOutput("normalizationRadioButtonValue"))),
       wellPanel(
         # This outputs the dynamic UI component

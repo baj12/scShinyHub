@@ -10,6 +10,7 @@ if (file.exists("defaultValues.R")) {
   defaultValueRegExGene <- ""
 }
 
+# inputTab ----
 inputTab <- tabItem(
   tabName = "input",
   fluidRow(div(h3("scShinyHub Input"), align = "center")),
@@ -18,7 +19,7 @@ inputTab <- tabItem(
     h5(
       "This app is designed for exploratory data analysis of processed RNA-Seq data of single cell experiments. 
       Multiple files can be selected using certain browsers (E.g. chrome). This is not working when running in RStudio as a window.
-      Rds files are R data files generated using base::save(). They contain two objects, gbm and featuredata that hold raw counts in a sparse matrix
+      Rds files are R data files generated using base::save(). They contain two objects, scEx that hold raw counts in a sparse matrix
       and annotation in a data frame."
     ),
     align = "center"
@@ -50,7 +51,7 @@ inputTab <- tabItem(
   ))
 )
 
-
+# geneSelectionTab ----
 geneSelectionTab <- tabItem(
   tabName = "geneSelection",
   fluidRow(div(h3("Gene selection"), align = "center")),
@@ -113,27 +114,53 @@ geneSelectionTab <- tabItem(
   )
 )
 
+# generalParametersTab ----
 generalParametersTab <- tabItem(
   "generalParameters",
-  fluidRow(div(h3("General parameters"), align = "center")),
+  fluidRow(div(h2("General parameters"), align = "center")),
   br(),
-  fluidRow(div(
-    h4(
-      "How many clusters should be calculated?"
-    ),
-    align = "center"
-  )),
+  fluidRow(div(h3("Parameters for clustering"), align = "left")),
   fluidRow(
-    column(5,
-           offset = 1,
-           numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
+    # column(2,
+    #        offset = 1,
+    #        numericInput("kNr", "Number of clusters", 10, min = 2, max = 30)
+    # ),
+    column(2, offset = 0,
+           selectInput("clusterSource", "use PCA or normalized data?", choices = c("PCA", "normData"), selected = "PCA")),
+    column(2, offset = 0,
+           numericInput("minClusterSize", "minimum size of each cluster.", 2, min = 2)),
+    column(2, offset = 0,
+           selectInput("clusterMethod", "clustering method to use", choices = c("hclust", "igraph"), selected = "igraph"))
+  ),
+  fluidRow(
+    column(10, offset = 1,
+    textInput("geneSelectionClustering", "Genes to be used for clustering")
     )
   ),
+  br(),
+  fluidRow(
+    column(10, offset = 1,
+           textOutput("Nclusters"))
+  ),
+  br(),
+  fluidRow(div(h3("Comments"), align = "left")),
   fluidRow(
     tinyMCE(
       "descriptionOfWork",
       "Please describe your work. This will be included in the report."
     )
+  ),
+  br(),
+  fluidRow(div(h3("Colors"), align = "left")),
+  fluidRow(
+    actionButton("updateColors", "Update colours", icon = icon("update"))
+  ),
+  fluidRow(column(4,offset = 1,
+    uiOutput('sampleColorSelection')
+  ),
+  column(4,offset = 1,
+           uiOutput('clusterColorSelection')
+  )
   )
   # ,
   # fluidRow(
@@ -142,6 +169,7 @@ generalParametersTab <- tabItem(
   # )
 )
 
+# cellSelectionTab ----
 cellSelectionTab <- tabItem(
   tabName = "cellSelection",
   fluidRow(div(h3("Cell selection"), align = "center")),

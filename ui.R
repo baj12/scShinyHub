@@ -39,10 +39,18 @@ source("parameters.R", local = TRUE)
 
 # Basic menu Items
 allMenus <- list(
-  menuItem("input", tabName = "input", icon = icon("dashboard")),
-  menuItem("Parametes", tabName = "parameters", icon = icon("dashboard"), parameterItems),
-  menuItem("Cell selection", tabName = "cellSelection", icon = icon("dashboard")),
-  menuItem("Gene selection", tabName = "geneSelection", icon = icon("dashboard"))
+  menuItem("input", 
+           # id="inputID",
+           tabName = "input", icon = icon("dashboard")),
+  menuItem("Parametes", 
+           # id="parametersID", 
+           tabName = "parameters", icon = icon("dashboard"), parameterItems),
+  menuItem("Cell selection", 
+           # id="cellSelectionID", 
+           tabName = "cellSelection", icon = icon("dashboard")),
+  menuItem("Gene selection", 
+           # id="geneSelectionID",
+           tabName = "geneSelection", icon = icon("dashboard"))
 )
 
 
@@ -94,6 +102,7 @@ shinyUI(
     dashboardHeader(title = "scShinyHub"),
     dashboardSidebar(
       sidebarMenu(
+        id="sideBarID",
         allMenus
       ),
       tipify(

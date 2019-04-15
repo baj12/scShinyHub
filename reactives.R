@@ -1,80 +1,94 @@
-# general reactive
-# (same as global variables, but they are reactive to manipulation and are lazy, i.e. they only get executed when needed.)
 
-# # default values
-# # not working like this. need to update the values in each UI via an active update
-#
-# defaultValueSingleGeneReact <- reactive({
-#   cat(stderr(), 'defaultValueSingleGene\n')
-#   defaultValueSingleGene <<- input$defaultValueSingleGene
-# })
-#
-# defaultValueMultiGenesReact <- reactive({
-#   cat(stderr(), 'defaultValueMultiGenes\n')
-#   defaultValueMultiGenes <<- input$defaultValueMultiGenes
-# })
 
-# library(cellrangerRkit)
+# reactive values  ------------------------------------------------------------------
 inputFileStats <- reactiveValues(
   stats = NULL
 )
-# reactive values  ------------------------------------------------------------------
-# should only hold original data
-# internal, should not be used by plug-ins
+
+# store cell groups that are defined on the fly using the modular 2D plot
+groupNames <- reactiveValues(
+  namesDF = data.frame()
+)
+
+# colors for samples
+sampleCols <- reactiveValues(
+  colPal = allowedColors
+)
+
+# colors for clusters
+clusterCols <- reactiveValues(
+  colPal = allowedColors
+)
+
+# Here, we store projections that are created during the session. These can be selections of cells or other values that
+# are not possible to precalculate.
+sessionProjections <- reactiveValues(
+  prjs = data.frame()
+)
+
+# inputDataFunc ----
+# loads singleCellExperiment
+#   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  "!DEBUG start shiny"
+  debugme::debug("plot render start", pkg = ".")
+  if (DEBUG) cat(file = stderr(), "inputDataFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "inputDataFunc")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "inputDataFunc")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "DEBUG:inputData\n")
-  }
+  })
   if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("loading", id = "inputDataFunc", duration = NULL)
+    showNotification("inputDataFunc", id = "inputDataFunc", duration = NULL)
   }
-  start.time <- Sys.time()
-  # save(file = "test.RData", list = c("inFile"))
-  # load("test.RData")
+  
   stats <- tibble(.rows = length(inFile$datapath))
   stats$names <- inFile$name
   stats$nFeatures <- 0
   stats$nCells <- 0
 
-    cat(file = stderr(), paste("reading", inFile$name[1], "\n"))
-    fp <- inFile$datapath[1]
-    fpLs <- load(fp)
-    if ("featuredata" %in% fpLs){
-      fd <- featuredata
-    }else{
-      fd = featuredata = fData(gbm)
+  #
+  cat(file = stderr(), paste("reading", inFile$name[1], "\n"))
+  fp <- inFile$datapath[1]
+  # fp ="scEx.Rds"
+  # fp ="../scShinyHubData/patty1A.v2.Rds"
+  # a bit of cleanup
+  rm(list = c("scEx", "scEx_log", "featureData"))
+  fpLs <- load(fp)
+  scExFound <- FALSE
+  for (varName in fpLs) {
+    if ("SingleCellExperiment" %in% class(get(varName))) {
+      scEx <- get(varName)
+      scExFound <- TRUE
     }
-    fdAll <- fData(gbm)
-    fdIdx <- intersect(rownames(fdAll), rownames(featuredata))
-    if (length(fdIdx) != nrow(fd)) {
-      cat(file = stderr(), "Houston, there is a problem with the features\n")
-    }
-    
-     pdAll <- pData(gbm)
-    exAll <- exprs(gbm)
-    stats[1, "nFeatures"] <- nrow(fdAll)
-    stats[1, "nCells"] <- nrow(pdAll)
-
-
-    if (length(inFile$datapath) > 1) {
-      for (fpIdx in 2:length(inFile$datapath)) {
+  }
+  if (!scExFound) {
+    return(NULL)
+  }
+  fdAll <- rowData(scEx)
+  pdAll <- colData(scEx)
+  exAll <- assays(scEx)[["counts"]]
+  stats[1, "nFeatures"] <- nrow(fdAll)
+  stats[1, "nCells"] <- nrow(pdAll)
+  
+  # read multiple files
+  if (length(inFile$datapath) > 1) {
+    for (fpIdx in 2:length(inFile$datapath)) {
       cat(file = stderr(), paste("reading", inFile$name[fpIdx], "\n"))
       fp <- inFile$datapath[fpIdx]
       fpLs <- load(fp)
-      fdIdx <- intersect(rownames(fd), rownames(featuredata))
-      if (length(fdIdx) != nrow(fd)) {
-        cat(file = stderr(), "Houston, there is a problem with the features\n")
+      if (!"scEx" %in% fpLs) {
+        next()
       }
-      fd <- featuredata[fdIdx, ]
+      fdIdx <- intersect(rownames(fdAll), rownames(rowData(scEx)))
+      # if (length(fdIdx) != nrow(fd)) {
+      #   cat(file = stderr(), "Houston, there is a problem with the features\n")
+      # }
+      # fd <- featuredata[fdIdx, ]
       fdAll <- fdAll[fdIdx, ]
-      pd1 <- pData(gbm)
-      ex1 <- exprs(gbm)[fdIdx, ]
+      pd1 <- colData(scEx)
+      ex1 <- assays(scEx)[["counts"]][fdIdx, ]
       if (sum(rownames(pdAll) %in% rownames(pd1)) > 0) {
         cat(file = stderr(), "Houston, there are cells with the same name\n")
         rownames(pd1) <- paste0(rownames(pd1), "_", fpIdx)
@@ -85,65 +99,79 @@ inputDataFunc <- function(inFile) {
       }
       stats[fpIdx, "nFeatures"] <- nrow(fd)
       stats[fpIdx, "nCells"] <- nrow(pd1)
-
+      
       exAll <- Matrix::cbind2(exAll[fdIdx, ], ex1)
     }
-    gbm <- newGeneBCMatrix(mat = as(exAll, "dgTMatrix"), fd = fdAll, pd = pdAll)
-    featuredata <- fd
-  } else {
-    load(inFile$datapath)
   }
-
-  cat(file = stderr(), "file Loaded")
+  exAll <- as(exAll, "dgTMatrix")
+  scEx <- SingleCellExperiment(
+    assay = list(counts = exAll),
+    colData = pdAll,
+    rowData = fdAll
+  )
+  
+  cat(stderr(), "Loaded")
   dataTables <- list()
-  featuredata$Associated.Gene.Name <-
-    toupper(featuredata$Associated.Gene.Name)
-  featuredata <- featuredata[rownames(gbm), ]
-  dataTables$featuredataOrg <- featuredata
-  # dataTables$positiveCells <- NULL
-  # dataTables$positiveCellsAll <- NULL
-
-  # take only genes that are in all tables
-  rnames <- rownames(featuredata)
-  # rnames = rnames[rnames %in% rownames(log2cpm)]
-  rnames <- rnames[rnames %in% rownames(gbm)]
-  # rnames = rnames[rnames %in% rownames(gbm_log)]
-
-  # cnames = colnames(log2cpm)
-  # cnames =colnames(gbm)
-  # cnames = cnames[cnames %in% colnames(gbm_log)]
-
-  # dataTables$log2cpm <- log2cpm[rnames, cnames]
-  dataTables$gbm <- gbm[rnames, ]
-  # dataTables$gbm_log = gbm_log[rnames, cnames]
-  dataTables$featuredata <- featuredata[rnames, ]
-
-  if (is.null(gbm$barcode)) {
-    showNotification("gbm doesn't contain barcode column", type = "error")
+  featuredata <- rowData(scEx)
+  # handle different extreme cases for the symbol column (already encountered)
+  if (is.factor(featuredata$symbol)) {
+    if (levels(featuredata$symbol) == "NA") {
+      featuredata$symbol = toupper(rownames(featuredata))
+      rowData(scEx) <- featuredata
+    }
+  }
+  if ("symbol" %in% colnames(featuredata)) {
+    featuredata$symbol = toupper(featuredata$symbol)
+    rowData(scEx) <- featuredata
+  }
+  
+  # dataTables$featuredataOrg <- rowData(scEx)
+  dataTables$scEx <- scEx
+  dataTables$featuredata <- featuredata
+  
+  if (is.null(scEx$barcode)) {
+    showNotification("scEx doesn't contain barcode column", type = "error")
     return(NULL)
   }
   # some checks
-
-  if (sum(is.infinite(exprs(gbm))) > 0) {
+  
+  if (sum(is.infinite(assays(scEx)[["counts"]])) > 0) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("gbm contains infinite values",
-        type = "error"
+      showNotification("scEx contains infinite values",
+                       type = "error"
       )
     }
     return(NULL)
   }
-  if (sum(c("id", "symbol") %in% colnames(fData(gbm))) < 2) {
+  
+  if ("sampleNames" %in% names(colData(scEx))) {
+    sampNames <- levels(colData(scEx)$sampleNames)
+    isolate({
+      # sampleCols$colPal <- colorRampPalette(brewer.pal(
+      #   n = 6, name =
+      #     "PRGn"
+      # ))(length(sampNames))
+      sampleCols$colPal <- allowedColors[seq_along(sampNames)]
+      names(sampleCols$colPal) <- sampNames
+    })
+  } else {
+    showNotification("scEx - colData doesn't contain sampleNames",
+                     duration = NULL, type = "error"
+    )
+  }
+  
+  if (sum(c("id", "symbol") %in% colnames(rowData(scEx))) < 2) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("gbm - fData doesn't contain id and/or symbol columns",
-        duration = NULL, type = "error"
+      showNotification("scEx - rowData doesn't contain id and/or symbol columns",
+                       duration = NULL, type = "error"
       )
     }
   }
-
-  if (!sum(c("Associated.Gene.Name", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
+  
+  if (!sum(c("symbol", "Gene.Biotype", "Description") %in% colnames(featuredata)) == 3) {
     if (!is.null(getDefaultReactiveDomain())) {
-      showNotification("featuredata - one of is missing: Associated.Gene.Name, Gene.Biotype, Description)",
-        duration = NULL, type = "error"
+      showNotification("featuredata - one of is missing: symbol, Gene.Biotype, Description)",
+                       duration = NULL, type = "error"
       )
     }
     if (!"Gene.Biotype" %in% colnames(featuredata)) {
@@ -152,75 +180,127 @@ inputDataFunc <- function(inFile) {
     if (!"Description" %in% colnames(featuredata)) {
       featuredata$"Description" <- "not given"
     }
+    featuredata$symbol = toupper(featuredata$symbol)
     dataTables$featuredata <- featuredata
   }
-  # if (is.null(fData(dataTables$gbm)$symbol)){
+  # if (is.null(rowData(dataTables$scEx)$symbol)){
   #
   # }
-  if (DEBUG) {
-    cat(file = stderr(), "inputData: done\n")
-  }
-  end.time <- Sys.time()
-  cat(file = stderr(), paste("===load data:done", difftime(end.time, start.time, units = "min"), " min\n"))
-
+  
   inputFileStats$stats <- stats
   return(dataTables)
 }
 
+
+
+# inputData ----
 # internal, should not be used by plug-ins
 inputData <- reactive({
+  if (DEBUG) cat(file = stderr(), "inputData started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "inputData")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "inputData")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("inputData", id = "inputData", duration = NULL)
+  }
+  
   inFile <- input$file1
   if (is.null(inFile)) {
-    if (DEBUG) {
-      cat(file = stderr(), "inputData: NULL\n")
-    }
+    if (DEBUG) cat(file = stderr(), "inputData: NULL\n")
     return(NULL)
   }
-  return(inputDataFunc(inFile))
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/inputData.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file='~/scShinyHubDebug/inputData.RData')
+  
+  retVal <- inputDataFunc(inFile)
+  
+  exportTestValues(inputData = {list(assays(retVal$scEx)[["counts"]], rowData(retVal$scEx), colData(retVal$scEx)) })  
+  return(retVal)
 })
 
-medianENSGfunc <- function(gbm) {
-  geneC <- Matrix::colSums(gbm > 0, na.rm = TRUE)
+medianENSGfunc <- function(scEx) {
+  if (DEBUG) cat(file = stderr(), "medianENSGfunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianENSGfunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianENSGfunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianENSGfunc", id = "medianENSGfunc", duration = NULL)
+  }
+  
+  geneC <- Matrix::colSums(scEx > 0, na.rm = TRUE)
   return(median(t(geneC)))
 }
 
+# medianENSG ----
 medianENSG <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "medianENSG\n")
+  if (DEBUG) cat(file = stderr(), "medianENSG started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianENSG")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianENSG")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianENSG", id = "medianENSG", duration = NULL)
   }
-  gbm <- exprs(gbm())
-  if (is.null(gbm)) {
+  
+  scEx_log <- scEx_log()
+  if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "medianENSG:NULL\n")
     }
     return(0)
   }
-  if (ncol(gbm) <= 1 | nrow(gbm) < 1) {
+  scEx_log <- assays(scEx_log)[[1]]
+  if (ncol(scEx_log) <= 1 | nrow(scEx_log) < 1) {
     return(0)
   }
-  retVal <- medianENSGfunc(gbm)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), paste("===medianENSG:done", difftime(end.time, start.time, units = "min"), "\n"))
-  }
+  retVal <- medianENSGfunc(scEx_log)
+  
+  exportTestValues(medianENSG = { retVal })
   return(retVal)
 })
 
-medianUMIfunc <- function(gbm) {
-  umiC <- Matrix::colSums(gbm, na.rm = TRUE)
+medianUMIfunc <- function(scEx) {
+  if (DEBUG) cat(file = stderr(), "medianUMIfunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianUMIfunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianUMIfunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianUMIfunc", id = "medianUMIfunc", duration = NULL)
+  }
+  
+  umiC <- Matrix::colSums(scEx, na.rm = TRUE)
+  
   return(median(t(umiC)))
 }
 
+# medianUMI ----
 medianUMI <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "medianUMI\n")
+  if (DEBUG) cat(file = stderr(), "medianUMI started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "medianUMI")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "medianUMI")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("medianUMI", id = "medianUMI", duration = NULL)
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  
+  scEx <- scEx()
+  if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "medianUMI:NULL\n")
     }
@@ -230,11 +310,10 @@ medianUMI <- reactive({
     save(file = "~/scShinyHubDebug/medianUMI.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/medianUMI.RData')
-  retVal <- medianUMIfunc(gbm)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===medianUMI:done\n", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  scEx <- assays(scEx)[["counts"]]
+  retVal <- medianUMIfunc(scEx)
+  
+  exportTestValues(medianUMI = { retVal })
   return(retVal)
 })
 
@@ -243,62 +322,70 @@ medianUMI <- reactive({
 # internal, should not be used by plug-ins
 useCellsFunc <-
   function(dataTables,
-             geneNames,
-             rmCells,
-             rmPattern,
-             keepCells,
-             cellKeepOnly) {
-    if (DEBUG) {
-      cat(file = stderr(), "useCells2\n")
+           geneNames,
+           rmCells,
+           rmPattern,
+           keepCells,
+           cellKeepOnly) {
+    if (DEBUG) cat(file = stderr(), "useCellsFunc started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "useCellsFunc")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "useCellsFunc")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("useCellsFunc", id = "useCellsFunc", duration = NULL)
     }
+    
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/useCellsFunc.RData", list = c(ls()))
     }
     # load(file='~/scShinyHubDebug/useCellsFunc.Rdata')
-    goodCols <- rep(TRUE, ncol(dataTables$gbm))
-    gbm <- exprs(dataTables$gbm)
+    goodCols <- rep(TRUE, ncol(dataTables$scEx))
+    scEx <- assays(dataTables$scEx)[[1]]
     #### start: cells with genes expressed
     # take only cells where these genes are expressed with at least one read
     genesin <- toupper(geneNames)
     genesin <- gsub(" ", "", genesin, fixed = TRUE)
     genesin <- strsplit(genesin, ",")
     genesin <- genesin[[1]]
-
+    
     cellKeep <- toupper(keepCells)
     cellKeep <- gsub(" ", "", cellKeep, fixed = TRUE)
     cellKeep <- strsplit(cellKeep, ",")
     cellKeep <- cellKeep[[1]]
-
+    
     cellKeepOnly <- toupper(cellKeepOnly)
     cellKeepOnly <- gsub(" ", "", cellKeepOnly, fixed = TRUE)
     cellKeepOnly <- strsplit(cellKeepOnly, ",")
     cellKeepOnly <- cellKeepOnly[[1]]
-
+    
     # specifically remove cells
     if (nchar(rmCells) > 0) {
       cellsRM <- toupper(rmCells)
       cellsRM <- gsub(" ", "", cellsRM, fixed = TRUE)
       cellsRM <- strsplit(cellsRM, ",")
       cellsRM <- cellsRM[[1]]
-      goodCols[which(toupper(colnames(dataTables$gbm)) %in% cellsRM)] <- FALSE
+      goodCols[which(toupper(colnames(dataTables$scEx)) %in% cellsRM)] <- FALSE
     }
-
+    
     # remove cells by pattern
     if (nchar(rmPattern) > 0) {
-      goodCols[grepl(rmPattern, colnames(dataTables$gbm))] <- FALSE
+      goodCols[grepl(rmPattern, colnames(dataTables$scEx))] <- FALSE
     }
-
+    
     if (!length(cellKeep) == 0) {
-      ids <- which(toupper(colnames(dataTables$gbm)) %in% cellKeep)
+      ids <- which(toupper(colnames(dataTables$scEx)) %in% cellKeep)
       goodCols[ids] <- TRUE
     }
-
+    
     # genes that have to be expressed at least in one of them.
     selCols <- rep(FALSE, length(goodCols))
     if (!length(genesin) == 0) {
-      ids <- which(toupper(dataTables$featuredata$Associated.Gene.Name) %in% genesin)
+      ids <- which(toupper(dataTables$featuredata$symbol) %in% genesin)
       if (length(ids) == 1) {
-        selCols <- gbm[ids, ] > 0
+        selCols <- scEx[ids, ] > 0
       } else if (length(ids) == 0) {
         showNotification(
           "not enough cells, check gene names for min coverage",
@@ -307,34 +394,37 @@ useCellsFunc <-
         )
         return(NULL)
       } else {
-        selCols <- Matrix::colSums(gbm[ids, ]) > 0
+        selCols <- Matrix::colSums(scEx[ids, ]) > 0
       }
       goodCols <- goodCols & selCols
     }
-
+    
     if (!length(cellKeepOnly) == 0) {
       goodCols[c(1:length(goodCols))] <- FALSE
-      ids <- which(toupper(colnames(dataTables$gbm)) %in% cellKeepOnly)
+      ids <- which(toupper(colnames(dataTables$scEx)) %in% cellKeepOnly)
       goodCols[ids] <- TRUE
     }
-
+    
     #### end: cells with genes expressed
-
+    
     return(goodCols)
   }
 
+# useCells ----
 # works on cells only
 # internal, should not be used by plug-ins
 useCells <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "useCells started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "useCells")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "useCells")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "useCells\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("useCells", id = "useCells", duration = NULL)
   }
+  
   dataTables <- inputData()
   geneNames <- input$minExpGenes
   rmCells <- input$cellsFiltersOut
@@ -348,10 +438,8 @@ useCells <- reactive({
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("which cells to use", id = "useCells", duration = NULL)
-  }
-  retVal <- useCellsFunc(
+
+    retVal <- useCellsFunc(
     dataTables,
     geneNames,
     rmCells,
@@ -359,60 +447,47 @@ useCells <- reactive({
     keepCells,
     cellKeepOnly
   )
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===useCells:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-
+  
+  exportTestValues(useCells = { retVal })
   return(retVal)
 })
 
-# TODO: check that it is ok that we use dataTables directly and not useGenes()
-featureDataReact <- reactive({
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "featureData\n")
-  }
-  dataTables <- inputData()
-  gbm <- gbm()
-  if (!exists("dataTables") | is.null(dataTables) | is.null(gbm)) {
-    if (DEBUG) {
-      cat(file = stderr(), "featureData:NULL\n")
-    }
-    return(NULL)
-  }
-  useGenes <- rownames(dataTables$featuredata) %in% rownames(gbm)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===featureData:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  return(dataTables$featuredata[useGenes, ])
-})
 
 useGenesFunc <-
   function(dataTables,
-             ipIDs, # regular expression of genes to be removed
-             geneListSelection,
-             genesKeep,
-             geneLists) {
-    gList <- geneLists # global variable, assigning it locally ensures that it will be saved
+           ipIDs, # regular expression of genes to be removed
+           geneListSelection,
+           genesKeep,
+           geneLists) {
+    if (DEBUG) cat(file = stderr(), "useGenesFunc started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "useGenesFunc")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "useGenesFunc")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("useGenesFunc", id = "useGenesFunc", duration = NULL)
+    }
+
+        gList <- geneLists # global variable, assigning it locally ensures that it will be saved
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/useGenesFunc.Rdata", list = c(ls(), ls(envir = globalenv())))
     }
     # load(file='~/scShinyHubDebug/useGenesFunc.Rdata')
     # regular expression with gene names to be removed
     if (nchar(ipIDs) > 0) {
-      keepIDs <- !grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+      keepIDs <- !grepl(ipIDs, dataTables$featuredata$symbol)
     } else {
-      keepIDs <- rep(TRUE, nrow(dataTables$gbm))
+      keepIDs <- rep(TRUE, nrow(dataTables$scEx))
     }
     genesKeep <- toupper(genesKeep)
     genesKeep <- gsub(" ", "", genesKeep, fixed = TRUE)
     genesKeep <- strsplit(genesKeep, ",")
     genesKeep <- genesKeep[[1]]
-    keepGeneIds <- which(dataTables$featuredata$Associated.Gene.Name %in% genesKeep)
-
-    # dataTables$featuredata$Associated.Gene.Name[keepIDs]
+    keepGeneIds <- which(dataTables$featuredata$symbol %in% genesKeep)
+    
+    # dataTables$featuredata$symbol[keepIDs]
     # gene groups to be included
     if (!is.null(geneListSelection)) {
       selectedgeneList <- get_selected(geneListSelection)
@@ -426,75 +501,79 @@ useGenesFunc <-
           }
         }
         selGenes <- unique(selGenes)
-        keepIDs <- (rownames(dataTables$gbm) %in% selGenes) & keepIDs
+        keepIDs <- (rownames(dataTables$scEx) %in% selGenes) & keepIDs
       }
     }
-
-    # # overall gene expression Min
-    # if(!is.null(minGene)){
-    #   selGenes = rowSums(as.matrix(exprs(dataTables$gbm[,useCells]))) >=minGene
-    #   keepIDs = keepIDs & selGenes
-    # }
+    
     keepIDs[keepGeneIds] <- TRUE
     return(keepIDs)
   }
 
-# before gene filtering
+# before gene filtering -----
 beforeFilterCounts <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "beforeFilterCounts started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "beforeFilterCounts")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "beforeFilterCounts")
-    }
-  )
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("beforeFilterCounts", id = "beforeFilterCounts", duration = NULL)
+  }
+  
   dataTables <- inputData()
   ipIDs <- input$selectIds # regular expression of genes to be removed
+  
   if (!exists("dataTables") |
-    is.null(dataTables) |
-    length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+      is.null(dataTables) |
+      length(dataTables$featuredata$symbol) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "beforeFilterCounts: NULL\n")
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("beforeFilterCounts", id = "beforeFilterCounts", duration = NULL)
-  }
+  
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/beforeFilterCounts.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/beforeFilterCounts.RData")
-
+  
   geneIDs <- NULL
   if (nchar(ipIDs) > 0) {
-    geneIDs <- grepl(ipIDs, dataTables$featuredata$Associated.Gene.Name)
+    geneIDs <- grepl(ipIDs, dataTables$featuredata$symbol)
   }
   if (is.null(geneIDs)) {
     return(rep(0, nrow(dataTables$featuredata)))
   }
-  return(Matrix::colSums(dataTables$gbm[geneIDs, ]))
+  retVal = Matrix::colSums(assays(dataTables$scEx)[["counts"]][geneIDs, ])
+  
+  exportTestValues(beforeFilterCounts = { retVal })
+  return(retVal)
 })
 
+# useGenes ----
 # collects information from all places where genes being removed or specified
 useGenes <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "useGenes started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "useGenes")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "useGenes")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "useGenes\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("useGenes", id = "useGenes", duration = NULL)
   }
+  
   dataTables <- inputData()
-  # useCells = useCells()
-  # minGene <- input$minGenesGS
   ipIDs <- input$selectIds # regular expression of genes to be removed
   genesKeep <- input$genesKeep
   geneListSelection <- input$geneListSelection
-
+  
   if (!exists("dataTables") |
-    is.null(dataTables) |
-    length(dataTables$featuredata$Associated.Gene.Name) == 0) {
+      is.null(dataTables) |
+      length(dataTables$featuredata$symbol) == 0) {
     if (DEBUG) {
       cat(file = stderr(), "useGenes: NULL\n")
     }
@@ -503,56 +582,56 @@ useGenes <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("which genes to use", id = "useGenes", duration = NULL)
   }
+  
   retVal <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===useGenes: done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
+  exportTestValues(useGenes = { retVal })
   return(retVal)
 })
 
 
-# recursive removal
-# we need to have a first test to say if we can go
-
 # will be called recursively to ensure that nothing changes when cells/genes are changing.
-gbmFunc <-
-  function(gbmOrg,
-             useCells,
-             useGenes,
-             minGene,
-             minG,
-             maxG) {
-    # save(file="~/scShinyHubDebug/gbmFunc.RData", list=ls())
-    # load(file="~/scShinyHubDebug/gbmFunc.RData")
-    if (DEBUG) {
-      cat(file = stderr(), "gbmFunc\n")
+scExFunc <-
+  function(scExOrg,
+           useCells,
+           useGenes,
+           minGene,
+           minG,
+           maxG) {
+    if (DEBUG) cat(file = stderr(), "scExFunc started.\n")
+    start.time <- base::Sys.time()
+    on.exit({
+      printTimeEnd(start.time, "scExFunc")
+      if (!is.null(getDefaultReactiveDomain()))
+        removeNotification(id = "scExFunc")
+    })
+    if (!is.null(getDefaultReactiveDomain())) {
+      showNotification("scExFunc", id = "scExFunc", duration = NULL)
     }
-    # if(DEBUG)cat(file=stderr(), paste("col:",ncol(gbmOrg),"\n"))
-    # if(DEBUG)cat(file=stderr(), paste("l useCells:",length(useCells),"\n"))
-    # if(DEBUG)cat(file=stderr(), paste("row:",nrow(gbmOrg),"\n"))
-    # if(DEBUG)cat(file=stderr(), paste("l useGenes:",length(useGenes),"\n"))
-    # gbmOrg, useCells, useGenes cannot be NULL
-
+    if (!is.null(getDefaultReactiveDomain())){
+      removeNotification(id = "scExFunc1")
+      removeNotification(id = "scExFunc2")
+    }
+    
     # change names to be hopefully a bit more clear
     changed <- FALSE # trace if something changed
     keepGenes <- useGenes
     keepCells <- useCells
-    gbm <- exprs(gbmOrg)
-
+    scEx <- assays(scExOrg)[[1]]
+    
     # overall gene expression Min
     if (!is.null(minGene)) {
-      selGenes <- Matrix::rowSums(gbm[, keepCells]) >= minGene
+      selGenes <- Matrix::rowSums(scEx[, keepCells]) >= minGene
       selGenes <- keepGenes & selGenes
       if (!all(selGenes == keepGenes)) {
         keepGenes <- selGenes
         changed <- TRUE
       }
     }
-
+    
     # min reads per cell
     if (!is.null(minG)) {
-      selCols <- Matrix::colSums(gbm[keepGenes, ], na.rm = FALSE) > minG
+      selCols <- Matrix::colSums(scEx[keepGenes, ], na.rm = FALSE) > minG
       selCols[is.na(selCols)] <- FALSE
       selCols <- keepCells & selCols
       if (!all(selCols == keepCells)) {
@@ -560,10 +639,10 @@ gbmFunc <-
         changed <- TRUE
       }
     }
-
+    
     # max reads per cell
     if (!is.null(maxG)) {
-      selCols <- Matrix::colSums(gbm[keepGenes, ], na.rm = FALSE) <= maxG
+      selCols <- Matrix::colSums(scEx[keepGenes, ], na.rm = FALSE) <= maxG
       selCols[is.na(selCols)] <- FALSE
       selCols <- selCols & keepCells
       if (!all(selCols == keepCells)) {
@@ -571,56 +650,60 @@ gbmFunc <-
         keepCells <- selCols
       }
     }
-
+    
     if (sum(keepCells) == 0) {
       showNotification("not enough cells left",
-        type = "warning",
-        duration = NULL
+                       type = "warning",
+                       id = "scExFunc1",
+                       duration = NULL
       )
       return(NULL)
     }
     if (sum(keepGenes) == 0) {
       showNotification("not enough genes left",
-        type = "warning",
-        duration = NULL
+                       type = "warning",
+                       id = "scExFunc1",
+                       duration = NULL
       )
       return(NULL)
     }
-
+    
     # if something changed, check that it doesn't change again
-    gbmNew <- gbmOrg[keepGenes, keepCells]
+    scExNew <- scExOrg[keepGenes, keepCells]
     if (changed) {
-      gbmNew <- gbmFunc(gbmOrg[keepGenes, keepCells], useCells[keepCells], useGenes[keepGenes], minGene, minG, maxG)
-      if (is.null(gbmNew)) {
+      scExNew <- scExFunc(scExOrg[keepGenes, keepCells], useCells[keepCells], useGenes[keepGenes], minGene, minG, maxG)
+      if (is.null(scExNew)) {
         return(NULL)
       }
     }
-
-    pD <- pData(gbmNew)
+    
+    pD <- colData(scExNew)
     for (colN in colnames(pD)) {
       if (colN == "barcode") next()
       if (class(pD[, colN]) %in% c("character")) {
         pD[, colN] <- factor(as.character(pD[, colN]))
       }
     }
-    pData(gbmNew) <- pD
-
-    return(gbmNew)
+    colData(scExNew) <- pD
+    
+    return(scExNew)
   }
 
-
+# scEx ----
 # apply filters that depend on genes & cells
 # it is here that useCells and useGenes are combined and applied to select for
-gbm <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "gbm")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "gbm\n")
+scEx <- reactive({
+  if (DEBUG) cat(file = stderr(), "scEx started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scEx")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scEx")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scEx", id = "scEx", duration = NULL)
   }
+  
   dataTables <- inputData()
   useCells <- useCells()
   useGenes <- useGenes()
@@ -628,213 +711,154 @@ gbm <- reactive({
   minG <- input$minGenes # min number of reads per cell
   maxG <- input$maxGenes # max number of reads per cell
   if (!exists("dataTables") |
-    is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
+      is.null(dataTables) | is.null(useGenes) | is.null(useCells)) {
     if (DEBUG) {
-      cat(file = stderr(), "gbm: NULL\n")
+      cat(file = stderr(), "scEx: NULL\n")
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("gbm", id = "gbm", duration = NULL)
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/gbm.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/gbm.RData")
 
-  retVal <- gbmFunc(
-    gbmOrg = dataTables$gbm,
+    if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/scEx.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/scEx.RData")
+  
+  retVal <- scExFunc(
+    scExOrg = dataTables$scEx,
     useCells = useCells,
     useGenes = useGenes,
     minGene = minGene,
     minG = minG,
     maxG = maxG
   )
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===gbm:DONE", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
+  exportTestValues(scEx = { list(rowData(retVal), colData(retVal)) })
   return(retVal)
 })
 
-# takes a lot of memory and should be avoided.
-# gbm_matrix <- reactive({
-#   start.time <- Sys.time()
-#
-#   if (DEBUG) {
-#     cat(file = stderr(), "gbm_matrix\n")
-#   }
-#   gbm <- gbm()
-#   if (is.null(gbm)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "gbm_matrix:NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   if (ncol(gbm) <= 1 | nrow(gbm) < 1) {
-#     return(NULL)
-#   }
-#   retVal <- as.matrix(exprs(gbm))
-#   if (DEBUG) {
-#     end.time <- Sys.time()
-#
-#     cat(file = stderr(), "===gbm_matrix:done", difftime(end.time, start.time, units = "min"), "\n")
-#   }
-#   return(retVal)
-# })
-
-
+# rawNormalization ----
 rawNormalization <- reactive({
-  gbm <- gbm()
-  if (DEBUG) {
-    cat(file = stderr(), "rawNormalization\n")
+  if (DEBUG) cat(file = stderr(), "rawNormalization started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "rawNormalization")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "rawNormalization")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("rawNormalization", id = "rawNormalization", duration = NULL)
   }
-  return(gbm)
+  
+  scEx <- scEx()
+  names(assays(scEx)) = "logcounts"
+  
+  exportTestValues(rawNormalization = {str(scEx)})  
+  return(scEx)
 })
 
-# individual values
-gbm_log <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "gbm_log")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "gbm_log\n")
+# scEx_log ----
+scEx_log <- reactive({
+  if (DEBUG) cat(file = stderr(), "scEx_log started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scEx_log")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scEx_log")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scEx_log", id = "scEx_log", duration = NULL)
   }
-  # dataTables = inputData()
-  # useCells = useCells()
-  # useGenes = useGenes()
-  gbm <- gbm()
+  
+  scEx <- scEx()
   normMethod <- input$normalizationRadioButton
-
-  if (is.null(gbm)) {
+  
+  if (is.null(scEx)) {
     if (DEBUG) {
-      cat(file = stderr(), "gbm_log:NULL\n")
+      cat(file = stderr(), "scEx_log:NULL\n")
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Normalizing data", id = "gbm_log", duration = NULL)
-  }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/gbm_log.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/scEx_log.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/gbm_log.RData")
-
-  gbm_log <- do.call(normMethod, args = list())
-
-  # gbm rownames are ENSG numbers
-  # dataTables$gbm_log[useGenes, useCells]
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===gbm_log:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  return(gbm_log)
+  # load(file="~/scShinyHubDebug/scEx_log.RData")
+  
+  scEx_log <- do.call(normMethod, args = list())
+  
+  exportTestValues(scEx_log = { assays(scEx_log)["logcounts"] })
+  return(scEx_log)
 })
 
-# gbmLogMatrix <- reactive({
-#   on.exit(
-#     if (!is.null(getDefaultReactiveDomain())) {
-#       removeNotification(id = "gbmLogMatrix")
-#     }
-#   )
-#   start.time <- Sys.time()
-#
-#   if (DEBUG) {
-#     cat(file = stderr(), "gbmLogMatrix\n")
-#   }
-#   # dataTables = inputData()
-#   # useCells = useCells()
-#   # useGenes = useGenes()
-#   gbmLog <- gbm_log()
-#   if (is.null(gbmLog)) {
-#     if (DEBUG) {
-#       cat(file = stderr(), "gbmLogMatrix:NULL\n")
-#     }
-#     return(NULL)
-#   }
-#   if (!is.null(getDefaultReactiveDomain())) {
-#     showNotification("Calculating gbmLogmatrix",
-#       id = "gbmLogMatrix",
-#       duration = NULL
-#     )
-#   }
-#   if (DEBUGSAVE) {
-#     save(file = "~/scShinyHubDebug/gbmLogMatrix.RData", list = c(ls(), ls(envir = globalenv())))
-#   }
-#   # load(file="~/scShinyHubDebug/gbmLogMatrix.RData")
-#
-#   retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
-#   if (DEBUG) {
-#     end.time <- Sys.time()
-#     cat(file = stderr(), "===gbmLogMatrix:done", difftime(end.time, start.time, units = "min"), "\n")
-#   }
-#   return(retVal)
-# })
-
-# gbmLog matrix with symbol as first column
+# scExLogMatrixDisplay ----
+# scExLog matrix with symbol as first column
 # TODO
 # we should probably just rename the rows and then have an option to tableSelectionServer that shows (or not) rownames
-gbmLogMatrixDisplay <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
-      removeNotification(id = "gbmLogMatrixDisplay")
-    }
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "gbmLogMatrixDisplay\n")
+scExLogMatrixDisplay <- reactive({
+  if (DEBUG) cat(file = stderr(), "scExLogMatrixDisplay started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scExLogMatrixDisplay")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scExLogMatrixDisplay")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scExLogMatrixDisplay", id = "scExLogMatrixDisplay", duration = NULL)
   }
+  
   # dataTables = inputData()
   # useCells = useCells()
   # useGenes = useGenes()
-  gbmLog <- gbm_log()
-  if (is.null(gbmLog)) {
+  scEx_log <- scEx_log()
+  if (is.null(scEx_log)) {
     if (DEBUG) {
-      cat(file = stderr(), "gbmLogMatrixDisplay:NULL\n")
+      cat(file = stderr(), "scExLogMatrixDisplay:NULL\n")
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("Calculating gbmLogmatrix",
-      id = "gbmLogMatrixDisplay",
-      duration = NULL
-    )
-  }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/gbmLogMatrixDisplay.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/scExLogMatrixDisplay.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/gbmLogMatrixDisplay.RData")
-
+  # load(file="~/scShinyHubDebug/scExLogMatrixDisplay.RData")
+  
   # TODO
-  if (ncol(gbmLog) > 20000) {
-
+  if (ncol(scEx_log) > 20000) {
+    
   }
-  retVal <- as.data.frame(as.matrix(exprs(gbmLog)))
-  rownames(retVal) <- make.names(fData(gbmLog)$symbol, unique = TRUE)
-
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===gbmLogMatrixDisplay:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  retVal <- data.frame(symbol=make.names(rowData(scEx_log)$symbol, unique = TRUE), stringsAsFactors = FALSE)
+  retVal <- cbind(retVal,
+                  as.matrix(assays(scEx_log)[[1]]))
+  rownames(retVal) <- make.names(rowData(scEx_log)$symbol, unique = TRUE)
+  
   return(retVal)
 })
 
-pcaFunc <- function(gbm_log) {
-  if (DEBUGSAVE) {
+pcaFunc <- function(scEx_log) {
+  if (DEBUG) cat(file = stderr(), "pcaFunc started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "pcaFunc")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "pcaFunc")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("pcaFunc", id = "pcaFunc", duration = NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "pcawarning")
+  
+    if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/pcaFunc.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
-  pca <- tryCatch({
-    # TODO test for speed and accuracy
-    # require(irlba)
-    # xx =prcomp_irlba(exprs(gbm_log), n = 10, retx = TRUE, center = Matrix::colMeans(gbm_log), scale. = FALSE)
-    # colnames(data)[colnames(data) == "totalvar"] <- "tot_var"
-    # xx$center
-    use_genes = get_nonzero_genes(gbm_log)
-    cellrangerRkit::run_pca(gbm_log[use_genes, ], n_pcs = 10, logscale = TRUE, use_genes = use_genes)
+  scaterPCA <- tryCatch({
+    # not sure, but this works on another with dgTMatrix
+    if (class(assays(scEx_log)[["logcounts"]]) == "dgTMatrix") {
+      assays(scEx_log)[["logcounts"]] <- as(assays(scEx_log)[["logcounts"]], "dgCMatrix")
+    }
+    scater::runPCA(scEx_log,
+                   ncomponents = 10, method = "irlba",
+                   ntop = 500, exprs_values = "logcounts"
+    )
   },
   error = function(e) {
     cat(file = stderr(), paste("error in PCA:", e))
@@ -842,152 +866,251 @@ pcaFunc <- function(gbm_log) {
       showNotification(
         "Problem with PCA, probably not enough cells?",
         type = "warning",
+        id = "pcawarning",
         duration = NULL
       )
     }
+    cat(file = stderr(), "PCA FAILED!!!\n")
     return(NULL)
   },
   finally = {
     cat( file = stderr(), paste("pca done\n"))
   }
   )
-  cat( file = stderr(), paste("pca returning\n"))
-  return(pca)
+  if (is.null(scaterPCA)) return(NULL)
+  # pca = reducedDim(scaterPCA, "PCA")
+  # attr(pca,"percentVar")
+  #
+  return(list(
+    x = SingleCellExperiment::reducedDim(scaterPCA, "PCA"),
+    var_pcs = attr(SingleCellExperiment::reducedDim(scaterPCA, "PCA"), "percentVar")
+  ))
 }
 
+# pca ----
 pca <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "pca started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "pca")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "pca")
-    }
-  )
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "pca\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("pca", id = "pca", duration = NULL)
   }
-  gbm_log <- gbm_log()
-  if (is.null(gbm_log)) {
+  
+  scEx_log <- scEx_log()
+  if (is.null(scEx_log)) {
     if (DEBUG) {
       cat(file = stderr(), "pca:NULL\n")
     }
     return(NULL)
   }
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("pca", id = "pca", duration = NULL)
-  }
-  retVal <- pcaFunc(gbm_log)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===pca:donedone", difftime(end.time, start.time, units = "min"), "\n")
-  }
-
+  retVal <- pcaFunc(scEx_log)
+  
+  printTimeEnd(start.time, "pca")
+  exportTestValues(pca = { retVal })
   return(retVal)
 })
 
 
-kmClusteringFunc <- function(pca, seed, kNr = 10) {
-  clustering <- list()
+scranCluster <- function(pca, scEx_log, seed, clusterSource,
+                         geneSelectionClustering="", minClusterSize=2, clusterMethod="PCA", featureData) {
+  if (DEBUG) cat(file = stderr(), "scranCluster started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scranCluster")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scranCluster")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scranCluster", id = "scranCluster", duration = NULL)
+  }
 
-  # kNr = 10
-  # for (kNr in 2:kNr) {
-  set.seed(seed = seed)
-  km <- run_kmeans_clustering(pca, k = kNr)
-  clustering[[paste0("kmeans_", kNr, "_clusters")]] <- data.frame(
-    "Barcode" = rownames(data.frame(km$cluster)),
-    "Cluster" = km$cluster
+    set.seed(seed)
+  geneid <- geneName2Index(geneSelectionClustering, featureData)
+  
+  params <- list(
+    min.mean = NULL,
+    min.size = minClusterSize,
+    method = clusterMethod
   )
+  if (clusterSource == "PCA") {
+    params$x <- t(pca$x)
+  } else {
+    params$x <- scEx_log
+    params$assay.type <- "logcounts"
+    if (length(geneid) > 0)
+      params$subset.row <- geneid
+  }
+  
+  retVal <- tryCatch({
+    do.call("quickCluster", params)
+  },
+  error = function(e) {
+    cat(file = stderr(), paste("\nProblem with clustering", e, "\n\n"))
+    return(NULL)
+  }#,
+  # warning = function(e){
+  #   cat(file = stderr(), paste("\nclustering produced Warning:\n",e , "\n"))
+  #   return(do.call("quickCluster", params))
   # }
-  return(clustering)
+  )
+  retVal = data.frame(Barcode = colData(scEx_log)$barcode,
+                      Cluster = retVal)
+  rownames(retVal) = retVal$Barcode
+  return(retVal)
 }
 
-kmClustering <- reactive({
-  on.exit(
-    removeNotification(id = "kmClustering")
-  )
-  start.time <- Sys.time()
-  if (DEBUG) {
-    cat(file = stderr(), "kmClustering\n")
+
+
+# dbCluster ----
+dbCluster <- reactive({
+  if (DEBUG) cat(file = stderr(), "dbCluster started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "dbCluster")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "dbCluster")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("dbCluster", id = "dbCluster", duration = NULL)
   }
-  pca <- pca()
+  
+  kNr <- input$kNr
+  clustering <- scran_Cluster()
+  
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/dbCluster.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/dbCluster.RData")
+  
+  if (is.null(clustering)) {
+    if (DEBUG) {
+      cat(file = stderr(), "dbCluster: NULL\n")
+    }
+    return(NULL)
+  }
+  
+  dbCluster <- clustering$Cluster
+  
+  #cluster colors
+  inCols = list()
+  lev <- levels(dbCluster)
+  
+  inCols <- allowedColors[1:length(lev)]
+  names(inCols) = lev
+  
+  clusterCols$colPal = unlist(inCols)
+  
+  exportTestValues(dbCluster = { dbCluster })
+  return(dbCluster)
+})
+
+
+
+scran_Cluster <- reactive({
+  if (DEBUG) cat(file = stderr(), "scran_Cluster started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "scran_Cluster")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "scran_Cluster")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("scran_Cluster", id = "scran_Cluster", duration = NULL)
+  }
+  if (!is.null(getDefaultReactiveDomain()))
+    removeNotification(id = "dbClusterError")
+
+    pca <- pca()
+  scEx_log <- scEx_log()
   seed <- input$seed
   kNr <- input$kNr
-  # kNr = 10
-  if (is.null(pca)) {
+  clusterSource <- input$clusterSource
+  geneSelectionClustering <- input$geneSelectionClustering
+  minClusterSize <- input$minClusterSize
+  clusterMethod <- input$clusterMethod
+  
+  if (is.null(pca) | is.null(scEx_log) | is.na(minClusterSize)) {
     if (DEBUG) {
-      cat(file = stderr(), "kmClustering:NULL\n")
+      cat(file = stderr(), "scran_Cluster:NULL\n")
     }
     return(NULL)
   }
   if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/kmClustering.RData", list = c(ls(), ls(envir = globalenv())))
+    save(file = "~/scShinyHubDebug/scran_Cluster.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  # load(file="~/scShinyHubDebug/kmClustering.RData")
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("kmClustering", id = "kmClustering", duration = NULL)
-  }
-
+  # load(file="~/scShinyHubDebug/scran_Cluster.RData")
+  
+  featureData <- rowData(scEx_log)
+  
   if (is.null(seed)) {
     seed <- 1
   }
-  retVal <- kmClusteringFunc(pca, seed = seed, kNr = kNr)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===kmClustering:done", difftime(end.time, start.time, units = "min"), "\n")
+  retVal <- scranCluster(
+    pca, scEx_log, seed, clusterSource,
+    geneSelectionClustering, minClusterSize, clusterMethod, 
+    featureData
+  )
+  if (is.null(retVal)) {
+    showNotification(
+      paste("error: clustering didn't produce a result"),
+      type = "error",
+      id = "dbClusterError",
+      duration = NULL
+    )
   }
-
+  
+  exportTestValues(scran_Cluster = { retVal })
   return(retVal)
 })
 
 
-# TODO separate  function from reactive
-# projections
-# each column is of length of number of cells
-# if factor than it is categorical and can be cluster number of sample etc
-# if numeric can be projection
-
-# projections is a reactive and cannot be used in reports. Reports have to organize
-# themselves as it is done here with tsne.data.
-
-
-# Here, we store projections that are created during the session. These can be selections of cells or other values that
-# are not possible to precalculate.
-sessionProjections <- reactiveValues(
-  prjs = data.frame()
-)
-
+# projections ----
+#' projections
+#' each column is of length of number of cells
+#' if factor than it is categorical and can be cluster number of sample etc
+#' if numeric can be projection
+#' projections is a reactive and cannot be used in reports. Reports have to organize
+#' themselves as it is done here with tsne.data.
 projections <- reactive({
-  start.time <- Sys.time()
-  # gbm is the fundamental variable with the raw data, which is available after loading
+  if (DEBUG) cat(file = stderr(), "projections started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "projections")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "projections")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("projections", id = "projections", duration = NULL)
+  }
+  # scEx is the fundamental variable with the raw data, which is available after loading
   # data. Here we ensure that everything is loaded and all varialbles are set by waiting
   # input data being loaded
-  gbm <- gbm()
+  scEx <- scEx()
   pca <- pca()
-  prjs <- (sessionProjections$prjs)
-  if (!exists("gbm") | is.null(gbm) | !exists("pca") | is.null(pca)) {
+  prjs <- sessionProjections$prjs
+  
+  if (!exists("scEx") | is.null(scEx) | !exists("pca") | is.null(pca)) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
     }
     return(NULL)
   }
-  projections <- data.frame(pca$x[, c(1, 2, 3)])
-  if (DEBUG) {
-    cat(file = stderr(), "projections\n")
-  }
-
-  # phenotypic data/ annotations of cells can already be included in the gbm object. We collect this information, but only for variable that hold information
-  # i.e. length(levels) > 1 & < number of rows
-  pd <- pData(gbm)
-  if (ncol(pd) < 2) {
-    cat(file = stderr(), "phenoData for gbm has less than 2 columns\n")
-    return(NULL)
-  }
-
-
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/projections.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/projections.RData")
+  
+  projections <- data.frame(pca$x[, c(1, 2, 3)])
+  pd <- colData(scEx)
+  if (ncol(pd) < 2) {
+    cat(file = stderr(), "phenoData for scEx has less than 2 columns\n")
+    return(NULL)
+  }
+  
   withProgress(message = "Performing projections", value = 0, {
     n <- length(projectionFunctions)
     iter <- 1
@@ -1007,11 +1130,6 @@ projections <- reactive({
         cn <- make.names(c(colnames(projections), make.names(proj[1])))
       }
       if (length(tmp) == 0) {
-        #   showNotification(
-        #     paste("warning: ", proj[1], "didn't produce a result"),
-        #     type = "warning",
-        #     duration = NULL
-        #   )
         next()
       }
       if (ncol(projections) == 0) {
@@ -1030,7 +1148,7 @@ projections <- reactive({
           cat(file = stderr(), "===", proj[1], ":done", difftime(end.time, start.time1, units = "min"), "\n")
         }
       }
-
+      
       colnames(projections) <- cn
       observe(proj[2], quoted = TRUE)
     }
@@ -1043,44 +1161,31 @@ projections <- reactive({
       projections[, pdIdx] <- pd[, pdIdx]
     }
   }
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===projections:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
   if (ncol(prjs) > 0 & nrow(prjs) == nrow(projections)) {
     projections <- cbind(projections, prjs)
   }
+  
+  exportTestValues(projections = { projections })
   return(projections)
 })
 
-groupNames <- reactiveValues(
-  namesDF = data.frame()
-  # {
-  # if(DEBUG)
-  #   cat(file = stderr(), "groupNames\n")
-  # projections = projections()
-  # if(is.null(projections)){
-  #   return(NULL)
-  # }
-  # if (DEBUGSAVE)
-  #   save(file = "~/scShinyHubDebug/groupNames.RData", list = c(ls(),ls(envir = globalenv())))
-  # # load(file="~/scShinyHubDebug/groupNames.RData")
-  # retVal = c()
-  # for(cn in colnames(projections)){
-  #   if(class(projections[,cn])=="logical"){
-  #     retVal = c(retVal, cn)
-  #   }
-  # }
-  # return(retVal)
-  # }
-)
-
+# initializeGroupNames ----
+# TODO shouldn't this be an observer???
 initializeGroupNames <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "initializeGroupNames\n")
+  if (DEBUG) cat(file = stderr(), "initializeGroupNames started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "initializeGroupNames")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "initializeGroupNames")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("initializeGroupNames", id = "initializeGroupNames", duration = NULL)
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  
+  scEx <- scEx()
+  if (is.null(scEx)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
@@ -1088,56 +1193,29 @@ initializeGroupNames <- reactive({
   }
   # load(file="~/scShinyHubDebug/initializeGroupNames.RData")
   isolate({
-    df <- data.frame(all = rep(TRUE, ncol(gbm)), none = rep(FALSE, ncol(gbm)))
-    rownames(df) <- colnames(gbm)
+    df <- data.frame(all = rep(TRUE, ncol(scEx)), none = rep(FALSE, ncol(scEx)))
+    rownames(df) <- colnames(scEx)
     cat(file = stderr(), "initializeGroupNames2\n")
     groupNames[["namesDF"]] <- df
     cat(file = stderr(), "initializeGroupNames3\n")
   })
 })
 
-
-dbCluster <- reactive({
-  start.time <- Sys.time()
-
-  kNr <- input$kNr
-  # kNr = 10
-  if (DEBUG) {
-    cat(file = stderr(), "dbCluster\n")
-  }
-  clustering <- kmClustering()
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/dbCluster.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/dbCluster.RData")
-
-  if (is.null(clustering)) {
-    if (DEBUG) {
-      cat(file = stderr(), "dbCluster: NULL\n")
-    }
-    return(NULL)
-  }
-
-  # dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster - 1)
-  dbCluster <- factor(clustering[[paste0("kmeans_", kNr, "_clusters")]]$Cluster)
-
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===dbCluster:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-
-  return(dbCluster)
-})
-
 # sample --------
 sample <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "sample\n")
+  if (DEBUG) cat(file = stderr(), "sample started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sample")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sample")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sample", id = "sample", duration = NULL)
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  
+  scEx <- scEx()
+  if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "sample: NULL\n")
     }
@@ -1147,13 +1225,8 @@ sample <- reactive({
     save(file = "~/scShinyHubDebug/sample.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/sample.RData")
-  # samp <- gsub(".*-(.*)", "\\1", colnames(gbm))
-  # if (length(levels(as.factor(samp))) > 1) {
-  #   sample <- samp
-  # } else {
-  #   sample <- rep("1", ncol(gbm))
-  # }
-  pd <- pData(gbm)
+  
+  pd <- colData(scEx)
   retVal <- NULL
   for (pdColName in colnames(pd)) {
     if (length(levels(factor(pd[, pdColName]))) < 100) {
@@ -1164,128 +1237,156 @@ sample <- reactive({
       retVal[, pdColName] <- factor(as.character(pd[, pdColName]))
     }
   }
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===sample:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
-  retVal
-  # return(sample)
+  
+  exportTestValues(sample = { retVal })
+  return(retVal)
 })
 
 # geneCount --------
 geneCount <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "geneCount\n")
+  if (DEBUG) cat(file = stderr(), "geneCount started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "geneCount")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "geneCount")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("geneCount", id = "geneCount", duration = NULL)
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  
+  scEx_log <- scEx_log()
+  
+  if (is.null(scEx_log)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/geneCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/geneCount.RData")
-  retVal <- Matrix::colSums(exprs(gbm) > 0)
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===geneCount:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
+  retVal <- Matrix::colSums(assays(scEx_log)[["logcounts"]] > 0)
+  
+  exportTestValues(geneCount = { retVal })
   return(retVal)
 })
 
+# beforeFilterPrj ----
 beforeFilterPrj <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "umiCount\n")
+  if (DEBUG) cat(file = stderr(), "beforeFilterPrj started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "beforeFilterPrj")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "beforeFilterPrj")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("beforeFilterPrj", id = "beforeFilterPrj", duration = NULL)
   }
-  gbm <- gbm()
+  
+  scEx <- scEx()
   bfc <- beforeFilterCounts()
-  if (is.null(gbm) | is.null(bfc)) {
+  
+  if (is.null(scEx) | is.null(bfc)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/beforeFilterPrj.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/beforeFilterPrj.RData")
-  cn <- colnames(gbm)
+  
+  cn <- colnames(scEx)
   retVal <- bfc[cn]
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===beforeFilterPrj:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
+  exportTestValues(beforeFilterPrj = { retVal })
   return(retVal)
 })
 
+# umiCount ----
 umiCount <- reactive({
-  start.time <- Sys.time()
-
-  if (DEBUG) {
-    cat(file = stderr(), "umiCount\n")
+  if (DEBUG) cat(file = stderr(), "umiCount started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "umiCount")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "umiCount")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("umiCount", id = "umiCount", duration = NULL)
   }
-  gbm <- gbm()
-  if (is.null(gbm)) {
+  
+  scEx <- scEx()
+  
+  if (is.null(scEx)) {
     return(NULL)
   }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/umiCount.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/umiCount.RData")
-  retVal <- Matrix::colSums(exprs(gbm))
-  if (DEBUG) {
-    end.time <- Sys.time()
-    cat(file = stderr(), "===umiCount:done", difftime(end.time, start.time, units = "min"), "\n")
-  }
+  
+  retVal <- Matrix::colSums(assays(scEx)[["counts"]])
+  
+  exportTestValues(umiCount = { retVal })
   return(retVal)
 })
 
-
-sampleInfoFunc <- function(gbm) {
-  # gsub(".*-(.*)", "\\1", gbm$barcode)
-  pData(gbm)$sampleNames
+# sampleInfoFunc ----
+sampleInfoFunc <- function(scEx) {
+  # gsub(".*-(.*)", "\\1", scEx$barcode)
+  colData(scEx)$sampleNames
 }
 
 
 # sampleInfo -------
 # sample information
 sampleInfo <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "sampleInfo\n")
+  if (DEBUG) cat(file = stderr(), "sampleInfo started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "sampleInfo")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "sampleInfo")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("sampleInfo", id = "sampleInfo", duration = NULL)
   }
-  gbm <- gbm()
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/sampleInfo.RData", list = c(ls(), ls(envir = globalenv())))
-  }
-  # load(file="~/scShinyHubDebug/sampleInfo.RData")
-  if (!exists("gbm")) {
+  
+  scEx <- scEx()
+  if (!exists("scEx")) {
     if (DEBUG) {
       cat(file = stderr(), "sampleInfo: NULL\n")
     }
     return(NULL)
   }
-
-  ret <- sampleInfoFunc(gbm)
-  if (DEBUG) {
-    cat(file = stderr(), "sampleInfo: done\n")
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/sampleInfo.RData", list = c(ls(), ls(envir = globalenv())))
   }
-  return(ret)
+  # load(file="~/scShinyHubDebug/sampleInfo.RData")
+  
+  retVal <- sampleInfoFunc(scEx)
+  
+  exportTestValues(sampleInfo = { retVal })
+  return(retVal)
 })
 
 
 # table of input cells with sample information
+# TODO: used in tableSeletionServer table; should be divided into function and reactive
 inputSample <- reactive({
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain())) {
+  if (DEBUG) cat(file = stderr(), "inputSample started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "inputSample")
+    if (!is.null(getDefaultReactiveDomain()))
       removeNotification(id = "inputSample")
-    }
-  )
-  if (DEBUG) {
-    cat(file = stderr(), "inputSample\n")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("inputSample", id = "inputSample", duration = NULL)
   }
+  
   dataTables <- inputData()
-  # sampInf = sampleInfo() # not working as this is relative to the activated cells
+  
   if (is.null(dataTables)) {
     return(NULL)
   }
@@ -1296,13 +1397,15 @@ inputSample <- reactive({
     save(file = "~/scShinyHubDebug/inputSample.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file='~/scShinyHubDebug/inputSample.RData')
-  sampInf <- gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
+  
+  # TODO should come from sampleInfo
+  sampInf <- gsub(".*-(.*)", "\\1", dataTables$scEx$barcode)
   cellIds <- data.frame(
-    cellName = colnames(dataTables$gbm),
+    cellName = colnames(dataTables$scEx),
     sample = sampInf,
-    ngenes = Matrix::colSums(exprs(dataTables$gbm))
+    ngenes = Matrix::colSums(assays(dataTables$scEx)[[1]])
   )
-
+  
   if (DEBUG) {
     cat(file = stderr(), "inputSample: done\n")
   }
@@ -1313,184 +1416,245 @@ inputSample <- reactive({
   }
 })
 
-updateMemUse <- reactiveValues(
-  update = 1
-)
-
 
 getMemoryUsed <- reactive({
   require(pryr)
-  if (DEBUG) {
-    cat(file = stderr(), "getMemoryUsed\n")
+  if (DEBUG) cat(file = stderr(), "getMemoryUsed started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "getMemoryUsed")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "getMemoryUsed")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("getMemoryUsed", id = "getMemoryUsed", duration = NULL)
   }
-  umu <- updateMemUse$update
-  paste(utils:::format.object_size(mem_used(), "auto"), umu)
+  # number of times memory was calculated 
+  # not used anymore
+  # umu <- updateMemUse$update
+  paste(utils:::format.object_size(mem_used(), "auto"))
 })
 
 # used in coExpression, subclusterAnalysis, moduleServer, generalQC, DataExploration
-# TODO change to gbm_log everywhere and remove
-log2cpm <- reactive({
-  if (DEBUG) {
-    cat(file = stderr(), "log2cpm\n")
-  }
-  gbmLog <- gbm_log()
-  if (is.null(gbmLog)) {
-    if (DEBUG) {
-      cat(file = stderr(), "log2cpm: NULL\n")
-    }
-    return(NULL)
-  }
-  log2cpm <- as.data.frame(as.matrix(exprs(gbmLog)))
+# TODO change to scEx_log everywhere and remove
+# log2cpm <- reactive({
+#   if (DEBUG) {
+#     cat(file = stderr(), "log2cpm\n")
+#   }
+#   scEx_log <- scEx_log()
+#   if (is.null(scEx_log)) {
+#     if (DEBUG) {
+#       cat(file = stderr(), "log2cpm: NULL\n")
+#     }
+#     return(NULL)
+#   }
+#   log2cpm <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
+#   
+#   return(log2cpm)
+# })
 
-  return(log2cpm)
-})
 
-
-# dummy function to return NULL
-returnNull <- function() {
-  return(NULL)
+reportFunction <- function(tmpPrjFile) {
 }
 
-#### plot2Dprojection ----------------
-# used in moduleServer and reports
-plot2Dprojection <- function(gbm_log, gbm, projections, g_id, featureData,
-                             geneNames, geneNames2, dimX, dimY, clId, grpN, legend.position, grpNs,
-                             logx = FALSE, logy = FALSE, divXBy="None", divYBy="None") {
-  geneid <- geneName2Index(g_id, featureData)
-
-
-  # if (length(geneid) == 1) {
-  #   expression <- exprs(gbm_log)[geneid, ,drop=FALSE]
-  # } else {
-  expression <- Matrix::colSums(exprs(gbm_log)[geneid, , drop = FALSE])
-  # }
-  validate(need(is.na(sum(expression)) != TRUE, ""))
-  # if (length(geneid) == 1) {
-  #   expression <- exprs(gbm_log)[geneid, ]
-  # } else {
-  #   expression <- Matrix::colSums(exprs(gbm_log)[geneid, ])
-  # }
-  # validate(need(is.na(sum(expression)) != TRUE, ""))
-
-  # geneid <- geneName2Index(geneNames, featureData)
-  projections <- updateProjectionsWithUmiCount(
-    dimX = dimX, dimY = dimY,
-    geneNames = geneNames,
-    geneNames2 = geneNames2,
-    featureData = featureData,
-    gbm = gbm, projections = projections
-  )
-
-
-  projections <- cbind(projections, expression)
-  names(projections)[ncol(projections)] <- "exprs"
-
-  if (DEBUG) {
-    cat(file = stderr(), paste("output$dge_plot1:---", clId[1], "---\n"))
-  }
-  subsetData <- subset(projections, dbCluster %in% clId)
-  # subsetData$dbCluster = factor(subsetData$dbCluster)
-  # if there are more than 18 samples ggplot cannot handle different shapes and we ignore the
-  # sample information
-  if (length(as.numeric(as.factor(subsetData$sample))) > 18) {
-    subsetData$shape <- as.factor(1)
-  } else {
-    subsetData$shape <- as.numeric(as.factor(subsetData$sample))
-  }
-  if (DEBUGSAVE) {
-    save(file = "~/scShinyHubDebug/clusterPlot.RData", list = c(ls(), "legend.position", ls(envir = globalenv())))
-    cat(file = stderr(), paste("plot2Dprojection saving done.\n"))
-  }
-  # load(file="~/scShinyHubDebug/clusterPlot.RData")
-  if (nrow(subsetData) == 0) return(NULL)
-  # subsetData$shape = as.factor(1)
-  gtitle <- paste(toupper(g_id), clId, sep = "-Cluster", collapse = " ")
-  if (nchar(gtitle) > 50) {
-    gtitle <- paste(substr(gtitle, 1, 50), "...")
-  }
-
-  require(plotly)
-  f <- list(
-    family = "Courier New, monospace",
-    size = 18,
-    color = "#7f7f7f"
-  )
-  if (divXBy != "None"){
-    subsetData[,dimX] = subsetData[,dimX] / subsetData[,divXBy]
-  }
-  if (divYBy != "None"){
-    subsetData[,dimY] = subsetData[,dimY] / subsetData[,divYBy]
+# reacativeReport ----
+reacativeReport <- reactive({
+  if (DEBUG) cat(file = stderr(), "reacativeReport started.\n")
+  start.time <- base::Sys.time()
+  on.exit({
+    printTimeEnd(start.time, "reacativeReport")
+    if (!is.null(getDefaultReactiveDomain()))
+      removeNotification(id = "reacativeReport")
+  })
+  if (!is.null(getDefaultReactiveDomain())) {
+    showNotification("reacativeReport", id = "reacativeReport", duration = NULL)
   }
   
-  typeX <- typeY <- "linear"
-  if (logx) {
-    typeX <- "log"
+  scEx <- scEx()
+  projections <- projections()
+  scEx_log <- scEx_log()
+  inputNames <- names(input)
+  
+  if (is.null(scEx)) {
+    if (DEBUG) cat(file = stderr(), "output$report:NULL\n")
+    return(NULL)
   }
-  if (logy) {
-    typeY <- "log"
-  }
-  if (is.factor(subsetData[,dimX])) {
-    typeX <- NULL
-  }
-  if (is.factor(subsetData[,dimY])) {
-    typeY <- NULL
-  }
-  xAxis <- list(
-    title = dimX,
-    titlefont = f,
-    type = typeX
-  )
-  yAxis <- list(
-    title = dimY,
-    titlefont = f,
-    type = typeY
-  )
-  p1 <- plot_ly(data = subsetData, source = "subset") %>%
-    add_trace(
-      x = ~get(dimX),
-      y = ~get(dimY),
-      type = "scatter",
-      mode = "markers",
-      text = ~ paste(1:nrow(subsetData), " ", rownames(subsetData), "<br />", subsetData$exprs),
-      marker = list(
-        color = subsetData[, "exprs"],
-        size = 4
-      )
-    ) %>%
-    # add_trace() %>%
-    layout(
-      xaxis = xAxis,
-      yaxis = yAxis,
-      title = gtitle,
-      dragmode = 'select'
-    )
-
-  selectedCells <- NULL
-  if (length(grpN) > 0) {
-    if (length(grpNs[rownames(subsetData), grpN]) > 0 & sum(grpNs[rownames(subsetData), grpN], na.rm = TRUE) > 0) {
-      grpNSub <- grpNs[rownames(subsetData), ]
-      selectedCells <- rownames(grpNSub[grpNSub[, grpN], ])
+  
+  tmpPrjFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
+  
+  report.env = new.env()
+  # translate reactiveValues to lists
+  # this way they can be saved
+  rectVals = c()
+  isolate({
+    for (var in c(names(globalenv()),names(parent.env(environment())))) { 
+      cat(file = stderr(), paste("var: ", var, '---', class(get(var)),  "\n"))
+      if ( var == "reacativeReport") next()
+      if (class(get(var))[1] == "reactivevalues"){
+        cat(file = stderr(), paste("is reactiveValue: ", var, "\n"))
+        rectVals = c(rectVals, var)
+        assign(var, reactiveValuesToList(get(var)), envir = report.env)
+      } else if (class(get(var))[1] == "reactiveExpr") {
+        cat(file = stderr(), paste("is reactiveExpr: ", var, "--", class(get(var)), "\n"))
+        # if ( var == "coE_selctedCluster-cluster")
+        #   browser()
+        rectVals = c(rectVals, var)
+        assign(var, eval(parse(text = paste0("\`",var, "\`()"))), envir = report.env)
+        # for modules we have to take care of return values
+        # this has to be done manually (for the moment)
+        # and is only required for clusterServer
+        if (class(report.env[[var]])[1] == "reactivevalues") {
+          if (all(c("cluster", "selectedCells") %in% names(report.env[[var]]))) {
+            cat(file = stderr(), paste("is reactivevalues2: ", paste0(var,"-cluster"), "\n"))
+            # if( paste0(var,"-cluster") == "coE_selctedCluster-cluster")
+            #   browser()
+            assign(paste0(var,"-cluster"), eval(report.env[[var]][["cluster"]]), envir = report.env)
+            tempVar = report.env[[var]][["selectedCells"]]
+            assign(paste0(var,"-selectedCells"), eval(parse(text = "tempVar()")), envir = report.env)
+          }
+        }
+      }
     }
+    
+    assign("input", reactiveValuesToList(get("input")), envir = report.env)
+  })
+  base::save(file = tmpPrjFile, list = c("reportTempDir","projections", "scEx_log", "scEx", "report.env"))
+  userDataEnv <- as.environment(as.list(session$userData, all.names=TRUE))
+  # browser()
+  if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("session", "report.env", "file", ls(), ls(envir = globalenv())))
+  # load('~/scShinyHubDebug/tempReport.1.RData')
+  
+  outZipFile = paste0(reportTempDir, "/report.zip")
+  
+  reactiveFiles <- ""
+  
+  # fixed files -----------
+  tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
+  file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
+  reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
+  
+  # global variables
+  tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
+  save(file = tmpFile, list = c("allowedColors"))
+  reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
+  
+  # Projections -----
+  # projections can contain mannually annotated groups of cells and different normalizations.
+  # to reduce complexity we are going to save those in a separate RData file
+  
+  # return(tmpPrjFile)
+  # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
+  # we copy them to the temp directory and load them in the markdown
+  uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  for (fp in c("serverFunctions.R", "reactives.R", uiFiles)) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".R")
+    file.copy(fp, tmpFile, overwrite = TRUE)
+    reactiveFiles <- paste0(reactiveFiles, "source(\"", tmpFile, "\", local = TRUE)\n", collapse = "\n")
   }
-  if (!is.null(selectedCells)) {
-    shape <- rep("a", nrow(subsetData))
-    selRows <- which(rownames(subsetData) %in% selectedCells)
-    shape[selRows] <- "b"
-    x1 <- subsetData[selectedCells, dimX, drop = FALSE]
-    y1 <- subsetData[selectedCells, dimY, drop = FALSE]
-    p1 <- p1 %>%
-      add_trace(
-        x = x1[, 1], y = y1[, 1],
-        marker = list(
-          color = rep("green", nrow(x1)),
-          size = 5
-        ),
-        text = ~ paste( rownames(subsetData[selectedCells,]), 
-                        "<br />", subsetData$exprs[selectedCells]),
-        type = "scatter",
-        mode = "markers",
-        name = "selected"
-      )
+  # otherwise reactive might overwrite projections...
+  reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, 
+                          "\")\nfor (n in names(report.env)) {assign(n,report.env[[n]])}\n", collapse = "\n")
+  # encapsulte the load files in an R block
+  LoadReactiveFiles <- paste0("\n\n```{r load-reactives, include=FALSE}\n", reactiveFiles, "\n```\n\n")
+  
+  # handle plugin reports
+  # load contribution reports
+  # parse all report.Rmd files under contributions to include in application
+  uiFiles <- dir(path = "contributions", pattern = "report.Rmd", full.names = TRUE, recursive = TRUE)
+  pluginReportsString <- ""
+  fpRidx <- 1
+  for (fp in uiFiles) {
+    if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
+    tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".Rmd")
+    file.copy(fp, tmpFile, overwrite = TRUE)
+    pluginReportsString <- paste0(
+      pluginReportsString,
+      "\n\n```{r child-report-", fpRidx, ", child = '", tmpFile, "', eval=TRUE}\n```\n\n"
+    )
+    fpRidx <- fpRidx + 1
   }
-  p1
-}
+  
+  # Copy the report file to a temporary directory before processing it, in
+  # case we don't have write permissions to the current working dir (which
+  # can happen when deployed).
+  tempReport <- file.path(reportTempDir, "report.Rmd")
+  
+  # tempServerFunctions <- file.path(reportTempDir, "serverFunctions.R")
+  # file.copy("serverFunctions.R", tempServerFunctions, overwrite = TRUE)
+  
+  # create a new list of all parameters that can be passed to the markdown doc.
+  
+  params <- list(
+    # tempServerFunctions = tempServerFunctions,
+    # tempprivatePlotFunctions = tempprivatePlotFunctions,
+    calledFromShiny = TRUE # this is to notify the markdown that we are running the script from shiny. used for debugging/development
+    # save the outputfile name for others to use to save
+    # params$outputFile <- file$datapath[1]
+  )
+  
+  
+  
+  
+  
+  # for (idx in 1:length(names(input))) {
+  #   params[[inputNames[idx]]] <- input[[inputNames[idx]]]
+  # }
+  params[["reportTempDir"]] <- reportTempDir
+  
+  file.copy("report.Rmd", tempReport, overwrite = TRUE)
+  
+  # read the template and replace parameters placeholder with list
+  # of paramters
+  x <- readLines(tempReport)
+  # x <- readLines("report.Rmd")
+  paramString <- paste0("  ", names(params), ": NA", collapse = "\n")
+  y <- gsub("#__PARAMPLACEHOLDER__", paramString, x)
+  y <- gsub("__CHILDREPORTS__", pluginReportsString, y)
+  y <- gsub("__LOAD_REACTIVES__", LoadReactiveFiles, y)
+  # cat(y, file="tempReport.Rmd", sep="\n")
+  cat(y, file = tempReport, sep = "\n")
+  
+  if (DEBUG) cat(file = stderr(), "output$report:scEx:\n")
+  if (DEBUG) cat(file = stderr(), paste("\n", tempReport, "\n"))
+  # Knit the document, passing in the `params` list, and eval it in a
+  # child of the global environment (this isolates the code in the document
+  # from the code in this app)
+  if (DEBUG) file.copy(tempReport, "~/scShinyHubDebug/tempReport.Rmd")
+  myparams <- params # needed for saving as params is already taken by knitr
+  # if (DEBUGSAVE) 
+  save(file = "~/scShinyHubDebug/tempReport.RData", list = c("session", "myparams", ls(), "zippedReportFiles"))
+  # load(file = '~/scShinyHubDebug/tempReport.RData')
+  cat(file = stderr(), paste("workdir: ", getwd()))
+  require(callr)
+  # if (DEBUGSAVE)
+  file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
+  
+  tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  # file.copy("contributions/gQC_generalQC//report.Rmd",
+  #           '/var/folders/tf/jwlc7r3d48z7pkq0w38_v7t40000gp/T//RtmpTx4l4G/file1a6e471a698.Rmd', overwrite = TRUE)
+  r(function(input, output_file, params, envir)
+    rmarkdown::render(input = input, output_file = output_file,
+                      params = params, envir = envir), 
+    args = list(input = tempReport,
+                output_file = "report.html",
+                params = params,
+                envir = new.env())
+  )
+  # file.copy(from = "contributions/sCA_subClusterAnalysis/report.Rmd",
+  #           to = "/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T//Rtmph1SRTE/file69aa37a47206.Rmd", overwrite = TRUE)
+  # rmarkdown::render(input = tempReport, output_file = "report.html",
+  #                   params = params, envir = new.env())
+  
+  tDir <- paste0(reportTempDir, "/")
+  base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
+  write.csv(as.matrix(assays(scEx_log)[[1]]), file = paste0(reportTempDir, "/normalizedCounts.csv"))
+  base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("scEx", "projections"))
+  zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
+  zip(outZipFile, zippedReportFiles, flags = "-9Xj")
+  if (DEBUG) {
+    end.time <- Sys.time()
+    cat(file = stderr(), "===Report:done", difftime(end.time, start.time, units = "min"), "\n")
+  }
+  return(outZipFile)
+})

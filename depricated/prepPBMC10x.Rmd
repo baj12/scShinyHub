@@ -105,7 +105,7 @@ iter = 1
 exprs.res = list()
 pipestance_path = pipestance_paths[1]
 gbm <- load_cellranger_matrix(pipestance_path,barcode_filtered = TRUE)
-exprs.res[[iter]] = exprs(gbm)
+exprs.res[[iter]] = assays(gbm)[[1]]
 colnames(exprs.res[[iter]]) = paste0(sub("(.*)-","\\1",colnames(exprs.res[[iter]])),"-",sampleNames[iter])
 
 library(Matrix)
@@ -182,7 +182,7 @@ save(file = "Examples/pbmc10x.Rds", list = c("featuredata", "gbm"))
 ```{r subSampled 10x}
 
 
-expVals = as.matrix(exprs(gbm))
+expVals = as.matrix(assays(gbm)[[1]])
 
 ncol(gbm)
 

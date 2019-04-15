@@ -11,19 +11,21 @@ clusterUI <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
-      column(11,
+      column(5,
              offset = 1,
-             textInput(ns("geneIds"), "comma separated list of genes for UmiCountPerGenes", value = ""),
+             textInput(ns("geneIds"), "comma separated list of genes for UmiCountPerGenes", value = "")),
+      column(5,
+             offset = 0,
              textInput(ns("geneIds2"), "comma separated list of genes for UmiCountPerGenes", value = "")
       )
     ),
     fluidRow(
       column(
-        4,
+        3,
         uiOutput(ns("clusters"))
       ),
       column(
-        4,
+        3,
         selectInput(
           ns("dimension_x"),
           label = "X",
@@ -32,12 +34,21 @@ clusterUI <- function(id) {
         )
       ),
       column(
-        4,
+        3,
         selectInput(
           ns("dimension_y"),
           label = "Y",
           choices = c("tsne1", "tsne2", "tsne3"),
           selected = "tsne2"
+        )
+      ),
+      column(
+        3,
+        selectInput(
+          ns("dimension_col"),
+          label = "color",
+          choices = c("Gene.count"),
+          selected = "Gene.count"
         )
       )
     ),
@@ -72,7 +83,11 @@ tableSelectionUi <- function(id) {
     ),
     fluidRow(
       h4("Cells", offset = 1),
-      checkboxInput(ns("selectAll"), "Select all rows", FALSE), br(),
+      column(3,
+             checkboxInput(ns("selectAll"), "Select all rows", FALSE)), 
+      column(3,
+             checkboxInput(ns("reorderCells"), "reorder cells by sum of selected genes", FALSE)), 
+      br(),
       column(
         width = 12,
         DTOutput(ns("cellNameTable")) %>% withSpinner(),

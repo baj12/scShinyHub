@@ -10,6 +10,7 @@ README.html
 *.html
 *.Rproj
 contributions/*
+tests
 !contributions/coExpression
 !contributions/DataExploration
 !contributions/generalQC

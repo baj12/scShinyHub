@@ -9,6 +9,7 @@ output:
     fig_width: 9
     number_sections: yes
     toc: yes
+    code_folding: hide
 params:
 #__PARAMPLACEHOLDER__
 ---
@@ -22,30 +23,44 @@ if (!exists("DEBUGSAVE")) {
   # DEBUGSAVE=TRUE
   DEBUGSAVE <- FALSE
 }
+
 ```
 
 ```{r loadData, include=FALSE}
-require(shiny)
-require(shinyTree)
-require(shinyBS)
-require(plotly)
-require(shinythemes)
-require(ggplot2)
-require(DT)
-require(pheatmap)
-require(threejs)
-require(sm)
-require(RColorBrewer)
-require(mclust)
-require(reshape)
-# require(cellrangerRkit)
-# require(SCORPIUS)
-require(ggplot2)
-require(knitr)
-require(kableExtra)
-require(shinyWidgets)
-# require(scater)
+# LIBRARIES -----------------------------------------------------------------
+library(shiny)
+library(shinyTree)
+library(tibble)
+library(shinyBS)
+library(plotly)
+library(shinythemes)
+library(ggplot2)
+library(DT)
+library(pheatmap)
+library(threejs)
+library(sm)
+library(RColorBrewer)
+library(mclust)
+library(reshape)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(shinyWidgets)
+library(scater)
+library(shinyMCE)
+library(kohonen)
+library(Rsomoclu)
+library(gtools)
+library(SingleCellExperiment)
+library(Matrix)
+library(colourpicker)
+library(shinytest)
+library(scran)
 
+# we overwirte this function because it doesn't make sense in the report and causes problems otherwise
+exportTestValues <- function(...){return(NULL)}
+
+ 
 # params only exsits if called from somewhere with parameters
 if (exists("params") & is.list(params)) {
   cat(file = stderr(), paste("params:", params$calledFromShiny, "\n"))
@@ -56,7 +71,9 @@ if (exists("params") & is.list(params)) {
   }
 } else {
   # rm(list = ls())
+   base::load(file = "geneLists.RData")
   source("serverFunctions.R")
+  source("defaultValues.R")
   source("reactives.R", local = TRUE)
   uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
   for (fp in uiFiles) {
@@ -67,6 +84,8 @@ if (exists("params") & is.list(params)) {
   params <- myparams
   LOCALEXECUTION <- TRUE # to know that we are debugging.
 }
+
+
 ```
 
 
@@ -74,8 +93,9 @@ __LOAD_REACTIVES__
 
 # parameters
 
-```{r setup, include=TRUE, echo=FALSE, warning=FALSE}
-input <- params
+```{r setup, include=TRUE, echo=TRUE, warning=FALSE, eval=FALSE}
+# not needed anymore
+# input <- params
 print(str(input$file1$name))
 
 if (file.exists(input$file1$datapath)) {
@@ -90,9 +110,17 @@ cat(file = stderr(), paste("input:", names(input), input, "\n"))
 # cat(file = stderr(), paste("dataTables:", names(dataTables),"\n"))
 ```
 
+```{r save, eval=FALSE}
+save(file = "report.RData", list = c(ls(), "params"))
+```
+
+```{r loadata, eval=FALSE}
+load(file = "/var/folders/_h/vtcnd09n2jdby90zkb6wyd740000gp/T/RtmpzXuS03/report.RData")
+
+```
 
 
-```{r check Variables, include=FALSE}
+```{r check Variables, include=FALSE, eval=TRUE}
 # TODO this needs to go to individual packages
 
 if (is.null(input$cluster)) {
@@ -107,9 +135,9 @@ if (is.null(input$clusters)) {
   input$clusters <- "0"
   print("Warning: setting clusters to 0")
 }
-if (is.null(input$clusters1)) {
-  input$clusters1 <- "0"
-  print("Warning: setting clusters1 to All")
+if (is.null(input$sCA_dgeClustersSelection)) {
+  input$sCA_dgeClustersSelection <- "0"
+  print("Warning: setting sCA_dgeClustersSelection to All")
 }
 if (is.null(input$clusters2)) {
   input$clusters2 <- "0"
@@ -119,24 +147,29 @@ if (is.null(input$clusters3)) {
   input$clusters3 <- "0"
   print("Warning: setting clusters4 to 0")
 }
-if (is.null(input$clusters4)) {
-  input$clusters4 <- "All"
+if (is.null(input$DE_clusterSelectionPanelPlot)) {
+  input$DE_clusterSelectionPanelPlot <- "All"
   print("Warning: setting clusters4 to All")
+}
+if (is.null(input$geneSelectionClustering)) {
+  input$geneSelectionClustering <- ""
+  print("Warning: setting geneSelectionClustering to All")
 }
 ```
 
 
-```{r inputData, echo=FALSE}
+```{r inputData, echo=TRUE, eval=TRUE}
 # if ( !exists("dataTables")) {# needed when working with ~/scShinyHubDebug/reports.Data
 cat(file = stderr(), paste("loading dataTables\n"))
 # in case the file is not in the root directory is has to be manually loaded during debugging
-# input$file1 = data.frame("datapath" = dir(path = "~/Rstudio/scShinyHubData/", pattern="anna1805.sp.Rds", full.names = T), stringsAsFactors = F)
+# input$file1 = data.frame("datapath" = dir(path = "~/Rstudio/shHubgit/", pattern="scEx.Rds", full.names = T), stringsAsFactors = F)
 # inFile = input$file1
-dataTables <- inputDataFunc(input$file1)
+dataTables <- inputData
 # }
 ```
 
-```{r useCells, echo=FALSE}
+```{r useCells, echo=TRUE, eval=FALSE}
+# not needed anymore
 geneNames <- input$minExpGenes
 rmCells <- input$cellsFiltersOut
 rmPattern <- input$cellPatternRM
@@ -151,131 +184,133 @@ useCells <- useCellsFunc(dataTables,
 )
 ```
 
-```{r useGenes, echo=FALSE}
+```{r useGenes, echo=TRUE, eval=FALSE}
+# not needed anymore
 # base::save(file = "~/scShinyHubDebug/report.useGenes.RData", list = ls())
 ipIDs <- input$selectIds
 genesKeep <- input$genesKeep
 geneListSelection <- input$geneListSelection
 
+
 useGenes <- useGenesFunc(dataTables, ipIDs, geneListSelection, genesKeep, geneLists)
 ```
 
 
-```{r featureDataReact, echo=FALSE}
+```{r featureDataReact, echo=TRUE, eval=TRUE}
 
 featureDataReact <- dataTables$featuredata[useGenes, ]
 featureData <- dataTables$featuredata[useGenes, ]
 ```
 
-```{r gbm, echo=FALSE}
-if (DEBUG) cat(file = stderr(), "gbm\n")
+```{r scEx, echo=TRUE, eval=FALSE}
+# not needed anymore
+if (DEBUG) cat(file = stderr(), "scEx\n")
 minGene <- input$minGenesGS # min number of reads per gene
 minG <- input$minGenes # min number of reads per cell
 maxG <- input$maxGenes # max number of reads per cell
 
-gbm <- gbmFunc(gbmOrg = dataTables$gbm, useCells = useCells, useGenes = useGenes, minGene = minGene, minG = minG, maxG = maxG)
+scEx <- scExFunc(scExOrg = dataTables$scEx, useCells = useCells, useGenes = useGenes, minGene = minGene, minG = minG, maxG = maxG)
 
-if (DEBUG) cat(file = stderr(), "gbm:DONE\n")
-if (DEBUG) cat(file = stderr(), paste("gbm:", class(gbm), "\n"))
+if (DEBUG) cat(file = stderr(), "scEx:DONE\n")
+if (DEBUG) cat(file = stderr(), paste("scEx:", class(scEx), "\n"))
 ```
 
 
-```{r medianENSG, echo=FALSE}
-medianENSG <- medianENSGfunc(as.matrix(exprs(gbm)))
+```{r medianENSG, echo=TRUE, eval=TRUE}
+medianENSG <- medianENSGfunc(as.matrix(assays(scEx)[[1]]))
 ```
 
 
-```{r medianUMI, echo=FALSE}
-medianUMI <- medianUMIfunc(as.matrix(exprs(gbm)))
-```
-
-```{r groupNames, echo=FALSE}
-groupNames <- list()
-groupNames$namesDF <- gNames
+```{r medianUMI, echo=TRUE, eval=TRUE}
+medianUMI <- medianUMIfunc(as.matrix(assays(scEx)[[1]]))
 ```
 
 
-```{r gbm_log, eval=FALSE, include=FALSE}
-# gbm_log is the normalized version of the data. This stored in a separate RData
-# and thus doen't need to be recomputed.
-if (DEBUG) cat(file = stderr(), "gbm_log\n")
-# use_genes <- get_nonzero_genes(gbm)
-# gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-# gbm_log <- log_gene_bc_matrix(gbm_bcnorm,base=10)
 
 
-normMethod <- input$normalizationRadioButton
-# can only be done in reactive context...
-# thus, here the minimal version for debugging
-    # use_genes <- get_nonzero_genes(gbm)
-    # gbm_bcnorm <- normalize_barcode_sums_to_median(gbm)
-    # gbm_log <- log_gene_bc_matrix(gbm_bcnorm, base = 10)
+```{r scEx_matrix, include=FALSE, eval=TRUE}
 
-gbm_log <- do.call(normMethod, args = list())
-if (DEBUG) cat(file = stderr(), "gbm_log:Done\n")
+scEx_matrix <- as.matrix(assays(scEx)[[1]])
 ```
 
 
-```{r gbm_matrix, include=FALSE}
+```{r rawNormalization, include=FALSE, eval=FALSE}
+# not needed anymore
+rawNormalization <- scEx
+```
 
-gbm_matrix <- as.matrix(exprs(gbm))
+```{r scExLogMatrixDisplay, include=FALSE, eval=FALSE}
+# not needed anymore
+retVal <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
+rownames(retVal) <- make.names(rowData(scEx_log)$symbol, unique = TRUE)
+
+scExLogMatrixDisplay <- retVal
 ```
 
 
-```{r rawNormalization, include=FALSE}
-rawNormalization <- gbm
-```
-
-```{r gbmLogMatrixDisplay, include=FALSE}
-retVal <- as.data.frame(as.matrix(exprs(gbm_log)))
-rownames(retVal) <- make.names(fData(gbm_log)$symbol, unique = TRUE)
-
-gbmLogMatrixDisplay <- retVal
-```
-
-
-```{r pca, eval=TRUE, echo=FALSE}
+```{r pca, eval=TRUE, echo=TRUE, eval=FALSE}
+# not needed anymore
 if (DEBUG) cat(file = stderr(), "pca\n")
 
-pca <- pcaFunc(gbm_log)
-```
-Creating  `r input$kNr` clusters.
-
-```{r kmClustering, eval=TRUE, echo=FALSE}
-if (DEBUG) cat(file = stderr(), "kmClustering\n")
-seed <- 1
-kmClustering <- kmClusteringFunc(pca, seed, kNr = input$kNr)
-
-if (DEBUG) cat(file = stderr(), "kmClustering:done\n")
+pca <- pcaFunc(scEx_log)
 ```
 
-Creating `r input$tsneDim` tSNE clusters.
 
-```{r tsne, eval=TRUE, echo=FALSE}
+```{r scran_Cluster, echo=TRUE, eval=FALSE}
+# not needed anymore output is dbCluster
+if (DEBUG) cat(file = stderr(), "scran_Cluster\n")
+  geneSelectionClustering <- input$geneSelectionClustering
+  seed <- input$seed
+  kNr <- input$kNr
+  clusterSource <- input$clusterSource
+  geneSelectionClustering <- input$geneSelectionClustering
+  minClusterSize <- input$minClusterSize
+  clusterMethod <- input$clusterMethod
+
+#save(file = "~/scShinyHubDebug/scran_cluster.report.RData", list = c(ls()))
+# load("~/scShinyHubDebug/scran_cluster.report.RData")
+
+  # retVal <- scran_ClusterFunc(pca, seed = seed, kNr = kNr)
+  retVal <- scranCluster(
+    pca, scEx_log, seed, clusterSource,
+    geneSelectionClustering, minClusterSize, clusterMethod, 
+    featureData
+  )
+
+if (DEBUG) cat(file = stderr(), "scran_Cluster:done\n")
+```
+
+Creating `r input$gQC_tsneDim` tSNE clusters.
+
+```{r tsne, echo=TRUE, eval=FALSE}
+#not needed anymore 
 if (DEBUG) cat(file = stderr(), "tsne\n")
-tsneDim <- input$tsneDim
-tsnePerplexity <- input$tsnePerplexity
-tsneTheta <- input$tsneTheta
-tsneSeed <- input$tsneSeed
-set.seed(seed = tsneSeed)
+gQC_tsneDim <- input$gQC_tsneDim
+gQC_tsnePerplexity <- input$gQC_tsnePerplexity
+gQC_tsneTheta <- input$gQC_tsneTheta
+gQC_tsneSeed <- input$gQC_tsneSeed
+set.seed(seed = gQC_tsneSeed)
 tsne <- run_tsne(pca,
-  dims = tsneDim,
-  perplexity = tsnePerplexity,
-  theta = tsneTheta, check_duplicates = FALSE
+  dims = gQC_tsneDim,
+  perplexity = gQC_tsnePerplexity,
+  theta = gQC_tsneTheta, check_duplicates = FALSE
 )
 
 if (DEBUG) cat(file = stderr(), "tsne: done\n")
 ```
 
 
-```{r projections, eval=FALSE, include=FALSE}
+
+```{r projections, include=FALSE, eval=FALSE}
+# not needed anynmore
+
 # TODO not working with current projection model and debugging.
 # the correct projections are used via saving/loading of variables during report creation in server.R
-#     base::save(file = tmpPrjFile, list = c("projections", "gbm_log", "gNames"))
+#     base::save(file = tmpPrjFile, list = c("projections", "scEx_log", "gNames"))
 #     reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpPrjFile, "\")\n", collapse = "\n")
 
 if (DEBUG) cat(file = stderr(), "projections\n")
-clustering <- kmClustering
+clustering <- scran_Cluster
 projections <- data.frame(tsne$Y)
 colnames(projections) <- paste0("tsne", c(1:ncol(projections)))
 # projections$dbCluster <- factor(clustering$kmeans_10_clusters$Cluster - 1)
@@ -314,28 +349,30 @@ projections$UmiCountPerGenes2 <- 0
 if (DEBUG) cat(file = stderr(), "projections: done\n")
 ```
 
-```{r sampleInfo, include=FALSE}
-sampleInfo <- sampleInfoFunc(gbm)
+```{r sampleInfo, include=FALSE, eval=FALSE}
+# not needed anymore
+sampleInfo <- sampleInfoFunc(scEx)
 ```
 
-```{r inputSample, include=FALSE}
-sampInf <- gsub(".*-(.*)", "\\1", dataTables$gbm$barcode)
+```{r inputSample, include=FALSE, eval=FALSE}
+# not needed anymore
+sampInf <- gsub(".*-(.*)", "\\1", dataTables$scEx$barcode)
 inputSample <- data.frame(
-  cellName = colnames(dataTables$gbm),
+  cellName = colnames(dataTables$scEx),
   sample = sampInf,
-  ncells = colSums(as.matrix(exprs(dataTables$gbm)))
+  ncells = colSums(as.matrix(assays(dataTables$scEx)[[1]]))
 )
 ```
 
 
-```{r log2cpm, eval=TRUE, include=FALSE}
+```{r log2cpm, include=FALSE, eval=TRUE}
 if (DEBUG) cat(file = stderr(), "log2cpm\n")
-log2cpm <- log2cpm <- as.data.frame(as.matrix(exprs(gbm_log)))
+log2cpm <- as.data.frame(as.matrix(assays(scEx_log)[[1]]))
 if (DEBUG) cat(file = stderr(), "log2cpm:Done\n")
 ```
 
 
-```{r summaryStats, eval=TRUE, include=TRUE}
+```{r summaryStats, include=TRUE, eval=TRUE}
 
 
 line1 <- paste("No. of cells:", dim(log2cpm)[2], sep = "\t")
@@ -372,11 +409,11 @@ Variables that are used can be found here: **[variables.used.txt](variables.used
 
 __CHILDREPORTS__
 
-```{r variables, include=FALSE, results='asis'}
+```{r variables, include=FALSE, results='asis', eval=FALSE}
 # cat(file = stderr(), paste(ls(), collapse = "\n"))
 # save(file = "~/scShinyHubDebug/report.vars.RData", list = ls())
 # load(file = "~/scShinyHubDebug/report.vars.RData")
-fileConn <- (paste0(input$reportTempDir, "/variables.used.txt"))
+fileConn <- (paste0(reportTempDir, "/variables.used.txt"))
 printVars <- function(x, fileConn) {
   for (varN in names(x)) {
     # if (is.data.frame(x[[varN]])) {
@@ -390,7 +427,7 @@ printVars(params, fileConn)
 
 # Session information
 
-```{r sessionInfo, echo=FALSE}
+```{r sessionInfo, echo=TRUE}
 if (!LOCALEXECUTION) {
   # save(file = "~/scShinyHubDebug/report.RData", list=ls())
 }

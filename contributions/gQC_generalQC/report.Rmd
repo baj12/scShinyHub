@@ -7,7 +7,7 @@ output: html_document
 
 
 
-```{r bj-gQC-setup, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
+```{r bj-gQC-setup, echo=TRUE, warning=FALSE, message=FALSE, error=FALSE, include=FALSE}
 if(exists("params")){
   cat(file = stderr(), paste("Scater Plot report\n"))
 }else{
@@ -52,12 +52,12 @@ if(exists("params")){
   useGenes = useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
   featureDataReact = dataTables$featuredata[useGenes, ]
   featureData = dataTables$featuredata[useGenes, ]
-  gbm = dataTables$gbm[useGenes, useCells]
-  gbm_log = dataTables$gbm_log[useGenes, useCells]
+  scEx = dataTables$scEx[useGenes, useCells]
+  scEx_log = dataTables$scEx_log[useGenes, useCells]
   log2cpm = dataTables$log2cpm[useGenes, useCells]
   if(DEBUG)cat(file=stderr(), "pca\n")
   
-  pca = pcaFunc(gbm_log)
+  pca = pcaFunc(scEx_log)
   if(DEBUG)cat(file=stderr(), "tsne\n")
   seed=1
   set.seed(seed = seed)
@@ -65,7 +65,7 @@ if(exists("params")){
   if(DEBUG)cat(file=stderr(), "tsne: done\n")
   if(DEBUG)cat(file=stderr(), "tsne.data\n")
   
-  if(DEBUG)cat(file=stderr(), "kmClustering\n")
+  if(DEBUG)cat(file=stderr(), "scran_Cluster\n")
   clustering=list()
   
   kNr = 10
@@ -75,8 +75,8 @@ if(exists("params")){
     clustering[[paste0("kmeans_",kNr,"_clusters")]] = data.frame("Barcode" = rownames(data.frame(km$cluster)), "Cluster" = km$cluster)
   }
   
-  kmClustering = clustering
-  if(DEBUG)cat(file=stderr(), "kmClustering:done\n")
+  scran_Cluster = clustering
+  if(DEBUG)cat(file=stderr(), "scran_Cluster:done\n")
   
   
   tsne.data = data.frame(tsne$Y)
@@ -88,16 +88,13 @@ if(exists("params")){
   
 }
 
-cat(file=stderr(),paste(ls(),collapse = "\n"))
-  cat(file=stderr(), paste("\nmy Scater Plot report\n"))
-cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsneData), "\n"))
-  
+
 ```
 
 
 
 
-```{r bj-gQC-tsne3d, eval=FALSE, echo=FALSE}
+```{r bj-gQC-tsne3d, eval=FALSE, echo=TRUE}
 # TODO: not working because tsne.data is not available
 cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
   
@@ -123,7 +120,7 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
           sizeref = 3
         )
     )
-  if(DEBUG)cat(file=stderr(), "output$tsne_main: done\n")
+  if(DEBUG)cat(file=stderr(), "output$gQC_tsne_main: done\n")
   layout(p)
   
 
@@ -133,14 +130,14 @@ cat(file=stderr(),paste("bj-gQC-tsne3d: ", class(tsne.data)))
 ## UMI histogram
 
 
-```{r plotUmiHist, eval=TRUE, echo=FALSE}
+```{r gQC_plotUmiHist, eval=TRUE, echo=TRUE}
 
-hist(Matrix::colSums(exprs(gbm)), breaks = 50, main="histogram of number of UMI per cell")
+hist(Matrix::colSums(assays(scEx)[[1]]), breaks = 50, main="histogram of number of UMI per cell")
 ```
 
 ## Variances of PCs
 
-```{r variancePCA, eval=TRUE, echo=FALSE}
+```{r gQC_variancePCA, eval=TRUE, echo=TRUE}
 # if(exists("pca$var_pcs")){
   barplot(pca$var_pcs, main="Variance captured by first PCs")
 # }
@@ -149,27 +146,30 @@ hist(Matrix::colSums(exprs(gbm)), breaks = 50, main="histogram of number of UMI 
 ## Histogram of samples
 
 
-```{r histSamples, eval=TRUE, echo=FALSE}
+```{r histSamples, eval=TRUE, echo=TRUE}
 if(DEBUGSAVE) 
   save(file = "~/scShinyHubDebug/histSamples.RData", list = c(ls(),ls(envir = globalenv())))
-sampleInf <- sampleInfoFunc(gbm)
-sampleHistFunc(sampleInf)
+sampleInf <- sampleInfoFunc(scEx)
+scols = sampleCols$colPal
+ccols <- clusterCols$colPal
+
+gQC_sampleHistFunc(sampleInf, scols)
 ```
 
 ## TSNE plot
 
-```{r bj-GC-tsne, echo=FALSE}
+```{r bj-GC-tsne, echo=TRUE}
 
 
-  dimX = input$dim3D_x
-  dimY = input$dim3D_y
-  dimZ = input$dim3D_z
-  dimCol = input$col3D
+  dimX = input$gQC_dim3D_x
+  dimY = input$gQC_dim3D_y
+  dimZ = input$gQC_dim3D_z
+  dimCol = input$gQC_col3D
   
   
   if (DEBUGSAVE) 
-    save(file = "~/scShinyHubDebug/tsne_main.RData", list = c(ls(),ls(envir = globalenv())))
-  # load(file="~/scShinyHubDebug/tsne_main.RData")
+    save(file = "~/scShinyHubDebug/gQC_tsne_main.RData", list = c(ls(),ls(envir = globalenv())))
+  # load(file="~/scShinyHubDebug/gQC_tsne_main.RData")
   
   projections <- as.data.frame(projections)
   
@@ -200,10 +200,10 @@ sampleHistFunc(sampleInf)
 
 ## Projections table
 
-```{r savegqcProj, echo=FALSE}
+```{r savegqcProj, echo=TRUE}
 
 # save full table in tmp folder to be included in report
-  write.csv(projections, file = paste0(input$reportTempDir, "/gqcProjections.csv"))
+  write.csv(projections, file = paste0(reportTempDir, "/gqcProjections.csv"))
 
 ```
 

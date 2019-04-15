@@ -3,6 +3,7 @@
 menuList <- list(
   menuItem("DummyTools",
     tabName = "dummyMenuList", startExpanded = FALSE,
+    # id = "dummyID",
     menuSubItem("dummyTab", tabName = "dummyTab")
   )
 )
@@ -22,5 +23,3 @@ tabList <- list(
   )
 )
 
-# declare heavy calculations
-myHeavyCalculations <- NULL
