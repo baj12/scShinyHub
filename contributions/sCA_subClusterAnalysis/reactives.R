@@ -106,6 +106,7 @@ sCA_dge <- reactive({
   })
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("sCA_dge", id = "sCA_dge", duration = NULL)
+    removeNotification(id = "dgewarning")
   }
   
   scEx_log <- scEx_log()

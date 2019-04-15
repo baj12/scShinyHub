@@ -43,7 +43,7 @@ sCA_dgeTableReac <- reactive({
   
   top.genes$symbol <-
     featureData[rownames(top.genes), "symbol"]
-  rownames(top.genes) <- top.genes$symbol
+  rownames(top.genes) <- make.unique(top.genes$symbol, sep="___")
   if ("Description" %in% colnames(featureData)) {
     top.genes$Description <- featureData[rownames(top.genes), "Description"]
   }

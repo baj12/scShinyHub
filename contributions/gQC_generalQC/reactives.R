@@ -225,16 +225,6 @@ umapReact <- reactive({
     showNotification("umapReact", id = "umapReact", duration = NULL)
   }
   
-  start.time <- base::Sys.time()
-  on.exit(
-    if (!is.null(getDefaultReactiveDomain()))
-      removeNotification(id = "umapReact")
-  )
-  if (!is.null(getDefaultReactiveDomain())) {
-    showNotification("umapReact", id = "umapReact", duration = NULL)
-  }
-  if (DEBUG) cat(file = stderr(), "umapReact started.\n")
-  
   scEx_log <- scEx_log()
   myseed <- input$gQC_um_randSeed
   xaxis <- input$um_xaxis
