@@ -30,8 +30,6 @@ sessionProjections <- reactiveValues(
 # loads singleCellExperiment
 #   only counts, rowData, and colData are used. Everything else needs to be recomputed
 inputDataFunc <- function(inFile) {
-  "!DEBUG start shiny"
-  debugme::debug("plot render start", pkg = ".")
   if (DEBUG) cat(file = stderr(), "inputDataFunc started.\n")
   start.time <- base::Sys.time()
   on.exit({
@@ -53,6 +51,8 @@ inputDataFunc <- function(inFile) {
   fp <- inFile$datapath[1]
   # fp ="scEx.Rds"
   # fp ="../scShinyHubData/patty1A.v2.Rds"
+  # a bit of cleanup
+  rm(list = c("scEx", "scEx_log", "featureData"))
   fpLs <- load(fp)
   scExFound <- FALSE
   for (varName in fpLs) {
