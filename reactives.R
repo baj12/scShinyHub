@@ -47,7 +47,7 @@ inputDataFunc <- function(inFile) {
   stats$names <- inFile$name
   stats$nFeatures <- 0
   stats$nCells <- 0
-
+  
   #
   cat(file = stderr(), paste("reading", inFile$name[1], "\n"))
   fp <- inFile$datapath[1]
@@ -438,8 +438,8 @@ useCells <- reactive({
     }
     return(NULL)
   }
-
-    retVal <- useCellsFunc(
+  
+  retVal <- useCellsFunc(
     dataTables,
     geneNames,
     rmCells,
@@ -469,8 +469,8 @@ useGenesFunc <-
     if (!is.null(getDefaultReactiveDomain())) {
       showNotification("useGenesFunc", id = "useGenesFunc", duration = NULL)
     }
-
-        gList <- geneLists # global variable, assigning it locally ensures that it will be saved
+    
+    gList <- geneLists # global variable, assigning it locally ensures that it will be saved
     if (DEBUGSAVE) {
       save(file = "~/scShinyHubDebug/useGenesFunc.Rdata", list = c(ls(), ls(envir = globalenv())))
     }
@@ -717,8 +717,8 @@ scEx <- reactive({
     }
     return(NULL)
   }
-
-    if (DEBUGSAVE) {
+  
+  if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/scEx.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/scEx.RData")
@@ -846,7 +846,7 @@ pcaFunc <- function(scEx_log) {
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "pcawarning")
   
-    if (DEBUGSAVE) {
+  if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/pcaFunc.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/pcaFunc.RData")
@@ -927,8 +927,8 @@ scranCluster <- function(pca, scEx_log, seed, clusterSource,
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("scranCluster", id = "scranCluster", duration = NULL)
   }
-
-    set.seed(seed)
+  
+  set.seed(seed)
   geneid <- geneName2Index(geneSelectionClustering, featureData)
   
   params <- list(
@@ -1009,7 +1009,6 @@ dbCluster <- reactive({
 })
 
 
-
 scran_Cluster <- reactive({
   if (DEBUG) cat(file = stderr(), "scran_Cluster started.\n")
   start.time <- base::Sys.time()
@@ -1023,8 +1022,8 @@ scran_Cluster <- reactive({
   }
   if (!is.null(getDefaultReactiveDomain()))
     removeNotification(id = "dbClusterError")
-
-    pca <- pca()
+  
+  pca <- pca()
   scEx_log <- scEx_log()
   seed <- input$seed
   kNr <- input$kNr

@@ -439,6 +439,45 @@ forceCalc <- shiny::observe({
   }
 })
 
+scranWarning <- function() {
+  cat(file = stderr(), paste0("scranWarning\n"))
+  modalDialog(
+    span('The parameters clusterSource=normData and/or clusterMethod=hclust can ',
+         'can result in very long wait times (>6hrs). Do you really want to do this?'),
+    
+    footer = tagList(
+      actionButton("scranWarning_cancel", "Cancel"),
+      actionButton("scranWarning_ok", "OK")
+    )
+  )
+}
+
+# handle long executions ----
+observeEvent(input$clusterMethod ,
+             {
+               cat(file = stderr(), paste0("observe: input$clusterMethod\n"))
+               if (input$clusterMethod == "hclust")
+                 showModal(scranWarning())
+             })
+observeEvent(input$clusterSource,
+             {
+               cat(file = stderr(), paste0("observe: input$clusterSource\n"))
+               if (input$clusterSource == "normData")
+                 showModal(scranWarning())
+             })
+observeEvent(input$scranWarning_cancel, {
+  updateSelectInput(session, "clusterMethod",
+                    selected = "igraph"
+  )
+  updateSelectInput(session, "clusterSource",
+                    selected = "PCA"
+  )
+  removeModal()
+})
+observeEvent(input$scranWarning_ok, {
+  removeModal()
+})
+
 
 
 if (DEBUG) {
