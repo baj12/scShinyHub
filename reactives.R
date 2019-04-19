@@ -53,6 +53,8 @@ inputDataFunc <- function(inFile) {
   fp <- inFile$datapath[1]
   # fp ="scEx.Rds"
   # fp ="../scShinyHubData/patty1A.v2.Rds"
+  # a bit of cleanup
+  rm(list = c("scEx", "scEx_log", "featureData"))
   fpLs <- load(fp)
   scExFound <- FALSE
   for (varName in fpLs) {

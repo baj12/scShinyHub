@@ -70,6 +70,18 @@ clusterServer <- function(input, output, session,
     if (DEBUG) cat(file = stderr(), paste0("observe: devideYBy\n"))
     divYBy <<- input$devideYBy
   })
+  # clusterServer - observe input$groupNames ----
+  observe({
+    if (DEBUG) cat(file = stderr(), "observe input$groupNames \n")
+    input$groupNames # dropdown list with names of cell groups
+    isolate({
+      updateTextInput(
+        session = session, inputId = "groupName",
+        value = input$groupNames
+      )
+    })
+  })
+  
   
   # clusterServer - updateInput ----
   updateInput <- reactive({
@@ -84,7 +96,8 @@ clusterServer <- function(input, output, session,
     # Can also set the label and select items
     if (is.null(mod_cl1) || mod_cl1 == "") mod_cl1 = levels(tsneData$dbCluster)
     updateSelectInput(session, "clusters",
-                      choices = levels(tsneData$dbCluster),
+                      choices = levels(tsneData$dbCluster)
+                      ,
                       selected = mod_cl1
     )
     updateSelectInput(session, "dimension_x",
@@ -331,18 +344,6 @@ clusterServer <- function(input, output, session,
   #                   value = input$groupNames)
   # })
   
-  
-  # clusterServer - observe input$groupNames ----
-  observe({
-    if (DEBUG) cat(file = stderr(), "observe input$groupNames \n")
-    input$groupNames # dropdown list with names of cell groups
-    isolate({
-      updateTextInput(
-        session = session, inputId = "groupName",
-        value = input$groupNames
-      )
-    })
-  })
   
   # clusterServer - visibleCellNames ----
   visibleCellNames <- reactive({

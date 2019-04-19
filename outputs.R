@@ -41,20 +41,6 @@ output$normalizationsParametersDynamic <- renderUI({
   }
   selectedChoice <- input$normalizationRadioButton
   
-  if (DEBUG) {
-    cat(file = stderr(), paste(class(normaliztionParameters)), "\n")
-    cat(file = stderr(), paste(length(normaliztionParameters)), "\n")
-    for (li in normaliztionParameters) {
-      if (length(li) > 0) {
-        if (DEBUG) {
-          cat(file = stderr(), paste("normaliztionParameters: ", li, "\n"))
-        }
-        if (DEBUG) {
-          cat(file = stderr(), paste("normaliztionParameters: ", names(li), "\n"))
-        }
-      }
-    }
-  }
   if (DEBUGSAVE) {
     save(file = "~/scShinyHubDebug/normalizationsParametersDynamic.RData", list = c("normaliztionParameters", ls(), ls(envir = globalenv())))
   }
@@ -385,7 +371,13 @@ output$RDSsave <- downloadHandler(
   filename = paste0("project.", Sys.Date(), ".Rds"),
   content = function(file) {
     if (DEBUG) cat(file = stderr(), paste("RDSsave: \n"))
+    
     scEx <- scEx()
+    projections <- projections()
+    scEx_log <- scEx_log()
+    pca <- pca()
+    tsne <- tsne()
+    
     if (is.null(scEx)) {
       return(NULL)
     }
@@ -393,6 +385,13 @@ output$RDSsave <- downloadHandler(
       save(file = "~/scShinyHubDebug/RDSsave.RData", list = c(ls(), ls(envir = globalenv())))
     }
     # load(file='~/scShinyHubDebug/RDSsave.RData')
+    
+    reducedDims(scEx) <- SimpleList(PCA = pca$x, TSNE = tsne)
+    assays(scEx)[["logcounts"]] = assays(scEx_log)[[1]]
+    colData(scEx)[["before.Filter"]] = projections$before.filter
+    colData(scEx)[["dbCluster"]] = projections$dbCluster
+    colData(scEx)[["UmiCountPerGenes"]] = projections$UmiCountPerGenes
+    colData(scEx)[["UmiCountPerGenes2"]] = projections$UmiCountPerGenes2
     
     save(file = file, list = c("scEx"))
     if (DEBUG) cat(file = stderr(), paste("RDSsave:done \n"))
