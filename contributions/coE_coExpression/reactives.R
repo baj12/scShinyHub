@@ -280,8 +280,6 @@ coE_geneGrp_vioFunc <- function(genesin, projections, scEx, featureData, minExpr
       for (cIdx in 1:nrow(comb)) {
         map <-
           rownames(featureData[which(featureData$symbol %in% comb[cIdx, ]), ])
-        # permIdx <- Matrix::colSums(exprs(gbm[map, ]) >= minExpr) == length(comb[cIdx, ])
-        
         permIdx <- Matrix::colSums(assays(scEx)[[1]][map, , drop = FALSE] >= minExpr) == length(comb[cIdx, ])
         perms[permIdx] <- paste0(comb[cIdx, ], collapse = "+")
       }

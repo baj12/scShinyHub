@@ -34,7 +34,7 @@ DummyReactive <- reactive({
   scEx <- scEx()                 # raw data, filtered by genes/cells
   scEx_log <- scEx_log()         # normalized data
   prj <- projections()           # projections, includes manually set groups
-  inputData <- inputData()       # raw, unfiltered data
+  # inputData <- inputData()       # raw, unfiltered data
   pca <- pca()                   # pca projections, loadings...
   tsne <- tsne()                 # tSNE projections
   dbCluster <- dbCluster()       # clustering results, also available through projections
@@ -93,7 +93,7 @@ imageDummyPrecompute <- reactive({
   scEx <- scEx()                 # raw data, filtered by genes/cells
   scEx_log <- scEx_log()         # normalized data
   prj <- projections()           # projections, includes manually set groups
-  inputData <- inputData()       # raw, unfiltered data
+  # inputData <- inputData()       # raw, unfiltered data
   pca <- pca()                   # pca projections, loadings...
   dbCluster <- dbCluster()       # clustering results, also available through projections
   

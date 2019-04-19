@@ -57,7 +57,6 @@ seed <- 2
 reportTempDir <<- base::tempdir()
 
 shinyServer(function(input, output, session) {
-  "!DEBUG start shiny"
   base::set.seed(seed)
   # check that directory is availabl, otherwise create it
   if (DEBUG) {

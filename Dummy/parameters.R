@@ -21,7 +21,7 @@ myNormalizationParameters <- list(
 #' Dummy_Normalization
 #' here, we calculate the normalization
 #' the result has to be a singleCellExperiment object with the slot logcounts
-#' In the example below we devide 
+#' In the example below we devide
 Dummy_Normalization <- reactive({
   # track how much time is spent here
   start.time <- base::Sys.time()
@@ -36,14 +36,18 @@ Dummy_Normalization <- reactive({
   if (!is.null(getDefaultReactiveDomain())) {
     showNotification("Dummy_Normalization", id = "Dummy_Normalization", duration = NULL)
   }
-  
-  
+
+
   # just devide by number of cells and scale
   if (DEBUG) cat(file = stderr(), "Dummy_Normalization\n")
 
   # obviously you only want to use scEx and not scEx_log...
+  if (DEBUGSAVE) {
+    save(file = "~/scShinyHubDebug/Dummy_Normalization1.RData", list = c(ls(), ls(envir = globalenv())))
+  }
+  # load(file="~/scShinyHubDebug/Dummy_Normalization1.RData")
   scEx <- scEx()
-  
+
   if (is.null(scEx)) {
     if (DEBUG) {
       cat(file = stderr(), "Dummy_Normalization:NULL\n")
@@ -54,14 +58,14 @@ Dummy_Normalization <- reactive({
     save(file = "~/scShinyHubDebug/Dummy_Normalization.RData", list = c(ls(), ls(envir = globalenv())))
   }
   # load(file="~/scShinyHubDebug/Dummy_Normalization.RData")
-  
-  
+
+
 # normalization process
   retVal <- Dummy_NormalizationFunc(scEx = scEx)
-# end of normalization. 
-   
+# end of normalization.
+
   printTimeEnd(start.time, "Dummy_Normalization")
-  exportTestValues(Dummy_Normalization = {assays(retVal)[["logcounts"]]})  
+  exportTestValues(Dummy_Normalization = {assays(retVal)[["logcounts"]]})
   return(retVal)
 })
 
@@ -73,7 +77,7 @@ Dummy_NormalizationFunc <- function(scEx, scalingFactor = 10000){
   scEx_bcnorm <- SingleCellExperiment(assay = list(logcounts = as(A,"dgTMatrix")),
                                       colData = colData(scEx),
                                       rowData = rowData(scEx))
-  
+
   x <- uniqTsparse(assays(scEx_bcnorm)[[1]])
   rownames(x) = rownames(scEx)
   slot(x, "x") <- slot(x, "x") * scalingFactor
