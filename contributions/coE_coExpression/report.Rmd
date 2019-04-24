@@ -15,7 +15,7 @@ if (exists("params")) {
   rm(list = ls())
   load("~/scShinyHubDebug/report.RData")
   cat(file = stderr(), getwd())
-
+  
   require(shiny)
   require(plotly)
   require(shinythemes)
@@ -34,23 +34,23 @@ if (exists("params")) {
   require(kableExtra)
   require(shinyWidgets)
   require(scater)
-
+  
   source("../../../serverFunctions.R")
   source("../../../reactives.R", local = TRUE)
   # source("reactives.R", local = TRUE)
-
+  
   LOCALEXECUTION <- TRUE # to know that we are debugging.
   useCells <- useCellsFunc(dataTables,
-    geneNames = input$minExpGenes,
-    rmCells = input$cellsFiltersOut,
-    rmPattern = input$cellPatternRM,
-    keepCells = input$cellKeep,
-    cellKeepOnly = input$cellKeepOnly
+                           geneNames = input$minExpGenes,
+                           rmCells = input$cellsFiltersOut,
+                           rmPattern = input$cellPatternRM,
+                           keepCells = input$cellKeep,
+                           cellKeepOnly = input$cellKeepOnly
   )
   ipIDs <- input$selectIds
   geneListSelection <- input$geneListSelection
   minGene <- input$minGenesGS
-
+  
   useGenes <- useGenesFunc(dataTables, useCells, ipIDs, geneListSelection, minGene)
   featureDataReact <- dataTables$featuredata[useGenes, ]
   featureData <- dataTables$featuredata[useGenes, ]
@@ -149,22 +149,24 @@ if (dimCol == "dbCluster") {
 }
 
 p1 <- plot2Dprojection(scEx_log, projections, g_id, featureData, geneNames,
-  geneNames2, dimX, dimY, clId, grpN, legend.position,
-  grpNs = grpNs, logx, logy, divXBy, divYBy, dimCol, colors = myColors
+                       geneNames2, dimX, dimY, clId, grpN, legend.position,
+                       grpNs = grpNs, logx, logy, divXBy, divYBy, dimCol, colors = myColors
 )
 
 
-p1 %>%
-  add_trace(
-    data = subsetData[scCells, ],
-    x =
-      ~ get(dimX), y = ~ get(dimY),
-    type = "scatter", mode =
-      "markers", color = "red",
-    name =
-      "selected", showlegend = TRUE,
-    inherit = F
-  )
+if (!is.null(p1)){
+  p1 %>%
+    add_trace(
+      data = subsetData[scCells, ],
+      x =
+        ~ get(dimX), y = ~ get(dimY),
+      type = "scatter", mode =
+        "markers", color = "red",
+      name =
+        "selected", showlegend = TRUE,
+      inherit = F
+    )
+}
 
 ```
 
@@ -218,12 +220,12 @@ subsetData <- subset(projections, dbCluster %in% inpClusters)
 
 # cells.1 <- rownames(scCells)
 heatmapData <- coE_heatmapFunc(featureData,
-  scEx_matrix,
-  projections,
-  genesin,
-  cells = scCells,
-  sampCol = sampCol,
-  ccols = ccols
+                               scEx_matrix,
+                               projections,
+                               genesin,
+                               cells = scCells,
+                               sampCol = sampCol,
+                               ccols = ccols
 )
 
 
@@ -242,55 +244,60 @@ coEtgminExpr <- input$coEtgMinExpr
 scCells <- `coE_selctedCluster-selectedCells`
 
 if (is.null(scEx_log) || is.null(scCells)) {
-  return(NULL)
-}
-
-featureData <- rowData(scEx_log)
-# we only work on cells that have been selected
-mat <- assays(scEx_log)[[1]][, scCells]
-# only genes that express at least coEtgminExpr UMIs
-mat[mat < coEtgminExpr] <- 0
-# only genes that are expressed in coEtgPerc or more cells
-allexpressed <- Matrix::rowSums(mat > 0) / length(scCells) * 100 >= coEtgPerc
-mat <- mat[allexpressed, ]
-
-cv <- function(x) {
-  sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
-}
-matCV <- apply(mat, 1, cv)
-# top.genes <- as.data.frame(exprs(scEx_log))
-maxRows <- min(nrow(mat), 200)
-top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
-dataTables <- NULL
-if (dim(mat)[1] > 0) {
-  mat <- mat[top.genesOrder, ]
-  fd <- featureData[rownames(mat), c("symbol", "Description")]
-  matCV <- matCV[rownames(mat)]
-  fd <- cbind(fd, matCV)
-  colnames(fd) <- c("gene", "description", "CV")
-  # since we are returning a table to be plotted, we convert to regular table (non-sparse)
-  outMat <- cbind2(fd, as.matrix(mat))
-  rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
-  dataTables <- as.data.frame(outMat)
-}
-
-maxCol <- min(20, ncol(dataTables))
-if (dim(dataTables)[1] > 1) {
-  DT::datatable(dataTables[, 1:maxCol],
-    rownames = F, filter = "top",
-    options = list(
-      orderClasses = TRUE,
-      autoWidth = TRUE
-    )
-  )
+  
 } else {
-  print("no table to print")
+  
+  
+  
+  featureData <- rowData(scEx_log)
+  # we only work on cells that have been selected
+  mat <- assays(scEx_log)[[1]][, scCells]
+  # only genes that express at least coEtgminExpr UMIs
+  mat[mat < coEtgminExpr] <- 0
+  # only genes that are expressed in coEtgPerc or more cells
+  allexpressed <- Matrix::rowSums(mat > 0) / length(scCells) * 100 >= coEtgPerc
+  mat <- mat[allexpressed, ]
+  
+  cv <- function(x) {
+    sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+  }
+  matCV <- apply(mat, 1, cv)
+  # top.genes <- as.data.frame(exprs(scEx_log))
+  maxRows <- min(nrow(mat), 200)
+  top.genesOrder <- order(matCV, decreasing = TRUE)[1:maxRows]
+  dataTables <- NULL
+  if (dim(mat)[1] > 0) {
+    mat <- mat[top.genesOrder, ]
+    fd <- featureData[rownames(mat), c("symbol", "Description")]
+    matCV <- matCV[rownames(mat)]
+    fd <- cbind(fd, matCV)
+    colnames(fd) <- c("gene", "description", "CV")
+    # since we are returning a table to be plotted, we convert to regular table (non-sparse)
+    outMat <- cbind2(fd, as.matrix(mat))
+    rownames(outMat) <- make.unique(as.character(outMat$gene), sep = "___")
+    dataTables <- as.data.frame(outMat)
+  }
+  
+  maxCol <- min(20, ncol(dataTables))
+  if (dim(dataTables)[1] > 1) {
+    DT::datatable(dataTables[, 1:maxCol],
+                  rownames = F, filter = "top",
+                  options = list(
+                    orderClasses = TRUE,
+                    autoWidth = TRUE
+                  )
+    )
+  } else {
+    print("no table to print")
+  }
 }
 ```
 
 ```{r saveTOPGENES, echo=TRUE, eval=TRUE}
 # save full table in tmp folder to be included in report
-write.csv(dataTables, file = paste0(reportTempDir, "/output_coE_topExpGenes.csv"))
+if (is.data.frame(dataTables)) {
+  write.csv(dataTables, file = paste0(reportTempDir, "/output_coE_topExpGenes.csv"))
+}
 ```
 
 Full table can be found here: [output_coE_topExpGenes.csv](output_coE_topExpGenes.csv)

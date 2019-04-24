@@ -59,7 +59,6 @@ seed <- 2
 reportTempDir <<- base::tempdir()
 
 shinyServer(function(input, output, session) {
-  "!DEBUG start shiny"
   base::set.seed(seed)
   # check that directory is availabl, otherwise create it
   if (DEBUG) {
@@ -71,7 +70,9 @@ shinyServer(function(input, output, session) {
   
   # files to be included in report
   # developers can add in outputs.R a variable called "myZippedReportFiles"
-  zippedReportFiles <- c("report.html", "sessionData.RData", "normalizedCounts.csv", "variables.used.txt", "inputUsed.RData")
+  zippedReportFiles <- c("report.html", "sessionData.RData", 
+                         "normalizedCounts.csv", "variables.used.txt", 
+                         "inputUsed.RData")
 
   base::options(shiny.maxRequestSize = 2000 * 1024^2)
   

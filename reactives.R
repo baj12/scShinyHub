@@ -1473,6 +1473,7 @@ reacativeReport <- reactive({
   projections <- projections()
   scEx_log <- scEx_log()
   inputNames <- names(input)
+  inData <- inputData()
   
   if (is.null(scEx)) {
     if (DEBUG) cat(file = stderr(), "output$report:NULL\n")
@@ -1515,9 +1516,12 @@ reacativeReport <- reactive({
       }
     }
     
+    cat(file = stderr(), paste("input: \n"))
     assign("input", reactiveValuesToList(get("input")), envir = report.env)
   })
-  base::save(file = tmpPrjFile, list = c("reportTempDir","projections", "scEx_log", "scEx", "report.env"))
+  cat(file = stderr(), paste("save: \n"))
+  base::save(file = tmpPrjFile, list = c("diffExpFunctions", "reportTempDir","projections", "scEx_log", "scEx", "report.env"))
+  cat(file = stderr(), paste("userDataEnv: \n"))
   userDataEnv <- as.environment(as.list(session$userData, all.names=TRUE))
   # browser()
   if (DEBUGSAVE) save(file = "~/scShinyHubDebug/tempReport.1.RData", list = c("session", "report.env", "file", ls(), ls(envir = globalenv())))
@@ -1529,7 +1533,7 @@ reacativeReport <- reactive({
   
   # fixed files -----------
   tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".RData")
-  file.copy("geneLists.RData", tmpFile, overwrite = TRUE)
+  file.copy(paste0(packagePath, "/geneLists.RData"), tmpFile, overwrite = TRUE)
   reactiveFiles <- paste0(reactiveFiles, "load(file=\"", tmpFile, "\")\n", collapse = "\n")
   
   # global variables
@@ -1544,7 +1548,8 @@ reacativeReport <- reactive({
   # return(tmpPrjFile)
   # the reactive.R can hold functions that can be used in the report to reduce the possibility of code replication
   # we copy them to the temp directory and load them in the markdown
-  uiFiles <- dir(path = "contributions", pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
+  uiFiles <- dir(path = paste0(packagePath, "/contributions"),
+                 pattern = "reactives.R", full.names = TRUE, recursive = TRUE)
   for (fp in c("serverFunctions.R", "reactives.R", uiFiles)) {
     if (DEBUG) cat(file = stderr(), paste("loading: ", fp, "\n"))
     tmpFile <- tempfile(pattern = "file", tmpdir = reportTempDir, fileext = ".R")
@@ -1560,7 +1565,8 @@ reacativeReport <- reactive({
   # handle plugin reports
   # load contribution reports
   # parse all report.Rmd files under contributions to include in application
-  uiFiles <- dir(path = "contributions", pattern = "report.Rmd", full.names = TRUE, recursive = TRUE)
+  uiFiles <- dir(path = paste0(packagePath, "/contributions"), 
+                 pattern = "report.Rmd", full.names = TRUE, recursive = TRUE)
   pluginReportsString <- ""
   fpRidx <- 1
   for (fp in uiFiles) {
@@ -1601,7 +1607,7 @@ reacativeReport <- reactive({
   # }
   params[["reportTempDir"]] <- reportTempDir
   
-  file.copy("report.Rmd", tempReport, overwrite = TRUE)
+  file.copy(paste0(packagePath,"/report.Rmd"), tempReport, overwrite = TRUE)
   
   # read the template and replace parameters placeholder with list
   # of paramters
@@ -1627,9 +1633,9 @@ reacativeReport <- reactive({
   cat(file = stderr(), paste("workdir: ", getwd()))
   require(callr)
   # if (DEBUGSAVE)
-  file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
+  # file.copy(tempReport, "~/scShinyHubDebug/tmpReport.Rmd", overwrite = TRUE)
   
-  tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
+  # tempReport = "~/scShinyHubDebug/tmpReport.Rmd"
   # file.copy("contributions/gQC_generalQC//report.Rmd",
   #           '/var/folders/tf/jwlc7r3d48z7pkq0w38_v7t40000gp/T//RtmpTx4l4G/file1a6e471a698.Rmd', overwrite = TRUE)
   r(function(input, output_file, params, envir)
@@ -1649,6 +1655,7 @@ reacativeReport <- reactive({
   base::save(file = paste0(reportTempDir, "/sessionData.RData"), list = c(ls(), ls(envir = globalenv())))
   write.csv(as.matrix(assays(scEx_log)[[1]]), file = paste0(reportTempDir, "/normalizedCounts.csv"))
   base::save(file = paste0(reportTempDir, "/inputUsed.Rds"), list = c("scEx", "projections"))
+  
   zippedReportFiles <- c(paste0(tDir, zippedReportFiles))
   zip(outZipFile, zippedReportFiles, flags = "-9Xj")
   if (DEBUG) {

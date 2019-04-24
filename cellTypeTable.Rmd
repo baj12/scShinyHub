@@ -1,0 +1,1578 @@
+---
+title: "Celltype comparison"
+author: "Bernd Jagla"
+date: "6/7/2018"
+runtime: shiny
+output: 
+  html_notebook: 
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+---
+
+
+```{r whichFiles, echo=TRUE}
+library(ggplot2)
+library(plotly)
+library(shiny)
+require(gdata)
+library(shinyjqui)
+library(umapr)
+library(tidyverse)
+# require(XLConnect)
+# library(XLConnectJars)
+library(pROC)
+library(fastcluster)
+library(data.table)
+library(edgeR)
+library(DESeq2)
+library(DEFormats)
+library(FlowSOM)
+
+cellTypes = c("Lymphocytes", "CD4pos", "CD8pos", "CCR6negCXCR3neg", "CCR6pos", "CCR6posCXCR3pos", 
+              "CD3pos", "Var.8", "CD45ROneg", "CD4CD95neg", "CD4CD95pos", "CD4CM", "CD4EM", 
+              "CD4EMRA", "CD4FHPD1pos", "CD8CD95neg", "CD4Naivelike", "CD8CM", "CD8EMRA", 
+              "CRTh2negCXCR5neg", "CRTh2posCXCR5pos", "CXCR5pos", "SingleCellsII", "SingleCells",
+              "CXCR3pos", "CRTh2pos", "CD8Naivelike", "CD8EM")
+
+```
+
+
+```{r loadclaire, eval=FALSE, echo=TRUE}
+require(gdata)
+getwd()
+load('claire.flowset.RData')
+files = dir(path = "data", pattern = "flowsom.2.*", full.names = TRUE)
+
+filesDF = data.frame(filename=files, stringsAsFactors = FALSE)
+
+filesDF$sample = as.numeric(sub("data/flowsom.2.([^.]+)\\..+$", "\\1", filesDF$filename))
+filesDF$cellType = sub("data/flowsom.2.[^.]+.([^.]+)\\..+$", "\\1", filesDF$filename)
+filesDF$cellType = as.factor(filesDF$cellType)
+
+#wb=loadWorkbook("Cytometry_Cryostem_180424.xlsx")
+# df=readWorksheet(wb,sheet="Sheet1",header=TRUE)
+# 
+# metaData = read.xls("Cytometry_Cryostem_180424.xlsx", sheet = 1, as.is = TRUE)
+rownames(metaData) = metaData$Name.of.FCS.files
+
+```
+
+
+
+```{r filesDF, eval=FALSE, echo=TRUE}
+library(flowStats)
+
+sampleN = sampleNames(flowset)
+csvSubset = csvFiles[which(csvFiles$sampleName %in% sampleN & csvFiles$name.of.FCS.files != ""),]
+csvSubset = csvSubset[grep("180402_cohort3_Panel1",csvSubset$path),]
+rownames(csvSubset) = csvSubset$sampleName
+csvSubset$flowsetOrder = 1:nrow(csvSubset)
+csvSubset[sampleN,"name.of.FCS.files"]
+
+rownames(metaData) = metaData$Name.of.FCS.files
+
+tmp = metaData[csvSubset[sampleN,"name.of.FCS.files"],c("Couple.number", "Graft.Type","DONOR...RECIPIENT", "Name.of.FCS.files")]
+tmp2 = tmp[tmp$DONOR...RECIPIENT == 'D',]
+tmp3 = tmp[tmp$DONOR...RECIPIENT == 'R',]
+tmp2$Couple.number = as.character(tmp2$Couple.number)
+tmp3$Couple.number = as.character(tmp3$Couple.number)
+
+rownames(tmp2) = as.character(tmp2$Couple.number)
+rownames(tmp3) = as.character(tmp3$Couple.number)
+
+tmp2[tmp3$Couple.number,"Graft.Type"] = tmp3[tmp3$Couple.number,"Graft.Type"]
+tmp2$Graft.Type[is.na(tmp2$Graft.Type)] = ""
+
+tmp4 = rbind(tmp2, tmp3)
+tmp4 = tmp4[order(tmp4[,2], tmp4[,1]),]
+rownames(csvSubset) = csvSubset$name.of.FCS.files
+csvSubset = csvSubset[tmp4$Name.of.FCS.files,]
+csvSubset$order = 1:nrow(csvSubset)
+rownames(csvSubset) = csvSubset$sampleName
+
+# csvSubset$flowsetOrder = csvSubset[sampleNames(flowset),"order"]
+metaData$Graft.Type
+csvSubset$graftType =  metaData[csvSubset$name.of.FCS.files,"Graft.Type"]
+rownames(csvSubset) = as.character(csvSubset$flowsetOrder)
+
+filesDF$csvSampleName =  csvSubset[as.character(filesDF$sample),"sampleName"]
+filesDF$name.of.FCS.files =  csvSubset[as.character(filesDF$sample),"name.of.FCS.files"]
+filesDF$status1 = metaData[filesDF$"name.of.FCS.files","Status_1"]
+filesDF$status2 = metaData[filesDF$"name.of.FCS.files","Status_2"]
+filesDF$DR = metaData[filesDF$"name.of.FCS.files","DONOR...RECIPIENT"]
+filesDF$dateExpt = metaData[filesDF$"name.of.FCS.files","Date.of.expt"]
+filesDF$GVHDdelayJ90 = metaData[filesDF$"name.of.FCS.files","GVHD.delay.J90"]
+filesDF$age = metaData[filesDF$"name.of.FCS.files","age.at.transplant"]
+filesDF$sex = metaData[filesDF$"name.of.FCS.files","sex"]
+filesDF$sexMM = metaData[filesDF$"name.of.FCS.files","SEX.mismatch"]
+filesDF$hemDisease = metaData[filesDF$"name.of.FCS.files","hematologic.disease"]
+filesDF$CMVstatus = metaData[filesDF$"name.of.FCS.files","CMVStatus"]
+
+filesDF$orgName = NA
+for (idx in 1:nrow(filesDF)) {
+  filesDF$orgName[idx] = description(flowset[[filesDF$sample[idx]]])$GUID
+}
+
+
+# filesDF[filesDF[,"age"]=="#VALUE!","age"]=70
+filesDF[is.na(filesDF[,"age"]),"age"]=70
+filesDF$age = as.numeric(filesDF$age)
+
+filesDF[is.na(filesDF[,"sex"]),"sex"]="N"
+filesDF$sex = as.factor(filesDF$sex)
+
+filesDF[filesDF[,"sexMM"]=="","sexMM"]="N-N"
+filesDF$sexMM = as.factor(filesDF$sexMM)
+
+filesDF[filesDF[,"hemDisease"]=="","hemDisease"]="NA"
+filesDF$hemDisease = as.factor(filesDF$hemDisease)
+
+```
+
+# soms
+```{r, eval=FALSE}
+fpIdxList = which(filesDF$cellType == "Lymphocytes")
+markerList = 4:29
+markerNames = colnames(assignedTypes)[markerList]
+for (fpIdx in fpIdxList[1:length(fpIdxList)]) {
+  load(filesDF[fpIdx, "filename"])
+  # used to figure which markers to use
+  # for(idx in 4:ncol(assignedTypes)){
+  #   ss = 0
+  #   for(idx2 in 4:ncol(assignedTypes)){
+  #     if(sum(assignedTypes[assignedTypes[,idx]==1,idx2])>0)
+  #       ss = ss + 1
+  #     # print(table(assignedTypes[assignedTypes[,idx]==1,idx2]))
+  #   }
+  #   print(paste(idx, ss, colnames(assignedTypes)[idx]))
+  # }
+  clusterVal = rep('Lymphocytes', 400)
+  for(idx in markerList){
+    clusterVal = rep('Lymphocytes', 400)
+    clusterVal[assignedTypes[,idx]==1] = colnames(assignedTypes)[idx]
+    PlotStars(flowSOM.res[[1]], 
+              backgroundValues = clusterVal, 
+              view = 'grid', 
+              main = paste(fpIdx, 
+                           filesDF[fpIdx, "filename"], colnames(assignedTypes)[idx]))
+  }
+  clusterVal = factor(clusterVal)
+  PlotStars(flowSOM.res[[1]], backgroundValues = clusterVal,view = 'tSNE')
+}
+```
+
+```{r, eval=FALSE}
+fpIdxList = which(filesDF$cellType == "Lymphocytes")
+markerList = c(10, 12, 13, 14,22, 18, 19, 20, 21)
+markerNames = colnames(assignedTypes)[markerList]
+  # pdf("grid.som.pdf")
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+  pdf("grid.som.pdf")
+for (fpIdx in fpIdxList[1:length(fpIdxList)]) {
+  load(filesDF[fpIdx, "filename"])
+  # used to figure which markers to use
+  # for(idx in 4:ncol(assignedTypes)){
+  #   ss = 0
+  #   for(idx2 in 4:ncol(assignedTypes)){
+  #     if(sum(assignedTypes[assignedTypes[,idx]==1,idx2])>0)
+  #       ss = ss + 1
+  #     # print(table(assignedTypes[assignedTypes[,idx]==1,idx2]))
+  #   }
+  #   print(paste(idx, ss, colnames(assignedTypes)[idx]))
+  # }
+  clusterVal = rep('Lymphocytes', 400)
+  for(idx in markerList){
+    clusterVal[assignedTypes[,idx]==1] = colnames(assignedTypes)[idx]
+  }
+  clusterVal = factor(clusterVal)
+  PlotStars(flowSOM.res[[1]], backgroundValues = clusterVal,view = 'grid', backgroundColor = grDevices::colorRampPalette(cbPalette),
+            main = paste(fpIdx, 
+                           filesDF[fpIdx, "filename"]))
+}
+  # for(i in 1:100)
+  dev.off()
+```
+
+
+# QC: comparison manual vs. automated cell identification
+
+Cell assignements performed by Claire are compared to automatically identified cells by FlowSOM.
+Input cell type is the starting cell population for the SOM. The cell type referes to the cells under investigation.
+
+Cell types in FlowSOM are identified by having more than 50% of the cells belonging to that cluster also belonging to a given cell type defined by Claire.
+
+E.g. input: CD8Naivelike, cell type: CD8CD95pos => cc=0.94
+
+vs.
+
+input: CD3pos, cell type: CD8CD95pos => cc = 0.15
+
+
+```{r summaryTable, eval=FALSE, echo=TRUE}
+cellType = levels(filesDF$cellType)[26]
+fpIdxList = which(filesDF$cellType == cellType)
+
+# load(filesDF[fpIdxList[1], "filename"])
+
+summaryTable = data.frame(sampleId = numeric(), 
+                          inputCellType = factor(levels = colnames(mappingDF)),
+                          cellType = factor(levels = colnames(mappingDF)), 
+                          status1 = character(),
+                          fsomCounts = numeric(), 
+                          claireCounts = numeric(), 
+                          ratio = numeric(),
+                          rowID = character()
+)
+# loop over input cell types
+for(cellType in levels(filesDF$cellType)){
+  cat(file = stderr(), paste(cellType,"\n"))
+  fpIdxList = which(filesDF$cellType == cellType)
+  # mappingDF holds for a specific input celltype (see filename) a matrix with one row per cell
+  # table(mappingDF$cluster) gives the counts per cluster of the trained SOM
+  # cluster 0 refers to cells that were not in the input data
+  # column all in assignedCounts holds this number of cells from fSOM
+  
+  # loop over samples
+  for (fpIdx in fpIdxList[1:length(fpIdxList)]) {
+    load(filesDF[fpIdx, "filename"])
+    # get the number of cells in clusters that were identified by Claire
+    fsomClusterCounts = rep(0, ncol(mappingDF))
+    for(colIdx in 4:ncol(mappingDF)){
+      fsomClusterCounts[colIdx] =sum(assignedCounts[assignedCounts[, colIdx]>0, 3])
+    }
+    summaryTable = rbind(summaryTable, 
+                         data.frame(sampleId = filesDF[fpIdx, "sample"], 
+                                    inputCellType = cellType,
+                                    cellType = colnames(mappingDF), 
+                                    status1 = filesDF[fpIdx, "status1"], 
+                                    status2 = filesDF[fpIdx, "status2"], 
+                                    DR = filesDF[fpIdx, "DR"], 
+                                    dateExpt = filesDF[fpIdx, "dateExpt"], 
+                                    GVHDdelayJ90 = filesDF[fpIdx, "GVHDdelayJ90"], 
+                                    age = filesDF[fpIdx, "age"], 
+                                    sex = filesDF[fpIdx, "sex"], 
+                                    sexMM = filesDF[fpIdx, "sexMM"], 
+                                    hemDisease = filesDF[fpIdx, "hemDisease"], 
+                                    CMVstatus = filesDF[fpIdx, "CMVstatus"], 
+                                    fsomCounts = colSums(assignedCounts), 
+                                    fsomClusterCounts = fsomClusterCounts,
+                                    claireCounts = colSums(mappingDF), 
+                                    ratio = colSums(assignedCounts) / colSums(mappingDF),
+                                    rowID = filesDF[fpIdx, "name.of.FCS.files"]))
+    
+  }
+}
+
+# csvFiles
+# for (ct in levels(summaryTable$cellType)) {
+#   tab = summaryTable[which(summaryTable$cellType == ct),]
+#   print(ggplot(tab, aes(fsomCounts, claireCounts)) + geom_point() + ggtitle(ct))
+# }
+save(file = "summary.Table.RData", list = c("summaryTable"))
+```
+
+```{r setupPlotDefaults, echo=TRUE, eval=TRUE}
+inputCT = "CD3pos"
+ct = "CD4pos"
+colChoice = "status1"
+shapeChoice =  "DR"
+load(file = "summary.Table.RData")
+```
+
+
+```{r plot, echo=TRUE, fig.height=10, fig.width=10}
+inputPanel(
+  selectInput(
+    "inputCT", label = "input cell type",
+    choices = levels(summaryTable$inputCellType), selected = inputCT
+  ),selectInput(
+    "ct", label = "cell type",
+    choices = levels(summaryTable$cellType), selected = ct
+  ),selectInput(
+    "colChoice", label = "color choice",
+    choices = colnames(summaryTable), selected = colChoice
+  ),selectInput(
+    "shapeChoice", label = "shape choice",
+    choices = colnames(summaryTable)[unlist(lapply(colnames(summaryTable),FUN = function(x){is.factor(summaryTable[,x])}))], selected = shapeChoice
+  )
+)
+
+renderPlotly({
+  ct = input$ct
+  inputCT = input$inputCT
+  colChoice = input$colChoice
+  shapeChoice = input$shapeChoice
+  
+  sumRows = which(summaryTable$cellType == ct &
+                    summaryTable$inputCellType == inputCT)
+  tab = summaryTable[sumRows ,]
+  p = ggplot(tab, aes(fsomCounts, claireCounts)) + 
+    geom_point(
+      aes_string(colour = colChoice, shape = shapeChoice)
+    ) + ggtitle(paste(ct, ": cc = ", cor(tab$fsomCounts,tab$claireCounts))) + 
+    geom_abline(slope = 1, intercept = 0)
+  pp = plotly_build(p)
+  ppp = style(pp, text = tab$sampleId, traces = c(1))
+  cat(file = stderr(), class(ppp))
+  ggplotly(ppp)
+})
+
+```
+
+
+## Clair vs all cell identifies by flowSOM
+
+Here, we select the clusters that have more than 50% of cells that Clair found and take all the cells. The correlation is getting better because we are including more cells, but these cells have not been identified by Claire, and there are still other cells that have been identified by Claire but were in clusters with less than 50% of these cells.
+
+```{r plotClusterFSOMSetup, echo=TRUE}
+load(file = "summary.Table.RData")
+
+```
+
+
+```{r plotClusterFSOM, echo=TRUE, fig.height=10, fig.width=10}
+renderPlotly({
+  ct = input$ct
+  inputCT = input$inputCT
+  colChoice = input$colChoice
+  shapeChoice = input$shapeChoice
+  
+  sumRows = which(summaryTable$cellType == ct &
+                    summaryTable$inputCellType == inputCT)
+  tab = summaryTable[sumRows ,]
+  p = ggplot(tab, aes(fsomClusterCounts, claireCounts)) + 
+    geom_point(
+      aes_string(colour = colChoice, shape = shapeChoice)
+    ) + ggtitle(paste(ct, ": cc = ", cor(tab$fsomClusterCounts,tab$claireCounts))) + 
+    geom_abline(slope = 1, intercept = 0)
+  pp = plotly_build(p)
+  ppp = style(pp, text = tab$sampleId, traces = c(1))
+  cat(file = stderr(), class(ppp))
+  ggplotly(ppp)
+})
+
+```
+
+
+
+# Comparison of cluster medians
+
+We now look at what the SOM has learned. The MST and FlowSOM two ways of presenting this information for a given SOM. Here, want to compare multiple SOMs together and investigate how the medians of the SOMs correspond to the median of maunally defined clusters. 
+
+
+
+```{r medianValues, eval=FALSE, echo=TRUE}
+
+# Here we create the underlying data table
+cellType = levels(filesDF$cellType)[26]
+fpIdxList = which(filesDF$cellType == cellType)
+
+load(filesDF[fpIdxList[1], "filename"])
+
+
+medianValuesTable = data.frame()
+
+for (cellType in levels(filesDF$cellType)) {
+  fpIdxList = which(filesDF$cellType == cellType)
+  cat(file = stderr(), paste(cellType,"\n"))
+  for (fpIdx in fpIdxList[1:length(fpIdxList)]) {
+    load(filesDF[fpIdx, "filename"])
+    # median values of SOM
+    vars = make.names(colnames(flowSOM.res[[1]]$map$medianValues))
+    markerN = vars[1:(length(vars)-1)]
+    tab = data.frame(flowSOM.res[[1]]$map$medianValues)
+    colnames(tab) = vars
+    tab$ClusterNr = 1:400
+    tab$nCellfsom = countDF$all
+    # add columns with cell types assigned based on having >50% of cells belonging to that cluster (compared to Claire)
+    tab = cbind(tab, assignedTypes[,4:ncol(assignedTypes)])
+    
+    # claire's assingment/ median values for all cells from Claire
+    # add one row for each cell type
+    for (cl in colnames(assignedTypes)[4:ncol(assignedTypes)]) {
+      rowNr = nrow(tab) + 1
+      dfData = data.frame(flowSOM.res[[1]]$data)
+      colnames(dfData) = make.names(colnames(dfData))
+      apply(dfData[ mappingDF[, cl],], 2, median)
+      tab[rowNr,] = 0
+      tab[rowNr, cl] = 1
+      tab[rowNr, colnames(dfData)] = apply(dfData[ mappingDF[, cl],], 2, median)
+    }
+    
+    tab$sampleId = filesDF[fpIdx, "sample"]
+    tab$inputCellType = cellType
+    # tab$cellType = colnames(mappingDF) 
+    tab$status1 = filesDF[fpIdx, "status1"]
+    tab$status2 = filesDF[fpIdx, "status2"] 
+    tab$DR = filesDF[fpIdx, "DR"] 
+    tab$dateExpt = filesDF[fpIdx, "dateExpt"] 
+    tab$GVHDdelayJ90 = filesDF[fpIdx, "GVHDdelayJ90"] 
+    tab$age = filesDF[fpIdx, "age"]
+    tab$sex = filesDF[fpIdx, "sex"]
+    tab$sexMM = filesDF[fpIdx, "sexMM"] 
+    tab$hemDisease = filesDF[fpIdx, "hemDisease"]
+    tab$CMVstatus = filesDF[fpIdx, "CMVstatus"]
+    
+    medianValuesTable = rbind(medianValuesTable, 
+                              tab)
+  }
+}
+
+# csvFiles
+# for (ct in levels(summaryTable$cellType)) {
+#   tab = summaryTable[which(summaryTable$cellType == ct),]
+#   print(ggplot(tab, aes(fsomCounts, claireCounts)) + geom_point() + ggtitle(ct))
+# }
+save(file = "medianValues.Table.RData", list = c("medianValuesTable", "markerN"))
+
+```
+
+
+
+## Medians in 2D space
+
+The sample ratio defines how many medians should be sampled from the overall number to reduce the display speed. Initially to set up the parameters this should be a low ratio (0.1) and can be set to 1 (everything) once the parameters are set.
+
+We  can change the plot order to see if e.g. background points are hidden underneath the flowSOM points.
+
+Individual samples can be removed / added.
+
+```{r prepareData, echo=TRUE}
+load(file = "medianValues.Table.RData")
+pointSize = 1
+tmp = data.frame(sampleId = summaryTable$sampleId, rowID = summaryTable$rowID)
+tmp = tmp[!duplicated(tmp),]
+rownames(tmp) = tmp$sampleId
+medianValuesTable$rowID = tmp[as.character(medianValuesTable$sampleId), "rowID"]
+
+# function to create the outTab data frame that is used for plotting. Somehow I had difficulties reusing the data from within a reactive (should have probably used <<- or something like that...)
+prepareData <- function(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio){
+  # sampleIds = c("R34", "R22")
+  sampIdx = medianValuesTable$rowID %in% sampleIds
+  
+  levelOrd <<- strsplit(InlevelOrd,'-')[[1]]
+  
+  allIdx <<- which(medianValuesTable[,"inputCellType"] == inputCT & sampIdx)
+  cellIdx <<- which(medianValuesTable[,"inputCellType"] == inputCT & sampIdx & medianValuesTable[,cellT] == 1 & medianValuesTable[,"ClusterNr"] > 0)
+  clairIdx <<- which(medianValuesTable[,"inputCellType"] == inputCT & sampIdx & medianValuesTable[,cellT] == 1 & medianValuesTable[,"ClusterNr"] == 0)
+  allIdx <<- allIdx[!allIdx %in% cellIdx]
+  allIdx <<- allIdx[!allIdx %in% clairIdx]
+  
+  sampleSize = length(allIdx) * sampleRatio
+  nSpec = sampleSize
+  nSamp = min(max(1,nSpec*sampleRatio), nSpec)
+  dataTab = medianValuesTable[allIdx, ]
+  dataTab = dataTab[sample(length(allIdx),nSamp),]
+  nSpec = length(cellIdx)
+  nSamp = min(max(1,nSpec*sampleRatio), nSpec)
+  dataSpec = medianValuesTable[cellIdx, ]
+  dataSpec = dataSpec[sample(nSpec, nSamp),]
+  nSpec = length(clairIdx)
+  nSamp = min(max(1,nSpec*sampleRatio), nSpec)
+  dataClair = medianValuesTable[cellIdx, ]
+  dataClair = dataClair[sample(nSpec, nSamp),]
+  
+  dataTab$col = 'background'
+  dataSpec$col = 'flowSOM'
+  dataClair$col = 'Claire'
+  
+  outTab = rbind(dataTab, dataSpec, dataClair)
+  outTab$col = factor(outTab$col, levels = levelOrd)
+  return(outTab)
+}
+```
+
+```{r plot2dSetupDefaultValues, eval=TRUE, echo=TRUE}
+
+xaxis = "CD3"
+yaxis = "CD4"
+cellT = ct
+sampleRatio = 1.0
+sampleIds = levels(as.factor(tmp[medianValuesTable$sampleId, "rowID"]))
+InlevelOrd = 'background-flowSOM-Claire'
+require(shinyjqui)
+```
+
+### UMAP cell types
+
+select the cell types that visualize their location on the umap.
+
+** Be aware that the sample ratio is in effect for the line plot/Clustering and others.
+
+```{r plot2d, echo=TRUE, fig.height=10, fig.width=10}
+inputPanel(
+  selectInput(
+    "xaxis", label = "X axis",
+    choices = markerN, selected = xaxis
+  ),
+  selectInput(
+    "yaxis", label = "Y axis",
+    choices = markerN, selected = yaxis
+  ), selectInput(
+    "sampleRatio", label = "sampling ratio",
+    choices = seq(.1,1.0,0.1), selected = sampleRatio
+  ), selectInput(
+    "sampleIds", label = "select samples",
+    choices = sort(levels(as.factor(tmp[medianValuesTable$sampleId, "rowID"]))),
+    multiple = TRUE,
+    selected = sampleIds
+  ),
+  selectInput('levelOrd', label = 'Order to plot', 
+              choices = c('background-flowSOM-Claire', 'background-Claire-flowSOM', 'flowSOM-background-Claire'),
+              selected = InlevelOrd
+  )
+)
+
+renderPlotly({
+  
+  xaxis = input$xaxis
+  yaxis = input$yaxis
+  cellT <<- input$ct
+  inputCT <<- input$inputCT
+  sampleRatio <<- as.numeric(input$sampleRatio )
+  sampleIds <<- input$sampleIds
+  InlevelOrd <<- input$levelOrd
+  # sampleIds = c("R34", "R22")
+  
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  
+  p <- ggplot(outTab, aes_string(xaxis, yaxis)) + 
+    geom_point(aes_string(colour = "col"), size = pointSize) +
+    ggtitle(paste("Number of points: background:", length(allIdx), " fSOM:", length(cellIdx), " claire:", length(clairIdx) ))
+  pp = plotly_build(p)
+  ppp = style(pp, text = outTab$rowID, traces = c(1, 2,3))
+  ggplotly(ppp)
+  
+})
+
+```
+
+## line plot
+
+```{r linePlot2, fig.width=11.7, fig.height=8.27,  message=FALSE, warning=FALSE, echo=TRUE, eval=TRUE}
+
+renderPlotly({
+  xaxis = input$xaxis
+  yaxis = input$yaxis
+  cellT = input$ct
+  inputCT = input$inputCT
+  sampleRatio = as.numeric(input$sampleRatio )
+  sampleIds = input$sampleIds
+  InlevelOrd = input$levelOrd
+  
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  require(reshape2)
+  outTab$ClusterNrRowID = paste(outTab$ClusterNr, outTab$rowID, sep = "-")
+  mV = outTab[, c(markerN, "col", "ClusterNrRowID")]
+  # mV$ClusterNr = as.factor(mV$ClusterNr)
+  mVlong <- melt(mV,  varying = markerN,
+                 direction = "long")
+  mVlong$col = factor(mVlong$col)
+  gg = ggplot(mVlong[mVlong$col == 'background',], aes(variable, value, group = ClusterNrRowID) ) + geom_line(colour = 'gray') +
+    geom_line(data = mVlong[mVlong$col == 'flowSOM',], aes(variable, value, group = ClusterNrRowID), colour = 'green')  +
+    geom_line(data = mVlong[mVlong$col == 'Claire',], aes(variable, value, group = ClusterNrRowID), colour = 'red' )  + 
+    ggtitle(paste("input cluster: ", inputCT, " cell type:", cellT)) 
+  
+  gg
+})
+
+
+
+```
+
+
+
+## PCA (doesn't seem to be as expected)
+
+The reason for this is that the PCA only looks at the variance without taking into account the distances between different points.
+
+```{r, eval=FALSE, echo=TRUE}
+pc1 = "PC1"
+pc2 = 'PC2'
+
+
+myPCA = prcomp(outTab[, markerN], scale. = F, center = F)
+pcaProj = data.frame(myPCA$x)
+p <- ggplot(pcaProj, aes_string(pc1, pc2)) +
+  geom_point( colour = as.numeric(outTab$col))
+p
+
+
+```
+
+## MST
+
+The MST is really expensive to calculate and therefore not a good approach here.
+
+```{r, eval=FALSE, echo=TRUE, fig.height=10, fig.width=10}
+c = 1
+require(igraph)
+
+renderPlot({
+  
+  xaxis = input$xaxis
+  yaxis = input$yaxis
+  cellT = input$ct
+  inputCT = input$inputCT
+  sampleRatio = as.numeric(input$sampleRatio )
+  sampleIds = input$sampleIds
+  InlevelOrd = input$levelOrd
+  
+  outTab <-  prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  
+  adjacency <- stats::dist(outTab[, markerN], method = "euclidean")
+  # 
+  #   hc = hclust(adjacency)
+  #   library(pheatmap); library("RColorBrewer")
+  # pheatmap(adjacency)
+  #  
+  #    fullGraph <- igraph::graph.adjacency(as.matrix(adjacency),
+  #                                       mode = "undirected",
+  #                                       weighted = TRUE)
+  #  graph <- igraph::minimum.spanning.tree(fullGraph)
+  #  lLen <- igraph::layout.kamada.kawai(graph)
+  #  # 
+  #  #     nodes = as.data.frame(V(graph))
+  #  #   edges = data.frame(E(graph))
+  #  #   visIgraph(graph)
+  #  
+  #  colList = c("red", "green", "blue")
+  #  c = c + 1
+  #  
+  #  igraph::plot.igraph(
+  #    graph,
+  #    layout = lLen,
+  #    vertex.size = 1.9,
+  #    vertex.label = NA,
+  #    main = paste("MST1", c),
+  #    edge.lty = 1,
+  #    # mark.groups=background$groups,
+  #    mark.col = outTab$col,
+  #    mark.border = 2,
+  #    vertex.color = colList[as.numeric(outTab$col)]
+  #  )
+})
+
+
+```
+
+## UMAP
+
+```{r umapParameters, echo=TRUE, eval=FALSE}
+n_neighbors = 15
+n_components = 10
+n_epochs = 10
+alpha = 1
+init = 'spectral'
+min_dist = 0.1
+set_op_mix_ratio = 1
+local_connectivity = 1
+bandwidth = 1
+gamma = 1
+negative_sample_rate = 5
+metric = "euclidean"
+spread = 1
+UMAP1 = 'UMAP1'
+UMAP2 = 'UMAP2'
+require(umapr)
+require(tidyverse)
+
+```
+
+
+```{r umapPlot, echo=TRUE}
+
+
+Sys.setenv(KMP_DUPLICATE_LIB_OK = "TRUE")
+
+inputPanel(
+  selectInput(
+    "randSeed", label = "random seed",
+    choices = c(1:100), selected = "1"
+  ),
+  selectInput(
+    "n_neighbors", label = "N Neighbors",
+    choices = c(2:100), selected = "15"
+  ),
+  selectInput(
+    "n_components", label = "N components",
+    choices = c(2:20), selected = "20"
+  ),
+  selectInput(
+    "metric", label = "metric",
+    choices = c("euclidean", "manhattan", "chebyshev", "minkowski", 
+                "canberra", "braycurtis", "mahalanobis", "wminkowski", 
+                "seuclidean", "cosine", "correlation", "haversine", 
+                "hamming", "jaccard", "dice", "russelrao", "kulsinski", 
+                "rogerstanimoto", "sokalmichener", "sokalsneath", 
+                "yule"), selected = "euclidean"
+  ),
+  selectInput(
+    "n_epochs", label = "n_epochs",
+    choices = c(1:30), selected = "1"
+  ),
+  selectInput(
+    "alpha", label = "alpha",
+    choices = seq(0.1,10,0.1), selected = "1.0"
+  ),
+  selectInput(
+    "init", label = "init",
+    choices = c('spectral', 'random'), selected = 'spectral'
+  ),
+  selectInput(
+    "spread", label = "spread",
+    choices = c(0:10), selected = "1"
+  ),
+  selectInput(
+    "min_dist", label = "min_dist",
+    choices = seq(0.05, 0.5, 0.01), selected = "0.1"
+  ),
+  selectInput(
+    "set_op_mix_ratio", label = "set_op_mix_ratio",
+    choices = seq(0, 1, 0.1), selected = "1"
+  ),
+  selectInput(
+    "local_connectivity", label = "local_connectivity",
+    choices = 1:length(markerN), selected = "1"
+  ),
+  selectInput(
+    "bandwidth", label = "bandwidth",
+    choices = c(1:20), selected = "1"
+  ),
+  selectInput(
+    "gamma", label = "gamma",
+    choices = seq(0,10,0.2), selected = "1"
+  ),
+  selectInput(
+    "negative_sample_rate", label = "negative_sample_rate",
+    choices = c(1:50), selected = "5"
+  ),
+  selectInput(
+    "umap1", label = "dim 1 to plot",
+    choices = paste0("UMAP", 1:20), selected = "UMAP1"
+  ),
+  selectInput(
+    "umap2", label = "dim 2 to plot",
+    choices = paste0("UMAP", 1:20), selected = "UMAP2"
+  )
+  
+)
+
+
+
+renderPlot({
+  set.seed(input$randSeed)
+  xaxis = input$xaxis
+  yaxis = input$yaxis
+  cellT = input$ct
+  inputCT = input$inputCT
+  sampleRatio = as.numeric(input$sampleRatio )
+  sampleIds = input$sampleIds
+  InlevelOrd = input$levelOrd
+  UMAP1 = input$umap1
+  UMAP2 = input$umap2
+  
+  n_neighbors = as.numeric(input$n_neighbors)
+  n_components = as.numeric(input$n_components)
+  n_epochs = as.numeric(input$n_epochs)
+  alpha = as.numeric(input$alpha)
+  init = input$init
+  min_dist = as.numeric(input$min_dist)
+  set_op_mix_ratio = as.numeric(input$set_op_mix_ratio)
+  local_connectivity = as.numeric(input$local_connectivity)
+  bandwidth = as.numeric(input$bandwidth)
+  gamma = as.numeric(input$gamma)
+  negative_sample_rate = as.numeric(input$negative_sample_rate)
+  metric = input$metric
+  spread = as.numeric(input$spread)
+  
+  
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  compCases = complete.cases(outTab[, markerN])
+  umapData = outTab[compCases,markerN]
+  embedding <<- umap(umapData, n_neighbors = n_neighbors, 
+                     n_components = n_components, n_epochs = n_epochs,
+                     alpha = alpha, 
+                     init = init,
+                     spread = spread,
+                     min_dist = min_dist,
+                     set_op_mix_ratio = set_op_mix_ratio,
+                     local_connectivity = local_connectivity,
+                     bandwidth = bandwidth,
+                     gamma = gamma,
+                     negative_sample_rate = negative_sample_rate,
+                     metric = metric
+  )
+  
+  
+  # outTab$UMAP1 = embedding$UMAP1
+  # outTab$UMAP2 = embedding$UMAP2
+  embedding %>% 
+    mutate(col = outTab[compCases, "col"]) %>%
+    ggplot( aes_string(UMAP1, UMAP2, color = "col")) + geom_point(size = pointSize)
+  
+})
+
+```
+
+
+```{r umapCelltypesDefaults, echo=TRUE}
+
+colCellTypes  = c( "CD3pos", "CD4pos")
+
+```
+
+
+```{r umapCelltypes, echo=TRUE}
+
+
+inputPanel(
+  selectInput(
+    "colorCT", label = "cell types to color",
+    choices = levels(summaryTable$cellType)[-1], selected = "CCR6negCXCR3neg",
+    multiple = TRUE
+  )
+)
+
+
+renderPlot({
+  set.seed(input$randSeed)
+  xaxis = input$xaxis
+  yaxis = input$yaxis
+  cellT = input$ct
+  inputCT = input$inputCT
+  sampleRatio = as.numeric(input$sampleRatio )
+  sampleIds = input$sampleIds
+  InlevelOrd = input$levelOrd
+  UMAP1 = input$umap1
+  UMAP2 = input$umap2
+  colCellTypes = input$colorCT
+  
+  n_neighbors = as.numeric(input$n_neighbors)
+  n_components = as.numeric(input$n_components)
+  n_epochs = as.numeric(input$n_epochs)
+  alpha = as.numeric(input$alpha)
+  init = input$init
+  min_dist = as.numeric(input$min_dist)
+  set_op_mix_ratio = as.numeric(input$set_op_mix_ratio)
+  local_connectivity = as.numeric(input$local_connectivity)
+  bandwidth = as.numeric(input$bandwidth)
+  gamma = as.numeric(input$gamma)
+  negative_sample_rate = as.numeric(input$negative_sample_rate)
+  metric = input$metric
+  spread = as.numeric(input$spread)
+  
+  
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  
+  
+  outTab$col = "bg"
+  for (cc in colCellTypes) {
+    outTab$col[outTab[, cc] > 0] = cc
+  }
+  outTab$col = factor(outTab$col)
+  emb = embedding[outTab$ClusterNr > 0,]
+  outT = outTab[outTab$ClusterNr > 0,]
+  
+  emb %>% 
+    mutate(col = outT$col) %>%
+    ggplot( aes_string(UMAP1, UMAP2, color = "col")) + geom_point(size = pointSize)
+  
+})
+
+
+```
+
+
+# C50
+
+I am still not happy with neither the line plots (they are not showing a clear enough separation between cell types) and the Umap clustering. Though in the Umap clustering it is possible to see some different clusters the number of clusters is not sufficient to effectively show different cell cell types based on median values.
+
+What comes to mind now is to apply a dicision tree and some clustering for supervised / unsupervised analysis of the median values.
+
+This might be used to come up with an alternative gating strategy...
+
+Here, we compare the results from a decision tree. The data is split in training (~60%) and test (rest) and the results from the test are shown. We look at the predicions for all samples as well as the samples from donors and recipients analyzed serately.
+
+The clustering is performed on the median vectors. I.e. the trained cluster from the SOM (without Claire's median values.) We don't know the number of cells at this point.
+
+We show the split between donor and recipient because this is supposed to be the biggest source of variation.
+
+Be aware that the ratio defined above also impacts the number of clusters available here.
+
+The goal here is to validate that we can potentially learn how to classify the cells automatically.
+
+
+```{r c50defaults, echo=TRUE}
+require(C50)
+require(ggplot2)
+c50CT  = c("CD3pos", "CD4pos")
+
+```
+
+
+```{r c50, echo=TRUE}
+
+
+inputPanel(
+  selectInput(
+    "c50CT", label = "cell types to color",
+    choices = levels(summaryTable$cellType)[-1], selected = c("CD8pos", "CD4pos"),
+    multiple = TRUE
+  ),
+  selectInput(
+    "randSeed2", label = "random seed",
+    choices = c(1:100), selected = "1"
+  ),
+  checkboxInput("doCalc", "caluclate", FALSE)
+)
+
+renderPrint({
+  
+  if (!input$doCalc) {
+    return("waiting for check box")
+  }
+  
+  set.seed(input$randSeed2)
+  c50CT = input$c50CT
+  
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  centers = outTab[, markerN]
+  vars = colnames(centers)
+  outTab$col = "bg"
+  for (cc in c50CT) {
+    outTab$col[outTab[, cc] > 0] = cc
+  }
+  outTab$col = factor(outTab$col)
+  cat(file = stderr(), c50CT)
+  centers$type = outTab$col
+  
+  # split in train/test
+  donorSamples = sampleIds[starts_with("D", vars = sampleIds)]
+  recpSamples = sampleIds[starts_with("R", vars = sampleIds)]
+  
+  print('all')
+  usedSampleIds = sampleIds
+  trainingSamples = sample(usedSampleIds,0.66*length(usedSampleIds))
+  testSamples = usedSampleIds[!usedSampleIds %in% trainingSamples]
+  trainIdx = which(outTab$rowID %in% trainingSamples)
+  testIdx = which(outTab$rowID %in% testSamples)
+  
+  model = C50::C5.0(formula(paste("type ~ ", paste(vars, collapse = " + "))) , 
+                    data=centers[trainIdx, ], 
+                    trials = 100, 
+                    control = C5.0Control(winnow = F, minCases = 1, earlyStopping = T)
+  )
+  
+  # print(summary(model))
+  predictions = predict(model, centers[testIdx,])
+  print(table(predictions, centers[testIdx,"type"]))
+  predic = predict(model, centers[testIdx,], type = "prob")
+  mcRoc = multiclass.roc(centers[testIdx,"type"], apply(predic, 1, function(row) which.max(row)))
+  print(mcRoc$auc)
+  
+  
+  print("")
+  print("")
+  print('donors')
+  usedSampleIds = donorSamples
+  trainingSamples = sample(usedSampleIds,0.66*length(usedSampleIds))
+  testSamples = usedSampleIds[!usedSampleIds %in% trainingSamples]
+  trainIdx = which(outTab$rowID %in% trainingSamples)
+  testIdx = which(outTab$rowID %in% testSamples)
+  
+  model = C50::C5.0(formula(paste("type ~ ", paste(vars, collapse = " + "))) , 
+                    data=centers[trainIdx, ], 
+                    trials = 100, 
+                    control = C5.0Control(winnow = F, minCases = 1, earlyStopping = T)
+  )
+  
+  # print(summary(model))
+  predictions = predict(model, centers[testIdx,])
+  print(table(predictions, centers[testIdx,"type"]))
+  predic = predict(model, centers[testIdx,], type = "prob")
+  mcRoc = multiclass.roc(centers[testIdx,"type"], apply(predic, 1, function(row) which.max(row)))
+  print(mcRoc$auc)
+  
+  print("")
+  print("")
+  print('recipients')
+  usedSampleIds = recpSamples
+  trainingSamples = sample(usedSampleIds,0.66*length(usedSampleIds))
+  testSamples = usedSampleIds[!usedSampleIds %in% trainingSamples]
+  trainIdx = which(outTab$rowID %in% trainingSamples)
+  testIdx = which(outTab$rowID %in% testSamples)
+  
+  model = C50::C5.0(formula(paste("type ~ ", paste(vars, collapse = " + "))) , 
+                    data = centers[trainIdx, ], 
+                    trials = 100, 
+                    control = C5.0Control(winnow = F, minCases = 1, earlyStopping = T)
+  )
+  
+  # print(summary(model))
+  predictions = predict(model, centers[testIdx,])
+  print(table(predictions, centers[testIdx,"type"]))
+  
+  
+  predic = predict(model, centers[testIdx,], type = "prob")
+  mcRoc = multiclass.roc(centers[testIdx,"type"], apply(predic, 1, function(row) which.max(row)))
+  print(mcRoc$auc)
+})
+
+```
+
+# predictions
+
+we are finally going to predict a phenotype based on the counts of clusters. Since this is a machine learning task we are going to split the data into training and test data based on the patient ids.
+
+```{r datasplit}
+inputCT = c("Lymphocytes", "CD3pos", "CD4pos", "CD8pos", "SingleCellsII" )
+sampleRatio = 1
+outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+
+clusterTab = outTab[outTab$ClusterNr > 0 & outTab$nCellfsom > 0, ]
+centers = clusterTab[clusterTab$ClusterNr > 0 & clusterTab$nCellfsom > 0, markerN]
+vars = colnames(centers)
+clusterTab$col = "bg"
+for (cc in c50CT) {
+  clusterTab$col[clusterTab[, cc] > 0] = cc
+}
+clusterTab$col = factor(clusterTab$col)
+cat(file = stderr(), c50CT)
+centers$type = clusterTab[,"col"]
+
+# donor/receptor information. We can use those instead of sampleIds (all samples) to restrict to a subset of samples
+donorSamples = sampleIds[starts_with("D", vars = sampleIds)]
+recpSamples = sampleIds[starts_with("R", vars = sampleIds)]
+
+# split in train/test
+usedSampleIds = sampleIds
+trainingSamples = sample(usedSampleIds,0.66*length(usedSampleIds))
+testSamples = usedSampleIds[!usedSampleIds %in% trainingSamples]
+trainIdx = which(clusterTab$rowID %in% trainingSamples)
+testIdx = which(clusterTab$rowID %in% testSamples)
+
+
+```
+
+
+## dendrogram grouping
+
+based on a dendrogram we are traversing the dendrogram and using each branch as a group to 
+
+### Can we identify differences in cell populations in recipients compared to their respective donors
+
+```{r parallel, echo=TRUE}
+library(fastcluster)
+library(data.table)
+library(edgeR)
+require(reshape)
+
+library(foreach)
+library(doParallel)
+
+cores = detectCores()
+cl <- makeCluster(cores[1] - 1)
+registerDoParallel(cl)
+
+
+# stopCluster(cl)
+```
+
+```{r helperFunc, echo=TRUE}
+
+# outTab table with cell counts per cluster and vector with row ids, colo inputcell type etc.
+# c50CT = "CD4pos" "CD8pos"
+# markerN = markers to be used for the clustering
+# parallelized
+# returns count of cells per "gene" per cut
+countsPerCut <- function(outTab, c50CT, markerN, inputCT, nClusterLayers){
+  clusterTab = outTab[outTab$ClusterNr > 0 & outTab$nCellfsom > 0, ]
+  clusterTab$col = "bg"
+  for (cc in c50CT) {
+    clusterTab$col[clusterTab[, cc] > 0] = cc
+  }
+  clusterTab$col = factor(clusterTab$col)
+  
+  # cluster 
+  # adjacency <- stats::dist(clusterTab[testIdx, markerN], method = "euclidean")
+  set.seed(1)
+  cat(file = stderr(), paste(inputCT, " distance:", "\n"))
+  adjacency <- stats::dist(clusterTab[, markerN], method = "euclidean")
+  cat(file = stderr(), paste(inputCT, " hclust:", "\n"))
+  hc = fastcluster::hclust(adjacency)
+  
+  #check that we have 
+  # http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/selectNodes.R
+  # plot(hc$height)
+  
+  
+  # the rownames are not used with data.table
+  clusterTab$rn = rownames(clusterTab)
+  dt <- data.table(clusterTab)
+  setindexv(dt, cols=list("rowID","rn"))
+  
+  countTable = data.table()
+  # nClusterLayers = (length(hc$height)/length(levels(dt$rowID)))*30
+  cat(file = stderr(), paste(inputCT, " loop:", "\n"))
+  countTable <- foreach(k  = 1: nClusterLayers, .combine = rbind) %dopar% {
+    require(data.table)
+    require(stats)
+    require(tidyverse)
+    cat(file = stderr(), paste(inputCT, " cutTree:",k," of ", round(nClusterLayers-1), "\n"))
+    # cut the tree at all positions ct is the current cut
+    ct = cutree(hc, k = k)
+    # table(ct)
+    # length(names(ct[ct==1]))
+    tmpTable = data.table()
+    for (grp in 1:k){
+      # count all cells of all clusters in a split/cut of the tree per patient
+      tmpTable = rbind(tmpTable, 
+                       dt[rn %in% names(ct[ct==grp]), 
+                          list(countSum=sum(nCellfsom), clGrp = grp, cut =k ),
+                          by=rowID])
+      
+    }
+    tmpTable
+  }
+  # for (k  in 1: nClusterLayers){
+  #   cat(file = stderr(), paste(inputCT, " cutTree:",k," of ", round(nClusterLayers-1), "\n"))
+  #   # cut the tree at all positions ct is the current cut
+  #   ct = cutree(hc, k = k)
+  #   # table(ct)
+  #   # length(names(ct[ct==1]))
+  #   tmpTable = data.table()
+  #   for (grp in 1:k){
+  #     # count all cells of all clusters in a split/cut of the tree per patient
+  #     tmpTable = rbind(tmpTable, 
+  #                      dt[rn %in% names(ct[ct==grp]), 
+  #                         list(countSum=sum(nCellfsom), clGrp = grp, cut =k ),
+  #                         by=rowID])
+  #     
+  #   }
+  #   countTable = rbind(countTable, tmpTable)
+  # }
+  
+  return(countTable)
+}
+
+# Calculate different p-values
+# normalized
+getMinPValues <- function(countTable, nClusterLayers, inputCT, metaData){
+  setindex(countTable, cut)
+  k = 2
+  # for (k  in 1: nClusterLayers){
+  minPValues <- foreach(k  = 1:nClusterLayers, .combine = rbind) %dopar% {
+    require(edgeR)
+    require(stats)
+    require(data.table)
+    
+    # will first get the count matrix by filtering for a given cut
+    # each cut groups all cells in different node sets
+    countsLong = countTable[cut == k,]
+    if(nrow(countsLong) == 0) return(NULL)
+    # we can now collect each sample (rowID) the number of cells contained in each group
+    # each group is then similar to a gene
+    # when dividing by the row sum we are normalizing to the input population. That can be either the
+    # lymphocite population or CD4, etc.
+    counts = dcast(countsLong, rowID ~ clGrp, value.var = 'countSum', fun.aggregate = sum)
+    counts[is.na(counts)] = 0
+    
+    # push the data into an edgeR structure
+    Counts = t(counts[,-1])
+    
+    # filter rows with less than 40% of samples represented
+    rmCol = c()
+    for (id in 1:nrow(Counts) ) {
+      if (sum(Counts[id,] > 0)/ncol(Counts) < 0.4)
+        rmCol = c(rmCol, id)
+    }
+    if ( !is.null(rmCol) ) {
+      Counts = as.matrix(Counts[-rmCol, ])
+    }
+    if ( ncol(Counts) == 1 )
+      Counts = t(Counts)
+    if ( nrow(Counts) < 1 )
+      next()
+    colnames(Counts) = as.character(counts[,"rowID"])
+    group = data.table(dr = metaData[colnames(Counts), "DONOR...RECIPIENT"],
+                       sample = as.factor(metaData[colnames(Counts), "Couple.number"]),
+                       status = metaData[colnames(Counts), "Status_1"]
+    )
+    rownames(group) = metaData[colnames(Counts), "Name.of.FCS.files"]
+    
+    
+    # normalize data and prepare for paired t-test
+    countsNorm = counts[,-1]
+    if(class(countsNorm)[1] == "numeric"){
+      countsNorm = data.frame(countsNorm)
+    }
+    rownames(countsNorm) = counts[,1]
+    #normalization
+    countsNorm = as.data.frame(apply(countsNorm, 2, function(x) {x/sum(x)*k}))
+    countsNorm$dr = group$dr
+    countsNorm$sample = group$sample
+    
+    # perform paired t-test
+    tTestResults = rep(1,k)
+    wcResult = rep(1,k)
+    for (k1 in 1 : k){
+      cN = countsNorm[,c(k1, k+1, k+2)]
+      cNw = reshape(cN, idvar="sample", timevar = c("dr"), direction = "wide")
+      cNw = cNw[complete.cases(cNw),]
+      colnames(cNw) = c("sample", "D", "R")
+      # t-test
+      tt = t.test(cNw$D,cNw$R, paired = TRUE)
+      tTestResults[k1] = tt$p.value
+      # wilcox test
+      wcLess = wilcox.test(cNw$D,cNw$R, paired = TRUE, alternative = "less")
+      wcGreater = wilcox.test(cNw$D,cNw$R, paired = TRUE, alternative = "greater")
+      wcResult[k1] = min(wcGreater$p.value, wcLess$p.value)
+    }
+    # normalization done within DGE/EdgeR
+    dgList <- DGEList(counts = Counts, 
+                      samples = as.character(counts[,"rowID"]), 
+                      genes = paste0("cluster",1:(k-length(rmCol))),
+                      group = as.factor(group$dr)
+    )
+    # no filtering applied
+    # just normalization (which one to use is open, we try first with TMM (Trimmed mean of M-values))
+    dgList <- calcNormFactors(dgList, method="none")
+    # for development: inter sample relationships: using multidimensional scaling
+    # plotMDS(dgList)
+    
+    # setup of model
+    model = model.matrix(data=group, ~ dr )
+    
+    dgList <- estimateGLMCommonDisp(dgList, design=model)
+    # dgList <- estimateGLMTrendedDisp(dgList, design=model)
+    # dgList <- estimateGLMTagwiseDisp(dgList, design=model)
+    # # plotBCV(dgList)
+    
+    fit <- glmFit(dgList, model)
+    lrt <- glmLRT(fit)
+    edgeR_result <- topTags(lrt)
+    tmppVal = data.table(nCut=k, minTTest=min(tTestResults, na.rm = TRUE), minWilcox=min(wcResult, na.rm = TRUE), minPValue=min(edgeR_result$table$PValue), inputCT=inputCT)
+    # minPValues = rbind(minPValues,tmppVal )
+  }
+  
+}
+
+```
+
+```{r helperFuncObjective, echo=TRUE}
+#clustering facted by Claire's assignment
+
+# outTab table with cell counts per cell and vector with row ids, colo inputcell type etc.
+# c50CT = "CD4pos" "CD8pos"
+# markerN = markers to be used for the clustering
+countsPerCutObjective <- function(outTab, c50CT, markerN, inputCT, nClusterLayers){
+  clusterTab = outTab[outTab$ClusterNr > 0 & outTab$nCellfsom > 0, ]
+  clusterTab$col = "bg"
+  for (cc in c50CT) {
+    clusterTab$col[clusterTab[, cc] > 0] = cc
+  }
+  clusterTab$col = factor(clusterTab$col)
+  
+  # cluster 
+  # adjacency <- stats::dist(clusterTab[testIdx, markerN], method = "euclidean")
+  set.seed(1)
+  cat(file = stderr(), paste(inputCT, " distance:", "\n"))
+  adjacency <- stats::dist(clusterTab[, cellTypes], method = "euclidean")
+  cat(file = stderr(), paste(inputCT, " hclust:", "\n"))
+  hc = fastcluster::hclust(adjacency)
+  
+  cd4Rows=rownames(clusterTab[clusterTab$CD4pos==1,])
+  cd4Len = length(cd4Rows)
+  #check that we have 
+  # http://faculty.ucr.edu/~tgirke/Documents/R_BioCond/My_R_Scripts/selectNodes.R
+  # plot(hc$height)
+  
+  
+  # the rownames are not used with data.table
+  clusterTab$rn = rownames(clusterTab)
+  dt <- data.table(clusterTab)
+  setindexv(dt, cols=list("rowID","rn"))
+  
+  countTable = data.table()
+  # nClusterLayers = (length(hc$height)/length(levels(dt$rowID)))*30
+  cat(file = stderr(), paste(inputCT, " loop:", "\n"))
+  countTable <- foreach(k  = 1: nClusterLayers, .combine = rbind) %dopar% {
+    require(data.table)
+    require(stats)
+    require(tidyverse)
+    cat(file = stderr(), paste(inputCT, " cutTree:",k," of ", round(nClusterLayers-1), "\n"))
+    # cut the tree at all positions ct is the current cut
+    ct = cutree(hc, k = k)
+    # table(ct)
+    # length(names(ct[ct==1]))
+    tmpTable = data.table()
+    for (grp in 1:k){
+      # count all cells of all clusters in a split/cut of the tree per patient
+      
+      t1 = dt[rn %in% names(ct[ct==grp]), 
+              list(countSum=sum(nCellfsom), clGrp = grp, cut =k ),
+              by=rowID]
+      t1$rowID = as.character(t1$rowID)
+      t1 = t1[order(t1$rowID), ]
+      
+      t2 = dt[,list(countSum=sum(nCellfsom), clGrp = grp, cut =k ),
+              by=rowID]
+      t2$rowID = as.character(t2$rowID)
+      t2 = t2[order(t2$rowID), ]
+      t1$orgSumt = t1$countSum
+      t1$countSum = t1$countSum / t2$countSum
+      t1$cd4Perc = sum(names(ct[ct==grp]) %in% cd4Rows)/cd4Len
+      t1$cd3Count = t2$countSum
+      tmpTable = rbind(tmpTable, 
+                       t1)
+      # save(file="cd3-cd4.tmpTable.Rdata", list = c("tmpTable", "t1", "t2", "dt", "hc", "ct"))
+    }
+    tmpTable
+  }
+  # for (k  in 1: nClusterLayers){
+  #   cat(file = stderr(), paste(inputCT, " cutTree:",k," of ", round(nClusterLayers-1), "\n"))
+  #   # cut the tree at all positions ct is the current cut
+  #   ct = cutree(hc, k = k)
+  #   # table(ct)
+  #   # length(names(ct[ct==1]))
+  #   tmpTable = data.table()
+  #   for (grp in 1:k){
+  #     # count all cells of all clusters in a split/cut of the tree per patient
+  #     tmpTable = rbind(tmpTable, 
+  #                      dt[rn %in% names(ct[ct==grp]), 
+  #                         list(countSum=sum(nCellfsom), clGrp = grp, cut =k ),
+  #                         by=rowID])
+  #     
+  #   }
+  #   countTable = rbind(countTable, tmpTable)
+  # }
+  
+  return(countTable)
+}
+
+
+```
+
+
+```{r clusterFunctions, eval=FALSE, echo=TRUE}
+# save(file = "devDendo.RData", list=ls())
+load(file = "devDendo.RData")
+
+inputCT = "CD3pos"
+k=21
+sampleRatio = 1
+# 
+nClusterLayers = 200
+
+
+minPValues = data.table(nCut = integer(), minPValue=numeric(), minTTest=numeric(), minWilcox=numeric(), inputCT = character())
+for(inputCT in c( "CCR6negCXCR3neg", "CD4Naivelike" , "CD8Naivelike", "Lymphocytes", "CD3pos", "CD4pos", "CD8pos", "SingleCellsII")){
+  cat(file = stderr(), paste(inputCT, "\n"))
+  
+  cellT = inputCT
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  
+  # generate counts for all possible splits and cuts (take some minute(s) or so)
+  countTable = countsPerCut(outTab, c50CT, markerN, inputCT, nClusterLayers)
+  # now we have all counts for all the possible splits/cuts
+  # we can now check which cut give us the lowest p-value for a given model
+  # clGrp will act a gene
+  # sample is sample
+  # countSum is the expression value
+  
+  minPValues <- rbind(minPValues,getMinPValues(countTable, nClusterLayers, inputCT, metaData))
+  
+}
+plot(-log10(minPValues$minWilcox))
+minPValues[which(min(minPValues$minWilcox)==minPValues$minWilcox),]
+
+# save(file = "minPValues.onlyDR.RData", list = c("minPValues", "metaData", "sampleIds", "InlevelOrd", "sampleRatio", "summaryTable", "medianValuesTable"))
+# load(file = "minPValues.onlyDR.RData")
+plot(-log10(minPValues$minTTest), main="minPValues.onlyDR.RData")
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+
+
+```
+
+```{r clusterFunctionsObjective, eval=FALSE, echo=TRUE}
+# save(file = "devDendo.RData", list=ls())
+# load(file = "devDendo.RData")
+
+inputCT = "CD3pos"
+k=21
+sampleRatio = 1
+# 
+nClusterLayers = 200
+
+
+minPValues = data.table(nCut = integer(), minPValue=numeric(), minTTest=numeric(), minWilcox=numeric(), inputCT = character())
+for(inputCT in c( "CCR6negCXCR3neg", "CD4Naivelike" , "CD8Naivelike", "Lymphocytes", "CD3pos", "CD4pos", "CD8pos", "SingleCellsII")){
+  cat(file = stderr(), paste(inputCT, "\n"))
+  
+  cellT = inputCT
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  
+  # generate counts for all possible splits and cuts (take some minute(s) or so)
+  countTable = countsPerCutObjective(outTab, c50CT, markerN, inputCT, nClusterLayers)
+  # now we have all counts for all the possible splits/cuts
+  # we can now check which cut give us the lowest p-value for a given model
+  # clGrp will act a gene
+  # sample is sample
+  # countSum is the expression value
+  
+  minPValues <- rbind(minPValues,getMinPValues(countTable, nClusterLayers, inputCT, metaData))
+  
+}
+plot(-log10(minPValues$minTTest))
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+
+# save(file = "minPValues.onlyDR.Objective.RData", list = c("minPValues", "metaData", "sampleIds", "InlevelOrd", "sampleRatio", "summaryTable", "medianValuesTable"))
+load(file = "minPValues.onlyDR.Objective.RData")
+plot(-log10(minPValues$minTTest), main="minPValues.onlyDR.RData")
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+
+
+```
+
+
+
+
+### only GVDH
+
+
+```{r clusterGVDH, eval=FALSE, echo=TRUE}
+# save(file = "devDendo.RData", list=ls())
+# load(file = "devDendo.RData")
+require(fastcluster)
+require(data.table)
+require(edgeR)
+
+load(file = "summary.Table.RData")
+minPValues[which(min(minPValues$minPValue) == minPValues$minPValue),]
+sampleIds = unique(summaryTable[summaryTable$status1 == "GVHD","rowID"])
+
+sampleRatio = 1
+nClusterLayers = 1000
+# 
+minPValues = data.table(nCut = integer(), minPValue=numeric(), minTTest=numeric(), minWilcox=numeric(), inputCT = character())
+for(inputCT in c( "CCR6negCXCR3neg", "CD4Naivelike" , "CD8Naivelike", "Lymphocytes", "CD3pos", "CD4pos", "CD8pos", "SingleCellsII")){
+  cat(file = stderr(), paste(inputCT, "\n"))
+  
+  cellT = inputCT
+  cat(file = stderr(), paste("prepare data", "\n"))
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  
+  # generate counts for all possible splits and cuts (take some minute(s) or so)
+  cat(file = stderr(), paste("counts per cut", "\n"))
+  countTable = countsPerCut(outTab, c50CT, markerN, inputCT, nClusterLayers)
+  # now we have all counts for all the possible splits/cuts
+  # we can now check which cut give us the lowest p-value for a given model
+  # clGrp will act a gene
+  # sample is sample
+  # countSum is the expression value
+  
+  cat(file = stderr(), paste("min P values", "\n"))
+  minPValues <- rbind(minPValues,getMinPValues(countTable, nClusterLayers, inputCT, metaData))
+  
+}
+plot(-log10(minPValues$minTTest))
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+
+# save(file = "minPValues.GVHD.DRonly.RData", list = c("minPValues", "metaData", "sampleIds", "InlevelOrd", "sampleRatio", "summaryTable", "medianValuesTable"))
+
+load(file = "minPValues.GVHD.DRonly.RData")
+plot(-log10(minPValues$minTTest), main="minPValues.GVHD.DRonly.RData")
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+
+```
+
+
+### non GVDH
+
+```{r clusterNonGVDH, eval=FALSE, echo=TRUE}
+# save(file = "devDendo.RData", list=ls())
+# load(file = "devDendo.RData")
+require(fastcluster)
+require(data.table)
+require(edgeR)
+
+load(file = "summary.Table.RData")
+# load(file = "minPValues.RData")
+# minPValues[which(min(minPValues$minPValue) == minPValues$minPValue),]
+sampleIds = unique(summaryTable[ ! summaryTable$status1 == "GVHD","rowID"])
+
+sampleRatio = 1
+nClusterLayers = 1000
+# 
+minPValues = data.table(nCut = integer(), minPValue=numeric(), minTTest=numeric(), minWilcox=numeric(), inputCT = character())
+for(inputCT in c( "CCR6negCXCR3neg", "CD4Naivelike" , "CD8Naivelike", "Lymphocytes", "CD3pos", "CD4pos", "CD8pos", "SingleCellsII")){
+  cat(file = stderr(), paste(inputCT, "\n"))
+  cellT = inputCT
+  cat(file = stderr(), paste("prepare data", "\n"))
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  # generate counts for all possible splits and cuts (take some minute(s) or so)
+  cat(file = stderr(), paste("counts per cut", "\n"))
+  countTable = countsPerCut(outTab, c50CT, markerN, inputCT, nClusterLayers)
+  cat(file = stderr(), paste("min P values", "\n"))
+  minPValues <- rbind(minPValues,getMinPValues(countTable, nClusterLayers, inputCT, metaData))
+}
+# save(file = "minPValues.nonGVHD.DRonly.RData", list = c("minPValues", "metaData", "sampleIds", "InlevelOrd", "sampleRatio", "summaryTable", "medianValuesTable"))
+load(file = "minPValues.nonGVHD.DRonly.RData")
+plot(-log10(minPValues$minPValue), main="EdgeR")
+plot(-log10(minPValues$minTTest), main="T-test")
+plot(-log10(minPValues$minWilcox), main="Wilcox test")
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+minPValues[which(min(minPValues$minTTest)==minPValues$minTTest),]
+minPValues[which(min(minPValues$minWilcox)==minPValues$minWilcox),]
+
+
+```
+
+```{r clusterNonGVDHObjective, eval=FALSE, echo=TRUE}
+# save(file = "devDendo.RData", list=ls())
+# load(file = "devDendo.RData")
+require(fastcluster)
+require(data.table)
+require(edgeR)
+
+load(file = "summary.Table.RData")
+# load(file = "minPValues.RData")
+# minPValues[which(min(minPValues$minPValue) == minPValues$minPValue),]
+sampleIds = unique(summaryTable[ ! summaryTable$status1 == "GVHD","rowID"])
+
+sampleRatio = 1
+nClusterLayers = 200
+# 
+minPValues = data.table(nCut = integer(), minPValue=numeric(), minTTest=numeric(), minWilcox=numeric(), inputCT = character())
+for(inputCT in c( "CD3pos", "CCR6negCXCR3neg", "CD4Naivelike" , "CD8Naivelike", "Lymphocytes", "CD4pos", "CD8pos", "SingleCellsII")){
+# for(inputCT in c( "CD3pos")){
+  cat(file = stderr(), paste(inputCT, "\n"))
+  cellT = inputCT
+  cat(file = stderr(), paste("prepare data", "\n"))
+  outTab <- prepareData(medianValuesTable, sampleIds, inputCT, cellT, sampleRatio)
+  # generate counts for all possible splits and cuts (take some minute(s) or so)
+  cat(file = stderr(), paste("counts per cut", "\n"))
+  countTable = countsPerCutObjective(outTab, c50CT, markerN, inputCT, nClusterLayers)
+  cat(file = stderr(), paste("min P values", "\n"))
+  minPValues <- rbind(minPValues,getMinPValues(countTable, nClusterLayers, inputCT, metaData))
+}
+plot(-log10(minPValues$minPValue), main="EdgeR")
+plot(-log10(minPValues$minTTest), main="T-test")
+plot(-log10(minPValues$minWilcox), main="Wilcox test")
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+minPValues[which(min(minPValues$minTTest)==minPValues$minTTest),]
+minPValues[which(min(minPValues$minWilcox)==minPValues$minWilcox),]
+
+# save(file = "minPValues.nonGVHD.DRonly.Objective.RData", list = c("minPValues", "metaData", "sampleIds", "InlevelOrd", "sampleRatio", "summaryTable", "medianValuesTable"))
+ load(file = "minPValues.nonGVHD.DRonly.Objective.RData")
+plot(-log10(minPValues$minPValue), main="EdgeR")
+plot(-log10(minPValues$minTTest), main="T-test")
+plot(-log10(minPValues$minWilcox), main="Wilcox test")
+minPValues[which(min(minPValues$minPValue)==minPValues$minPValue),]
+minPValues[which(min(minPValues$minTTest)==minPValues$minTTest),]
+minPValues[which(min(minPValues$minWilcox)==minPValues$minWilcox),]
+
+```
+
