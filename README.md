@@ -1,4 +1,4 @@
-
+# *DEPRCATED!!! please see https://github.com/C3BI-pasteur-fr/UTechSCB-SCHNAPPs*
 
 # Shiny app for exploration of single Cell data
 
